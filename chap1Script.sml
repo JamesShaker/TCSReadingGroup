@@ -206,4 +206,69 @@ QED
 
 
 
+val _ = Datatype‘
+  nfa = <|
+    Q : state set ;
+    A : symbol set ;
+    tf : state -> (symbol option -> state set);
+    q0 : state ;
+    C : state set
+  |>
+’;
+
+val wfNFA_def = Define`
+  wfNFA a <=>
+    FINITE a.Q ∧ 
+    FINITE a.A ∧
+    a.C ⊆ a.Q ∧ 
+    a.q0 ∈ a.Q (* or IN *) ∧
+    (!q c. c IN a.A /\ q IN a.Q ==> a.tf q (SOME c) ⊆ a.Q) /\
+    (!q. q IN a.Q ==> a.tf q NONE ⊆ a.Q)
+`;
+
+
+val strip_option_def = Define`
+  strip_option [] = [] /\
+  strip_option (NONE :: t) = strip_option t /\
+  strip_option (SOME c :: t) = c :: strip_option t`;
+
+val Sipser_ND_Accepts_def = Define`
+  Sipser_ND_Accepts A cs ⇔
+    ∃ss : state list cs':(symbol option) list.
+      ss ≠ (* <> *) [] ∧
+      (strip_option cs' = cs) /\
+      (LENGTH ss = LENGTH cs' + 1) ∧
+      (HD ss = A.q0) ∧
+      (∀n. n < LENGTH ss - 1 ⇒
+           EL (n + 1) ss IN A.tf (EL n ss) (EL n cs')) ∧
+      LAST ss ∈ A.C
+`;
+
+val e_closure_def = Define`
+  e_closure a Q = {s | ?q. q IN Q /\ RTC (\s0 s. s IN a.tf s0 NONE) q s}
+`
+val _ = temp_overload_on ("E",``e_closure``)
+
+val _ = temp_overload_on ("enc", ``\s.nlist_of (SET_TO_LIST s)``)
+
+val NFA2DFA_def = Define`
+  NFA2DFA a =
+    <|Q  := {enc s| s ⊆ a.Q};
+      A  := a.A;
+      tf := λs c. let decode_s = set (listOfN s);
+                      targets_c = E a {s' | ?s0. s0 IN decode_s /\ s' IN a.tf s0 (SOME c)} in
+		  enc targets_c;
+      q0 := enc (E a {a.q0});
+      C := {enc s |s ⊆ a.Q /\ ?c. c IN s /\ c IN a.C} |>`
+                  
+
+
+npair (M1.tf (nfst s) c)
+                        (M2.tf (nsnd s) c)
+			;
+      q0 := npair M1.q0 M2.q0;
+      C  := {npair r1 r2 | r1 ∈ M1.C ∨ r2 ∈ M2.C };
+    |>
+
+`
 val _ = export_theory();
