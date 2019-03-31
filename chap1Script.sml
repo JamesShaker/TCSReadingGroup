@@ -97,6 +97,7 @@ val runMachine_def = Define`
   (runMachine a q [] = q)  ∧
   (runMachine a q (c::cs) = runMachine a (a.tf q c) cs)
 `;
+val _ = export_rewrites ["runMachine_def"]
 
 val accepts_def = Define`
   accepts a cs <=> runMachine a a.q0 cs ∈ a.C
@@ -118,10 +119,67 @@ val Sipser_Accepts_def = Define`
 `;
 
 (* EXCERCISE *)
-Theorem accept_equiv:
-  ∀ A cs. Sipser_Accepts A cs ⇔ accepts A cs
+val sipser_rm = Q.prove(
+  ‘∀ss input.
+     (∀n. n < LENGTH input ⇒
+          (A.tf (EL n ss) (EL n input) = EL (n + 1) ss)) ∧
+     (LENGTH input + 1 = LENGTH ss)  ⇒
+     (runMachine A (HD ss) input = LAST ss)’,
+  Induct_on ‘input’ >> rw[] >>
+  Cases_on ‘ss’ >> fs[] >> simp[listTheory.LAST_DEF] >> rw[] >>
+  fs[indexedListsTheory.LT_SUC, DISJ_IMP_THM, FORALL_AND_THM,
+     PULL_EXISTS, arithmeticTheory.ADD_CLAUSES]);
+
+val buildstates_def = Define‘
+  (buildstates A q [] = [q]) ∧
+  (buildstates A q (c::cs) = q :: buildstates A (A.tf q c) cs)
+’;
+val _ = export_rewrites ["buildstates_def"]
+
+Theorem LENGTH_buildstates[simp]:
+  ∀q inp. LENGTH (buildstates A q inp) = LENGTH inp + 1
 Proof
-  cheat
+  Induct_on ‘inp’ >> simp[]
+QED
+
+Theorem HD_buildstates[simp]:
+  HD (buildstates A q inp) = q
+Proof
+  Cases_on ‘inp’ >> simp[]
+QED
+
+Theorem buildstates_EQ_NIL[simp]:
+  buildstates A q inp ≠ []
+Proof
+  Cases_on ‘inp’ >> simp[]
+QED
+
+Theorem LAST_buildstates[simp]:
+  ∀q inp. LAST (buildstates A q inp) = runMachine A q inp
+Proof
+  Induct_on ‘inp’ >> simp[runMachine_def] >>
+  simp[listTheory.LAST_DEF]
+QED
+
+Theorem buildstates_transition:
+  ∀n q0 i.
+    n < LENGTH i ⇒
+    (A.tf (EL n (buildstates A q0 i)) (EL n i) =
+     EL (n + 1) (buildstates A q0 i))
+Proof
+  Induct_on ‘i’ >> simp[] >> rw[] >> Cases_on ‘n’ >> fs[] >>
+  simp[GSYM arithmeticTheory.ADD1]
+QED
+
+Theorem Sipser_Accepts_runMachine_coincide:
+  Sipser_Accepts = accepts
+Proof
+  simp[FUN_EQ_THM, Sipser_Accepts_def, accepts_def, EQ_IMP_THM,
+       PULL_EXISTS] >> rw[]
+  >- (rfs[] >> metis_tac[sipser_rm]) >>
+  rename [‘runMachine A _ input’] >>
+  qexists_tac ‘buildstates A A.q0 input’ >> simp[] >>
+  metis_tac[buildstates_transition]
 QED
 
 (* Just prior to 1.16 *)
@@ -218,9 +276,9 @@ val _ = Datatype‘
 
 val wfNFA_def = Define`
   wfNFA a <=>
-    FINITE a.Q ∧ 
+    FINITE a.Q ∧
     FINITE a.A ∧
-    a.C ⊆ a.Q ∧ 
+    a.C ⊆ a.Q ∧
     a.q0 ∈ a.Q (* or IN *) ∧
     (!q c. c IN a.A /\ q IN a.Q ==> a.tf q (SOME c) ⊆ a.Q) /\
     (!q. q IN a.Q ==> a.tf q NONE ⊆ a.Q)
@@ -228,9 +286,10 @@ val wfNFA_def = Define`
 
 
 val strip_option_def = Define`
-  strip_option [] = [] /\
-  strip_option (NONE :: t) = strip_option t /\
-  strip_option (SOME c :: t) = c :: strip_option t`;
+  (strip_option [] = []) /\
+  (strip_option (NONE :: t) = strip_option t) /\
+  (strip_option (SOME c :: t) = c :: strip_option t)
+`;
 
 val Sipser_ND_Accepts_def = Define`
   Sipser_ND_Accepts A cs ⇔
@@ -249,7 +308,7 @@ val e_closure_def = Define`
 `
 val _ = temp_overload_on ("E",``e_closure``)
 
-val _ = temp_overload_on ("enc", ``\s.nlist_of (SET_TO_LIST s)``)
+val _ = temp_overload_on ("enc", ``\s. nlist_of (SET_TO_LIST s)``);
 
 val NFA2DFA_def = Define`
   NFA2DFA a =
@@ -259,16 +318,6 @@ val NFA2DFA_def = Define`
                       targets_c = E a {s' | ?s0. s0 IN decode_s /\ s' IN a.tf s0 (SOME c)} in
 		  enc targets_c;
       q0 := enc (E a {a.q0});
-      C := {enc s |s ⊆ a.Q /\ ?c. c IN s /\ c IN a.C} |>`
-                  
+      C := {enc s |s ⊆ a.Q /\ ?c. c IN s /\ c IN a.C} |>`;
 
-
-npair (M1.tf (nfst s) c)
-                        (M2.tf (nsnd s) c)
-			;
-      q0 := npair M1.q0 M2.q0;
-      C  := {npair r1 r2 | r1 ∈ M1.C ∨ r2 ∈ M2.C };
-    |>
-
-`
 val _ = export_theory();
