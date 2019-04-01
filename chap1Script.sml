@@ -297,6 +297,14 @@ val strip_option_def = Define‘
   (strip_option (SOME c :: t) = c :: strip_option t)
 ’;
 
+val _ = export_rewrites["strip_option_def"];
+
+Theorem strip_MAP_SOME[simp]:
+  strip_option (MAP SOME x) = x
+Proof
+  Induct_on`x` >> simp[]
+QED
+
 val Sipser_ND_Accepts_def = Define‘
   Sipser_ND_Accepts A cs ⇔
     ∃ss : state list cs':(symbol option) list.
@@ -321,11 +329,66 @@ val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
 
 val NFA2DFA_def = Define‘
   NFA2DFA a =
-    <|Q  := {enc s| s ⊆ a.Q};
+    <|Q  := {enc s| s SUBSET a.Q};
       A  := a.A;
       tf := λs c. enc (E a {s' | ∃s0. s0 ∈ dec s ∧ s' ∈ a.tf s0 (SOME c)});
       q0 := enc (E a {a.q0});
       C := {enc s |s ⊆ a.Q ∧ ∃c. c ∈ s ∧ c ∈ a.C} |>
 ’;
+
+
+Theorem e_in_states:
+  (∀q. q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ==> 
+  s SUBSET a.Q ==> E a s SUBSET a.Q
+Proof
+  strip_tac >> 
+  simp[e_closure_def,PULL_EXISTS,SUBSET_DEF] >> 
+  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0∈a.Q ⇒ x ∈ a.Q` 
+    suffices_by metis_tac[] >> 
+  ho_match_mp_tac relationTheory.RTC_INDUCT >> rw[] >>
+  first_x_assum drule >> simp[SUBSET_DEF]
+QED
+
+Theorem wf_NFA2DFA:
+  wfNFA a ==> wfFA (NFA2DFA a)
+Proof
+  fs[wfNFA_def,wfFA_def,NFA2DFA_def] >> rw[]
+  >- (`{enc s | s ⊆ a.Q} = IMAGE enc (POW a.Q)` by 
+        fs[EXTENSION,IN_POW] >> simp[FINITE_POW] )
+  >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
+  >- (qexists_tac`E a {a.q0}` >>
+      simp[e_in_states] )
+  >- (qmatch_abbrev_tac`∃s. enc eas = enc s ∧ s SUBSET a.Q` >>
+      qexists_tac`eas` >> simp[Abbr`eas`] >> irule e_in_states >>
+      rw[] >> `FINITE s` by metis_tac[SUBSET_FINITE_I] >>
+      simp[SUBSET_DEF,PULL_EXISTS,listOfN_nlist] >>
+      metis_tac[SUBSET_DEF] )
+QED
+
+val DFA2NFA_def = Define`
+DFA2NFA a = <|Q  := a.Q;
+      A  := a.A;
+      tf := λs copt. case copt of NONE => {} 
+                                | SOME c => {a.tf s c};
+      q0 := a.q0;
+      C := a.C |>`
+
+Theorem accepts_DFA2NFA:
+  Sipser_Accepts a cs ==> Sipser_ND_Accepts (DFA2NFA a) cs
+Proof
+  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def,DFA2NFA_def] >>
+  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[] >> 
+  fs[listTheory.EL_MAP]
+QED
+
+(* Still to prove *)
+(*
+Theorem accepts_NFA2DFA:
+  Sipser_ND_Accepts a cs ==> Sipser_Accepts (NFA2DFA a) cs
+Proof
+  fs[Sipser_ND_Accepts_def,Sipser_Accepts_def] >> rw[NFA2DFA_def] >>
+  qexists_tac`` >> rw[]
+QED
+*)
 
 val _ = export_theory();
