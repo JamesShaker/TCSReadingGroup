@@ -338,13 +338,13 @@ val NFA2DFA_def = Define‘
 
 
 Theorem e_in_states:
-  (∀q. q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ==> 
+  (∀q. q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ==>
   s SUBSET a.Q ==> E a s SUBSET a.Q
 Proof
-  strip_tac >> 
-  simp[e_closure_def,PULL_EXISTS,SUBSET_DEF] >> 
-  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0∈a.Q ⇒ x ∈ a.Q` 
-    suffices_by metis_tac[] >> 
+  strip_tac >>
+  simp[e_closure_def,PULL_EXISTS,SUBSET_DEF] >>
+  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0∈a.Q ⇒ x ∈ a.Q`
+    suffices_by metis_tac[] >>
   ho_match_mp_tac relationTheory.RTC_INDUCT >> rw[] >>
   first_x_assum drule >> simp[SUBSET_DEF]
 QED
@@ -353,7 +353,7 @@ Theorem wf_NFA2DFA:
   wfNFA a ==> wfFA (NFA2DFA a)
 Proof
   fs[wfNFA_def,wfFA_def,NFA2DFA_def] >> rw[]
-  >- (`{enc s | s ⊆ a.Q} = IMAGE enc (POW a.Q)` by 
+  >- (`{enc s | s ⊆ a.Q} = IMAGE enc (POW a.Q)` by
         fs[EXTENSION,IN_POW] >> simp[FINITE_POW] )
   >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
   >- (qexists_tac`E a {a.q0}` >>
@@ -368,7 +368,7 @@ QED
 val DFA2NFA_def = Define`
 DFA2NFA a = <|Q  := a.Q;
       A  := a.A;
-      tf := λs copt. case copt of NONE => {} 
+      tf := λs copt. case copt of NONE => {}
                                 | SOME c => {a.tf s c};
       q0 := a.q0;
       C := a.C |>`
@@ -377,18 +377,218 @@ Theorem accepts_DFA2NFA:
   Sipser_Accepts a cs ==> Sipser_ND_Accepts (DFA2NFA a) cs
 Proof
   rw[Sipser_ND_Accepts_def,Sipser_Accepts_def,DFA2NFA_def] >>
-  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[] >> 
+  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[] >>
   fs[listTheory.EL_MAP]
 QED
 
-(* Still to prove *)
-(*
-Theorem accepts_NFA2DFA:
+Theorem MEM_listOfN_enc[simp]:
+  FINITE s ⇒ (MEM x (listOfN (enc s)) ⇔ x ∈ s)
+Proof
+  simp[listOfN_nlist]
+QED
+
+Theorem e_closure_safe:
+  wfNFA a ∧ s0 ⊆ a.Q ⇒ E a s0 ⊆ a.Q
+Proof
+  strip_tac >> simp[e_closure_def, SUBSET_DEF, PULL_EXISTS] >>
+  ‘∀s0 s. (λq0 q. q ∈ a.tf q0 NONE)^* s0 s ⇒ (s0 ∈ a.Q ⇒ s ∈ a.Q)’
+    suffices_by metis_tac[SUBSET_DEF] >>
+  ho_match_mp_tac relationTheory.RTC_INDUCT >> simp[] >> rw[] >>
+  fs[wfNFA_def] >> metis_tac[SUBSET_DEF]
+QED
+
+Theorem IN_eclosure_originator:
+  x ∈ E a s ⇒ ∃x0. x0 ∈ s ∧ (λs0 s. s ∈ a.tf s0 NONE)^* x0 x
+Proof
+  simp[e_closure_def]
+QED
+
+Theorem nlist_of_11[simp]:
+  (nlist_of l1 = nlist_of l2) ⇔ (l1 = l2)
+Proof
+  qid_spec_tac ‘l2’ >> Induct_on ‘l1’ >> simp[] >>
+  Cases_on ‘l2’ >> simp[]
+QED
+
+Theorem SET_TO_LIST_11[simp]:
+  ∀s1 s2. FINITE s1 ∧ FINITE s2 ⇒ (SET_TO_LIST s1 = SET_TO_LIST s2 ⇔ s1 = s2)
+Proof
+  metis_tac[listTheory.SET_TO_LIST_INV]
+QED
+
+Theorem enc_11[simp]:
+  FINITE s1 ∧ FINITE s2 ⇒ ((enc s1 = enc s2) ⇔ (s1 = s2))
+Proof
+  simp[]
+QED
+
+Theorem NFA2DFA_1step:
+  wfNFA a ∧ s0 ⊆ a.Q ∧ c ∈ a.A ⇒
+  (((NFA2DFA a).tf (enc s0) c = q) ⇔
+   ∃s. (q = enc s) ∧ s ⊆ a.Q ∧
+      ∀nq. nq ∈ s ⇔
+           ∃nq0. nq0 ∈ s0 ∧ nq ∈ E a (a.tf nq0 (SOME c)))
+Proof
+  simp[NFA2DFA_def] >> strip_tac >> eq_tac >> rw[]
+  >- (qho_match_abbrev_tac ‘∃s. enc X = enc s ∧ _ s’ >> qexists_tac ‘X’ >>
+      simp[] >> rw[Abbr‘X’]
+      >- (‘FINITE s0’ by metis_tac[wfNFA_def, SUBSET_FINITE_I] >> simp[] >>
+          irule e_closure_safe >> simp[SUBSET_DEF, PULL_EXISTS] >>
+          fs[wfNFA_def] >> metis_tac[SUBSET_DEF]) >>
+      ‘FINITE s0’ by metis_tac[wfNFA_def, SUBSET_FINITE_I] >> fs[] >>
+      fs[e_closure_def, PULL_EXISTS] >> metis_tac[]) >>
+  ‘FINITE s0’ by metis_tac[wfNFA_def, SUBSET_FINITE_I] >> simp[] >>
+  AP_TERM_TAC >> fs[e_closure_def, EXTENSION, PULL_EXISTS] >>
+  metis_tac[]
+QED
+
+val (NF_transition_rules, NF_transition_ind, NF_transition_cases) = Hol_reln‘
+  (∀q0. NF_transition a q0 [] q0) ∧
+  (∀q0 q1 q c cs.
+     q1 ∈ a.tf q0 c ∧ NF_transition a q1 cs q
+    ⇒
+     NF_transition a q0 (c::cs) q)
+’;
+
+Theorem Sipser_ND_Accepts_NF_transition:
+  Sipser_ND_Accepts a cs ⇔
+  ∃q n nlist.
+     LENGTH nlist = LENGTH cs ∧
+     NF_transition a a.q0
+       (REPLICATE n NONE ++
+        FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) (ZIP (cs,nlist))))
+     q ∧ q ∈ a.C
+Proof
+  simp[Sipser_ND_Accepts_def] >> qspec_tac(‘a.q0’, ‘s0’) >> rw[] >>
+  eq_tac >> rw[]
+  >- (rpt (pop_assum mp_tac) >> map_every qid_spec_tac [`ss`, `s0`] >>
+      Induct_on `cs'` >> simp[]
+      >- (Cases >> simp[] >> rw[] >>
+          map_every qexists_tac [‘h’, ‘0’] >>
+          simp[NF_transition_rules]) >>
+      rw[] >> Cases_on ‘ss’ >> fs[] >>
+      ‘t ≠ []’ by (strip_tac >> fs[]) >>
+      ‘LENGTH t = LENGTH cs' + 1’ by fs[arithmeticTheory.ADD1] >>
+      fs[indexedListsTheory.LT_SUC, DISJ_IMP_THM, FORALL_AND_THM, PULL_EXISTS,
+         arithmeticTheory.ADD_CLAUSES] >>
+      ‘∀x. LAST (x :: t) = LAST t’ by simp[listTheory.LAST_CONS_cond] >> fs[] >>
+      rename [‘HD ss ∈ A.tf s0 copt’] >>
+      first_x_assum drule_all >> strip_tac >>
+      qexists_tac ‘q’ >> Cases_on ‘copt’ >> simp[]
+      >- (map_every qexists_tac [‘SUC n’ , ‘nlist’] >> simp[] >>
+          metis_tac[NF_transition_rules]) >>
+      map_every qexists_tac [‘0’, ‘n::nlist’] >> simp[] >>
+      metis_tac[NF_transition_rules]) >>
+  rpt (pop_assum mp_tac) >>
+  qho_match_abbrev_tac ‘P ⇒ Q ⇒ R q cs s0’ >>
+  ‘∀q0 csoptl q.
+      NF_transition a q0 csoptl q ⇒
+      ∀cs n nlist.
+        LENGTH nlist = LENGTH cs ∧
+        csoptl =
+          REPLICATE n NONE ++
+          FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) (ZIP(cs,nlist))) ⇒
+        R q cs q0’ suffices_by metis_tac[] >>
+   simp[Abbr‘R’] >> markerLib.UNABBREV_ALL_TAC >>
+   Induct_on ‘NF_transition’ >> simp[] >> rw[]
+   >- (fs[rich_listTheory.REPLICATE_NIL, listTheory.FLAT_EQ_NIL] >>
+       fs[listTheory.EVERY_MEM, listTheory.MEM_MAP, PULL_EXISTS,
+          pairTheory.FORALL_PROD] >>
+       rename [‘ZIP(cs,nlist)’] >>
+       ‘cs = []’
+         by (Cases_on ‘cs’ >> fs[] >> Cases_on ‘nlist’ >> fs[] >>
+             metis_tac[]) >>
+       map_every qexists_tac [‘[q0]’,‘[]’] >> simp[]) >>
+   rename[‘q1 ∈ a.tf a0 copt’,‘LENGTH nlist = LENGTH cs’,‘REPLICATE n’,
+          ‘NF_transition a q1 csoptl q’] >>
+   Cases_on ‘copt’
+   >- ((* nfa made an ε transition *)
+       ‘∃m. n = SUC m’
+         by (Cases_on ‘n’ >> fs[] >>
+             map_every Cases_on [‘cs’, ‘nlist’] >> fs[]) >>
+       fs[] >> first_x_assum (drule_then (qspec_then ‘m’ mp_tac)) >>
+       simp[] >> strip_tac >>
+       rename [‘strip_option IHcs = cs’, ‘HD IHss = q1’] >>
+       map_every qexists_tac [‘a0 :: IHss’, ‘NONE :: IHcs’] >>
+       simp[listTheory.LAST_CONS_cond] >> qx_gen_tac ‘N’ >> strip_tac >>
+       Cases_on ‘N’ >> simp[] >> rename [‘SUC N0 < LENGTH IHcs + 1’] >>
+       simp[arithmeticTheory.ADD_CLAUSES]) >>
+   (* copt = SOME ?; nfa made a "real" transition *)
+   rename [‘SOME c:: _ = _’] >> ‘n = 0’ by (Cases_on ‘n’ >> fs[]) >>
+   fs[] >>
+   qabbrev_tac
+    ‘build =
+       λn (cs:num list) (ns:num list).
+         REPLICATE n NONE ++
+         FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) (ZIP(cs,ns)))’ >>
+   fs[] >>
+   Cases_on ‘cs’ >> fs[] >- (rw[] >> fs[]) >>
+   rename [‘ZIP (c1::cs,_)’] >>
+   Cases_on ‘nlist’ >> fs[] >> rw[] >>
+   rename [‘NF_transition a q1 (build n cs ns) q’] >>
+   first_x_assum (drule_then (qspec_then ‘n’ mp_tac)) >> simp[] >>
+   strip_tac >> rename [‘strip_option IHcs = cs’, ‘IHss ≠ []’] >>
+   map_every qexists_tac [‘a0::IHss’, ‘SOME c :: IHcs’] >>
+   simp[listTheory.LAST_CONS_cond] >> qx_gen_tac ‘N’ >> strip_tac >>
+   Cases_on ‘N’ >> simp[] >> rename [‘SUC N0 < LENGTH IHcs + 1’] >>
+   simp[arithmeticTheory.ADD_CLAUSES]
+QED
+
+Theorem E_SUBSET:
+  x ∈ Q ⇒ x ∈ E a Q
+Proof
+  simp[e_closure_def] >> metis_tac[relationTheory.RTC_RULES]
+QED
+
+Theorem E_IDEMPOTENT[simp]:
+  E a (E a Q) = E a Q
+Proof
+  simp[e_closure_def, EXTENSION, PULL_EXISTS] >>
+  metis_tac[relationTheory.RTC_CASES_RTC_TWICE]
+QED
+
+Theorem NF_transition_NFA2DFA:
+  wfNFA a ⇒
+  ∀q0 cs q.
+     NF_transition a q0 cs q ⇒
+     (∀c. MEM (SOME c) cs ⇒ c ∈ a.A) ⇒
+     ∀Q0.
+       q0 ∈ Q0 ∧ Q0 ⊆ a.Q ⇒
+       ∃Q. enc Q = runMachine (NFA2DFA a) (enc (E a Q0)) (strip_option cs) ∧
+           q ∈ Q
+Proof
+  strip_tac >>
+  Induct_on ‘NF_transition’ >> rw[] >- metis_tac[E_SUBSET] >>
+  rename [‘q1 ∈ a.tf q0 copt’] >> Cases_on ‘copt’ >> simp[]
+  >- (fs[] >> first_x_assum (qspec_then ‘E a Q0’ mp_tac) >> simp[] >>
+      disch_then irule >> conj_tac
+      >- (simp[e_closure_def] >> qexists_tac ‘q0’ >>
+          simp[relationTheory.RTC_SINGLE]) >>
+      simp[e_closure_safe]) >>
+  fs[DISJ_IMP_THM, FORALL_AND_THM] >> rename [‘q1 ∈ a.tf q0 (SOME c)’] >>
+  ‘∃Q1. q1 ∈ Q1 ∧ Q1 ⊆ a.Q ∧ (NFA2DFA a).tf (enc (E a Q0)) c = enc (E a Q1)’
+     suffices_by metis_tac[] >>
+  simp[NFA2DFA_def] >>
+  qexists_tac ‘{q | ∃q0'. q0' ∈ E a Q0 ∧ q ∈ a.tf q0' (SOME c)}’ >> simp[]>>
+  rpt conj_tac
+  >- metis_tac[E_SUBSET]
+  >- (fs[wfNFA_def, SUBSET_DEF, PULL_EXISTS] >>
+      metis_tac[e_closure_safe, SUBSET_DEF, wfNFA_def]) >>
+  AP_TERM_TAC >> simp[EXTENSION] >>
+  ‘FINITE (E a Q0)’
+    by metis_tac[wfNFA_def, e_closure_safe, SUBSET_FINITE_I] >>
+  simp[MEM_listOfN_enc]
+QED
+
+(* Theorem accepts_NFA2DFA:
   Sipser_ND_Accepts a cs ==> Sipser_Accepts (NFA2DFA a) cs
 Proof
-  fs[Sipser_ND_Accepts_def,Sipser_Accepts_def] >> rw[NFA2DFA_def] >>
+  simp[Sipser_ND_Accepts_def,Sipser_Accepts_runMachine_coincide, accepts_def] >>
+  strip_tac >>
+  qexists_tac ‘buildstates (NFA2DFA a) (NFA2DFA a).q0 cs’ >> simp[] >>
+  rw[NFA2DFA_def] >>
   qexists_tac`` >> rw[]
 QED
-*)
 
+*)
 val _ = export_theory();
