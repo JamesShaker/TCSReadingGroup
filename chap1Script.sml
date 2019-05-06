@@ -114,7 +114,8 @@ val Sipser_Accepts_def = Define‘
       (HD ss = A.q0) ∧
       (∀n. n < LENGTH ss - 1 ⇒
            (A.tf (EL n ss) (EL n cs) = EL (n + 1) ss)) ∧
-      LAST ss ∈ A.C
+      LAST ss ∈ A.C ∧
+      (∀c. MEM c cs ⇒ c ∈ A.A)
 ’;
 
 Theorem sipser_rm:
@@ -185,7 +186,7 @@ Proof
 QED
 
 Theorem Sipser_Accepts_runMachine_coincide:
-  Sipser_Accepts = accepts
+  ∀A cs. (∀c. MEM c cs ⇒ c ∈ A.A) ⇒ (Sipser_Accepts A cs = accepts A cs)
 Proof
   simp[FUN_EQ_THM, Sipser_Accepts_def, accepts_def, EQ_IMP_THM,
        PULL_EXISTS] >>
@@ -198,9 +199,15 @@ Proof
       metis_tac[buildstates_transition])
 QED
 
+Theorem Sipser_Accepts_runMachine_coincide_thm:
+  ∀A cs. Sipser_Accepts A cs ⇔ (∀c. MEM c cs ⇒ c ∈ A.A) ∧ accepts A cs
+Proof
+  metis_tac[Sipser_Accepts_runMachine_coincide,Sipser_Accepts_def]
+QED
+
 (* Just prior to 1.16 *)
 val recogLang_def = Define‘
-  recogLang M = {w | accepts M w}
+  recogLang M = {w | Sipser_Accepts M w}
 ’;
 
 (* Definition 1.16 *)
@@ -242,7 +249,17 @@ val machine_union_def = Define‘
       C  := {npair r1 r2 | r1 ∈ M1.C ∨ r2 ∈ M2.C };
     |>
 ’;
-
+  
+  reverse (Cases_on ‘∀c. MEM c x ⇒ c ∈ M1.A’)
+  >- simp[]
+  reveser (Cases_on ‘∀c. MEM c x ⇒ c ∈ M2.A’) >>
+  simp
+  >- simp[]
+  ‘∀ q1 q2. runMachine MU (npair q1 q2) x ∈ MU.C
+            ⇔ runMachine M1 q1 x ∈ M1.C ∨
+              runMachine M2 q2 x ∈ M2.C’
+    suffices_by ( >>
+                  rw[Abbr ‘MU’, machine_union_def]) >>
 (* Theorem 1.25 *)
 Theorem regular_closed_under_union:
   ∀ lA lB. regularLanguage lA ∧
@@ -252,20 +269,23 @@ Proof
   rw [regularLanguage_def] >>
   rename [‘recogLang M1 ∪ recogLang M2’] >>
   qexists_tac ‘machine_union M1 M2’ >>
-  rw [recogLang_def, EXTENSION, accepts_def] >>
+  rw [recogLang_def, EXTENSION, Sipser_Accepts_runMachine_coincide_thm] >>
   qabbrev_tac ‘MU = machine_union M1 M2’ >>
-  ‘∀ q1 q2. runMachine MU (npair q1 q2) x ∈ MU.C
-            ⇔ runMachine M1 q1 x ∈ M1.C ∨
-              runMachine M2 q2 x ∈ M2.C’
-    suffices_by (‘MU.q0 = npair M1.q0 M2.q0’
-                    suffices_by rw[] >>
-                  rw[Abbr ‘MU’, machine_union_def]) >>
+  rw[accepts_def] >>
+  ‘(MU.A = M1.A ∪ M2.A) ∧ (MU.q0 = npair M1.q0 M2.q0)’
+    by rw[machine_union_def, Abbr ‘MU’] >>
+  simp[] >>
+  qspec_tac (‘M1.q0’, ‘q1’) >>
+  qspec_tac (‘M2.q0’, ‘q2’) >>
   Induct_on ‘x’
   >- rw[Abbr ‘MU’, runMachine_def,machine_union_def]
-  >- (rw[runMachine_def] >>
+  >- (rw[runMachine_def, DISJ_IMP_THM, FORALL_AND_THM] >>
       ‘MU.tf (npair q1 q2) h = npair (M1.tf q1 h) (M2.tf q2 h)’
-        suffices_by simp[] >>
-      rw[Abbr ‘MU’, machine_union_def])
+        by rw[Abbr ‘MU’, machine_union_def] >>
+      Cases_on ‘h ∈ M1.A’ >>
+      Cases_on ‘h ∈ M2.A’ >>
+      fs[]
+      )
 QED
 
 
@@ -314,7 +334,8 @@ val Sipser_ND_Accepts_def = Define‘
       (HD ss = A.q0) ∧
       (∀n. n < LENGTH ss - 1 ⇒
            EL (n + 1) ss ∈ A.tf (EL n ss) (EL n cs')) ∧
-      LAST ss ∈ A.C
+      LAST ss ∈ A.C ∧
+      (∀c. MEM c cs ⇒ c ∈ A.a)
 ’;
 
 val e_closure_def = Define‘
@@ -373,7 +394,7 @@ DFA2NFA a = <|Q  := a.Q;
       q0 := a.q0;
       C := a.C |>`
 
-Theorem accepts_DFA2NFA:
+Theorem DFA_SUBSET_NFA:
   Sipser_Accepts a cs ==> Sipser_ND_Accepts (DFA2NFA a) cs
 Proof
   rw[Sipser_ND_Accepts_def,Sipser_Accepts_def,DFA2NFA_def] >>
@@ -580,15 +601,15 @@ Proof
   simp[MEM_listOfN_enc]
 QED
 
-(* Theorem accepts_NFA2DFA:
-  Sipser_ND_Accepts a cs ==> Sipser_Accepts (NFA2DFA a) cs
+Theorem NFA_SUBSET_DFA:
+  ∀N cs. wfNFA N ∧ Sipser_ND_Accepts N cs ⇒ ∃D. wfFA D ∧ Sipser_Accepts D cs
 Proof
-  simp[Sipser_ND_Accepts_def,Sipser_Accepts_runMachine_coincide, accepts_def] >>
-  strip_tac >>
-  qexists_tac ‘buildstates (NFA2DFA a) (NFA2DFA a).q0 cs’ >> simp[] >>
-  rw[NFA2DFA_def] >>
-  qexists_tac`` >> rw[]
+  rw[Sipser_ND_Accepts_NF_transition] >>
+  qexists_tac ‘NFA2DFA N’ >>
+  rw[Sipser_Accepts_runMachine_coincide,accepts_def,wf_NFA2DFA] >>
+  drule_then (drule_then strip_assume_tac) NF_transition_NFA2DFA >>
+
 QED
 
-*)
+
 val _ = export_theory();
