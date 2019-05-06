@@ -40,12 +40,18 @@ val wfFA_def = Define‘
     FINITE a.A ∧
     a.C ⊆ a.Q  ∧
     a.q0 ∈ a.Q ∧
-    ∀q c.
-      c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q c ∈ a.Q
+    (∀q c.
+      c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q c ∈ a.Q) /\
     (* if you apply the transition function to a state in
        the machine's state set, and a character in the
        machine's alphabet, then you'd better stay in the
        set of machine states *)
+    0 IN a.Q /\
+    0 NOTIN a.C /\
+    0 <> a.q0 /\
+    (!q c. c NOTIN a.A ==> a.tf q c = 0) /\
+    (!c. a.tf 0 c = 0) /\
+    (!q c. c IN a.A /\ q IN a.Q /\ q <> 0 ==> a.tf q c <> 0)
 ’;
 
 (* Note that the same automaton can be encoded as two different
@@ -68,13 +74,17 @@ val wfFA_def = Define‘
 *)
 
 val example_def = Define‘
-  example = <| Q := {1;2;3;4}; A := { 1 (* a *); 2 (* b *) };
+  example = <| Q := {0;1;2;3;4}; A := { 1 (* a *); 2 (* b *) };
                tf := (λq. case q of
                           |  1 => (λc. if c = 1 then 2 else
-                                       if c = 2 then 3 else ARB)
-                          |  2 => (λc. 4)
-                          |  3 => (λc. 4)
-                          |  4 => (λc. 4)) ;
+                                       if c = 2 then 3 else 0)
+                          |  2 => (λc. if c = 1 \/ c = 2 then 4
+                                       else 0)
+                          |  3 => (λc. if c = 1 \/ c = 2 then 4
+                                       else 0)
+                          |  4 => (λc. if c = 1 \/ c = 2 then 4
+                                       else 0)
+                          | _ => \c.0 ) ;
                q0 := 1;
                C := {2} |>
 ’;
@@ -83,9 +93,10 @@ val example_def = Define‘
 Theorem example_wellformed:
   wfFA example
 Proof
-  simp[wfFA_def, example_def]>>
-  rpt strip_tac (* generates 8 subgoals *) >>
-  simp[]
+  simp[wfFA_def, example_def]>> 
+  rpt strip_tac (* generates 8 subgoals *) >> 
+  simp[] (* 9 *)
+  >- rw[] >> rfs[]
 QED
 
 val _ = type_abbrev("sipser_string", “:symbol list”);
@@ -115,7 +126,7 @@ val Sipser_Accepts_def = Define‘
       (∀n. n < LENGTH ss - 1 ⇒
            (A.tf (EL n ss) (EL n cs) = EL (n + 1) ss)) ∧
       LAST ss ∈ A.C ∧
-      (∀c. MEM c cs ⇒ c ∈ A.A)
+      wfFA A
 ’;
 
 Theorem sipser_rm:
@@ -186,7 +197,7 @@ Proof
 QED
 
 Theorem Sipser_Accepts_runMachine_coincide:
-  ∀A cs. (∀c. MEM c cs ⇒ c ∈ A.A) ⇒ (Sipser_Accepts A cs = accepts A cs)
+  ∀A cs. wfFA A ⇒ (Sipser_Accepts A cs = accepts A cs)
 Proof
   simp[FUN_EQ_THM, Sipser_Accepts_def, accepts_def, EQ_IMP_THM,
        PULL_EXISTS] >>
@@ -200,7 +211,7 @@ Proof
 QED
 
 Theorem Sipser_Accepts_runMachine_coincide_thm:
-  ∀A cs. Sipser_Accepts A cs ⇔ (∀c. MEM c cs ⇒ c ∈ A.A) ∧ accepts A cs
+  ∀A cs. Sipser_Accepts A cs ⇔ wfFA A ∧ accepts A cs
 Proof
   metis_tac[Sipser_Accepts_runMachine_coincide,Sipser_Accepts_def]
 QED
@@ -212,7 +223,7 @@ val recogLang_def = Define‘
 
 (* Definition 1.16 *)
 val regularLanguage_def = Define‘
-  regularLanguage l ⇔ ∃M. recogLang M = l
+  regularLanguage l ⇔ ∃M. wfFA M /\ recogLang M = l
 ’;
 
 (* Definition 1.23 *)
@@ -246,21 +257,31 @@ val machine_union_def = Define‘
       tf := λs c. npair (M1.tf (nfst s) c)
                         (M2.tf (nsnd s) c);
       q0 := npair M1.q0 M2.q0;
-      C  := {npair r1 r2 | r1 ∈ M1.C ∨ r2 ∈ M2.C };
+      C  := {npair r1 r2 | (r1 ∈ M1.C /\ r2 ∈ M2.Q) \/
+                           (r1 ∈ M1.Q /\ r2 ∈ M2.C)};
     |>
 ’;
   
-  reverse (Cases_on ‘∀c. MEM c x ⇒ c ∈ M1.A’)
-  >- simp[]
-  reveser (Cases_on ‘∀c. MEM c x ⇒ c ∈ M2.A’) >>
-  simp
-  >- simp[]
-  ‘∀ q1 q2. runMachine MU (npair q1 q2) x ∈ MU.C
-            ⇔ runMachine M1 q1 x ∈ M1.C ∨
-              runMachine M2 q2 x ∈ M2.C’
-    suffices_by ( >>
-                  rw[Abbr ‘MU’, machine_union_def]) >>
+
 (* Theorem 1.25 *)
+Theorem wfFA_machine_union :
+  !M1 M2. wfFA M1 /\ wfFA M2 ==> wfFA (machine_union M1 M2)
+Proof
+  rw[wfFA_def,machine_union_def] (* 11 *) >> simp[]
+  >- cheat (* intersection finite *)
+  >- (simp[SUBSET_DEF,PULL_EXISTS] >> metis_tac[SUBSET_DEF])
+  >- (Cases_on `c IN M2.A` >> simp[])
+  >- metis_tac[]
+  >- (map_every qexists_tac [`0`,`0`] >> simp[] >> EVAL_TAC)
+  >- (Cases_on `npair r1 r2 = 0` >> simp[] >> 
+     `r1 = 0 /\ r2 = 0` suffices_by simp[] >> cheat)
+  >- cheat
+  >- EVAL_TAC
+  >- cheat
+  >- cheat
+  >- cheat
+QED
+
 Theorem regular_closed_under_union:
   ∀ lA lB. regularLanguage lA ∧
            regularLanguage lB ⇒
