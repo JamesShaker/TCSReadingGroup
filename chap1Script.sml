@@ -46,12 +46,12 @@ val wfFA_def = Define‘
        the machine's state set, and a character in the
        machine's alphabet, then you'd better stay in the
        set of machine states *)
-    0 IN a.Q /\
-    0 NOTIN a.C /\
-    0 <> a.q0 /\
-    (!q c. c NOTIN a.A ==> a.tf q c = 0) /\
-    (!c. a.tf 0 c = 0) /\
-    (!q c. c IN a.A /\ q IN a.Q /\ q <> 0 ==> a.tf q c <> 0)
+    0 ∈ a.Q /\
+    0 ∉ a.C /\
+    0 ≠ a.q0 /\
+    (∀q c. c ∉ a.A ⇒ (a.tf q c = 0)) ∧
+    (∀c. a.tf 0 c = 0) ∧
+    (∀q c. c ∈ a.A ∧ q IN a.Q /\ q <> 0 ==> a.tf q c <> 0)
 ’;
 
 (* Note that the same automaton can be encoded as two different
@@ -78,11 +78,11 @@ val example_def = Define‘
                tf := (λq. case q of
                           |  1 => (λc. if c = 1 then 2 else
                                        if c = 2 then 3 else 0)
-                          |  2 => (λc. if c = 1 \/ c = 2 then 4
+                          |  2 => (λc. if (c = 1) \/ (c = 2) then 4
                                        else 0)
-                          |  3 => (λc. if c = 1 \/ c = 2 then 4
+                          |  3 => (λc. if (c = 1) \/ (c = 2) then 4
                                        else 0)
-                          |  4 => (λc. if c = 1 \/ c = 2 then 4
+                          |  4 => (λc. if (c = 1) \/ (c = 2) then 4
                                        else 0)
                           | _ => \c.0 ) ;
                q0 := 1;
@@ -223,7 +223,7 @@ val recogLang_def = Define‘
 
 (* Definition 1.16 *)
 val regularLanguage_def = Define‘
-  regularLanguage l ⇔ ∃M. wfFA M /\ recogLang M = l
+  regularLanguage l ⇔ ∃M. wfFA M /\ (recogLang M = l)
 ’;
 
 (* Definition 1.23 *)
@@ -273,8 +273,7 @@ Proof
   >- (Cases_on `c IN M2.A` >> simp[])
   >- metis_tac[]
   >- (map_every qexists_tac [`0`,`0`] >> simp[] >> EVAL_TAC)
-  >- (Cases_on `npair r1 r2 = 0` >> simp[] >> 
-     `r1 = 0 /\ r2 = 0` suffices_by simp[] >> cheat)
+  >- (Cases_on `npair r1 r2 = 0` >> simp[] >> cheat)
   >- cheat
   >- EVAL_TAC
   >- cheat
@@ -290,23 +289,28 @@ Proof
   rw [regularLanguage_def] >>
   rename [‘recogLang M1 ∪ recogLang M2’] >>
   qexists_tac ‘machine_union M1 M2’ >>
-  rw [recogLang_def, EXTENSION, Sipser_Accepts_runMachine_coincide_thm] >>
+  rw [recogLang_def, EXTENSION,
+      Sipser_Accepts_runMachine_coincide_thm,
+      wfFA_machine_union] >>
   qabbrev_tac ‘MU = machine_union M1 M2’ >>
   rw[accepts_def] >>
   ‘(MU.A = M1.A ∪ M2.A) ∧ (MU.q0 = npair M1.q0 M2.q0)’
     by rw[machine_union_def, Abbr ‘MU’] >>
   simp[] >>
-  qspec_tac (‘M1.q0’, ‘q1’) >>
-  qspec_tac (‘M2.q0’, ‘q2’) >>
+  ‘∀ q1 q2. q1 ∈ M1.Q ∧ q2 ∈ M2.Q
+    ⇒ (runMachine MU (q1 ⊗ q2) x ∈ MU.C ⇔
+      runMachine M1 q1 x ∈ M1.C ∨ runMachine M2 q2 x ∈ M2.C)’
+    suffices_by (rpt strip_tac >>
+                 metis_tac[wfFA_def]) >>
   Induct_on ‘x’
-  >- rw[Abbr ‘MU’, runMachine_def,machine_union_def]
+  >- (rw[Abbr ‘MU’, runMachine_def,machine_union_def])
   >- (rw[runMachine_def, DISJ_IMP_THM, FORALL_AND_THM] >>
       ‘MU.tf (npair q1 q2) h = npair (M1.tf q1 h) (M2.tf q2 h)’
         by rw[Abbr ‘MU’, machine_union_def] >>
-      Cases_on ‘h ∈ M1.A’ >>
-      Cases_on ‘h ∈ M2.A’ >>
-      fs[]
-      )
+      first_x_assum (fn x => SUBST_TAC [x]) >>
+      ‘M1.tf q1 h ∈ M1.Q ∧ M2.tf q2 h ∈ M2.Q’
+        suffices_by metis_tac[] >>
+      metis_tac[wfFA_def])
 QED
 
 
@@ -356,7 +360,7 @@ val Sipser_ND_Accepts_def = Define‘
       (∀n. n < LENGTH ss - 1 ⇒
            EL (n + 1) ss ∈ A.tf (EL n ss) (EL n cs')) ∧
       LAST ss ∈ A.C ∧
-      (∀c. MEM c cs ⇒ c ∈ A.a)
+      (∀c. MEM c cs ⇒ c ∈ A.A)
 ’;
 
 val e_closure_def = Define‘
@@ -400,6 +404,10 @@ Proof
   >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
   >- (qexists_tac`E a {a.q0}` >>
       simp[e_in_states] )
+  >- cheat
+  >- (qexists_tac ‘{}’ >>
+  	  simp[])
+  >- (
   >- (qmatch_abbrev_tac`∃s. enc eas = enc s ∧ s SUBSET a.Q` >>
       qexists_tac`eas` >> simp[Abbr`eas`] >> irule e_in_states >>
       rw[] >> `FINITE s` by metis_tac[SUBSET_FINITE_I] >>
