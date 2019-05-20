@@ -1,4 +1,7 @@
 open HolKernel Parse boolLib bossLib;
+open pred_setTheory;
+open numpairTheory;
+open nlistTheory;
 
 val _ = new_theory "chap1";
 
@@ -50,8 +53,7 @@ val wfFA_def = Define‘
     0 ∉ a.C /\
     0 ≠ a.q0 /\
     (∀q c. c ∉ a.A ⇒ (a.tf q c = 0)) ∧
-    (∀c. a.tf 0 c = 0) ∧
-    (∀q c. c ∈ a.A ∧ q IN a.Q /\ q <> 0 ==> a.tf q c <> 0)
+    (∀c. a.tf 0 c = 0)
 ’;
 
 (* Note that the same automaton can be encoded as two different
@@ -93,8 +95,8 @@ val example_def = Define‘
 Theorem example_wellformed:
   wfFA example
 Proof
-  simp[wfFA_def, example_def]>> 
-  rpt strip_tac (* generates 8 subgoals *) >> 
+  simp[wfFA_def, example_def]>>
+  rpt strip_tac (* generates 8 subgoals *) >>
   simp[] (* 9 *)
   >- rw[] >> rfs[]
 QED
@@ -196,6 +198,29 @@ Proof
   simp[GSYM arithmeticTheory.ADD1]
 QED
 
+Theorem runMachine_0_sticks:
+  wfFA A ⇒ runMachine A 0 cs = 0
+Proof
+  strip_tac >> Induct_on ‘cs’ >> simp[] >>
+  fs[wfFA_def]
+QED
+
+Theorem wfFA_accepts_characters_ok:
+  wfFA A ∧ accepts A cs ∧ MEM c cs ⇒ c ∈ A.A
+Proof
+  simp[accepts_def] >>
+  ‘wfFA A ⇒ ∀q c. q ∈ A.Q ∧ runMachine A q cs ∈ A.C ∧ MEM c cs ⇒ c ∈ A.A’
+    suffices_by metis_tac[wfFA_def] >>
+  strip_tac >> Induct_on ‘cs’ >> simp[] >> rw[]
+  >- (spose_not_then assume_tac >>
+      ‘A.tf q c = 0’ by metis_tac[wfFA_def] >> fs[] >>
+      rfs[runMachine_0_sticks] >> metis_tac[wfFA_def])
+  >- (‘h ∈ A.A’ suffices_by metis_tac[wfFA_def] >>
+      spose_not_then assume_tac >>
+      ‘A.tf q h = 0’ by metis_tac[wfFA_def] >> fs[] >>
+      rfs[runMachine_0_sticks] >> metis_tac[wfFA_def])
+QED
+
 Theorem Sipser_Accepts_runMachine_coincide:
   ∀A cs. wfFA A ⇒ (Sipser_Accepts A cs = accepts A cs)
 Proof
@@ -228,7 +253,6 @@ val regularLanguage_def = Define‘
 
 (* Definition 1.23 *)
 (* The Regular Operations *)
-open pred_setTheory;
 (* Union is already defined (set union...) *)
 
 val concat_def = Define‘
@@ -248,8 +272,6 @@ Proof
   rw[]
 QED
 
-open numpairTheory;
-
 val machine_union_def = Define‘
   machine_union M1 M2 =
     <|Q  := {npair r1 r2 | r1 ∈ M1.Q ∧ r2 ∈ M2.Q };
@@ -261,24 +283,19 @@ val machine_union_def = Define‘
                            (r1 ∈ M1.Q /\ r2 ∈ M2.C)};
     |>
 ’;
-  
+
 
 (* Theorem 1.25 *)
 Theorem wfFA_machine_union :
   !M1 M2. wfFA M1 /\ wfFA M2 ==> wfFA (machine_union M1 M2)
 Proof
   rw[wfFA_def,machine_union_def] (* 11 *) >> simp[]
-  >- cheat (* intersection finite *)
+  >- (qmatch_abbrev_tac ‘FINITE s’ >>
+      ‘s = IMAGE (UNCURRY npair) (M1.Q CROSS M2.Q)’ suffices_by simp[] >>
+      simp[Abbr‘s’, EXTENSION, pairTheory.EXISTS_PROD])
   >- (simp[SUBSET_DEF,PULL_EXISTS] >> metis_tac[SUBSET_DEF])
   >- (Cases_on `c IN M2.A` >> simp[])
   >- metis_tac[]
-  >- (map_every qexists_tac [`0`,`0`] >> simp[] >> EVAL_TAC)
-  >- (Cases_on `npair r1 r2 = 0` >> simp[] >> cheat)
-  >- cheat
-  >- EVAL_TAC
-  >- cheat
-  >- cheat
-  >- cheat
 QED
 
 Theorem regular_closed_under_union:
@@ -313,8 +330,6 @@ Proof
       metis_tac[wfFA_def])
 QED
 
-
-
 val _ = Datatype‘
   nfa = <|
     Q : state set ;
@@ -332,7 +347,8 @@ val wfNFA_def = Define‘
     a.C ⊆ a.Q  ∧
     a.q0 ∈ a.Q ∧
     (∀q c. c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q (SOME c) ⊆ a.Q) ∧
-    (∀q.   q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q)
+    (∀q.   q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ∧
+    (∀q c. c ∉ a.A ⇒ a.tf q (SOME c) = ∅)
 ’;
 
 
@@ -369,7 +385,6 @@ val e_closure_def = Define‘
 
 val _ = temp_overload_on ("E",“e_closure”);
 
-open nlistTheory;
 val _ = temp_overload_on ("enc", “λs. nlist_of (SET_TO_LIST s)”);
 val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
 
@@ -395,6 +410,34 @@ Proof
   first_x_assum drule >> simp[SUBSET_DEF]
 QED
 
+Theorem nlist_of_11[simp]:
+  (nlist_of x = nlist_of y) ⇔ (x = y)
+Proof
+  metis_tac[listOfN_nlist]
+QED
+
+Theorem nlist_of_EQ_0[simp]:
+  (nlist_of l = 0 ⇔ l = []) ∧
+  (0 = nlist_of l ⇔ l = [])
+Proof
+  metis_tac[nlist_of_11, nlist_of_def]
+QED
+
+Theorem SET_TO_LIST_EQ_NIL[simp]:
+  FINITE s ⇒
+  (SET_TO_LIST s = [] ⇔ s = ∅) ∧
+  ([] = SET_TO_LIST s ⇔ s = ∅)
+Proof
+  rw[EQ_IMP_THM] >>
+  metis_tac[listTheory.SET_TO_LIST_INV, listTheory.LIST_TO_SET_THM]
+QED
+
+Theorem enc_EQ_0[simp]:
+  FINITE s ⇒ (enc s = 0 ⇔ s = ∅) ∧ (0 = enc s ⇔ s = ∅)
+Proof
+  simp[]
+QED
+
 Theorem wf_NFA2DFA:
   wfNFA a ==> wfFA (NFA2DFA a)
 Proof
@@ -404,15 +447,26 @@ Proof
   >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
   >- (qexists_tac`E a {a.q0}` >>
       simp[e_in_states] )
-  >- cheat
-  >- (qexists_tac ‘{}’ >>
-  	  simp[])
-  >- (
-  >- (qmatch_abbrev_tac`∃s. enc eas = enc s ∧ s SUBSET a.Q` >>
+  >- (qmatch_abbrev_tac`
+        ∃s. SET_TO_LIST eas = SET_TO_LIST s ∧ s SUBSET a.Q
+      ` >>
       qexists_tac`eas` >> simp[Abbr`eas`] >> irule e_in_states >>
       rw[] >> `FINITE s` by metis_tac[SUBSET_FINITE_I] >>
       simp[SUBSET_DEF,PULL_EXISTS,listOfN_nlist] >>
       metis_tac[SUBSET_DEF] )
+  >- (qexists_tac ‘∅’ >> simp[])
+  >- (Cases_on ‘s ⊆ a.Q’ >> simp[] >>
+      ‘FINITE s’ by metis_tac[SUBSET_FINITE] >>
+      simp[] >>
+      Cases_on ‘s = ∅’ >> simp[])
+  >- (‘FINITE (E a {a.q0}) ∧ E a {a.q0} ≠ ∅’ suffices_by simp[] >>
+      conj_tac
+      >- (‘E a {a.q0} ⊆ a.Q’ suffices_by metis_tac[SUBSET_FINITE] >>
+          irule e_in_states >> simp[])
+      >- (simp[e_closure_def, EXTENSION] >> qexists_tac ‘a.q0’ >>
+          simp[])) >>
+  ‘E a ∅ = ∅’ suffices_by simp[] >>
+  simp[e_closure_def]
 QED
 
 val DFA2NFA_def = Define`
@@ -426,9 +480,12 @@ DFA2NFA a = <|Q  := a.Q;
 Theorem DFA_SUBSET_NFA:
   Sipser_Accepts a cs ==> Sipser_ND_Accepts (DFA2NFA a) cs
 Proof
-  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def,DFA2NFA_def] >>
-  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[] >>
-  fs[listTheory.EL_MAP]
+  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
+  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[]
+  >- fs[listTheory.EL_MAP]
+  >- (‘Sipser_Accepts a cs’ by metis_tac[Sipser_Accepts_def] >>
+      fs[Sipser_Accepts_runMachine_coincide_thm] >>
+      metis_tac[wfFA_accepts_characters_ok])
 QED
 
 Theorem MEM_listOfN_enc[simp]:
