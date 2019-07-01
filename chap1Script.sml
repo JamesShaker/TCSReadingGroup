@@ -386,6 +386,52 @@ val _ = temp_overload_on ("E",“e_closure”);
 
 val _ = temp_overload_on ("enc", “λs. nlist_of (SET_TO_LIST s)”);
 val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
+open combinTheory;
+open relationTheory;
+
+Theorem enc_inj:
+  INJ enc (λx. FINITE x) (𝕌 (: num))
+Proof
+  ‘INJ (nlist_of o SET_TO_LIST) (λx. FINITE x) (𝕌 (: num))’
+    suffices_by rw[o_DEF] >>
+  irule INJ_COMPOSE >>
+  qexists_tac ‘𝕌 (: num list)’ >>
+  rw [INJ_DEF]
+QED
+
+Theorem dec_enc_iden:
+  ∀s. FINITE s ⇒ dec (enc s) = s
+Proof
+  rw[listOfN_nlist,SET_TO_LIST_INV]
+QED
+
+Theorem enc_infin:
+  ∀s. enc s ≠ nlist_of ARB ⇒ FINITE s
+Proof
+  rpt strip_tac >>
+  fs[SET_TO_LIST_primitive_def] >>
+  qabbrev_tac ‘P = (@X. WF X ∧ ∀Y. FINITE Y ∧ Y ≠ ∅ ⇒ X (REST Y) Y)’ >>
+  qabbrev_tac ‘M = (λSET_TO_LIST a.
+               if FINITE a then
+                 if a = ∅ then [] else CHOICE a::SET_TO_LIST (REST a)
+               else ARB)’ >>
+  fs[]
+
+  CCONTR_TAC >>
+  
+  fs[]
+  ‘WF R’
+    by cheat >>
+  Q.ISPECL_THEN [‘R’,‘M’] strip_assume_tac WFREC_THM >>
+  rfs[] >>
+  first_x_assum (qspec_then ‘s’ assume_tac)
+  rw[WFREC_THM]
+
+  ‘SET_TO_LIST s = ARB’
+    suffices_by simp[nlist_of_def]
+  rw[SET_TO_LIST_primitive_def] >>
+
+QED
 
 val NFA2DFA_def = Define‘
   NFA2DFA a =
@@ -738,8 +784,6 @@ Proof
   simp[NFA2DFA_def]
 QED  
 
-
-
 Theorem nf_trasition_okay:
   ∀q0 copts q. NF_transition a q0 copts q ==> ∀c. MEM (SOME c) copts ==> c ∈ a.A
 Proof
@@ -766,7 +810,9 @@ Proof
     fs[]  ) >> fs[] >>
   `∃Q. enc Q = runMachine (NFA2DFA N) (enc (E N {N.q0})) cs ∧ q ∈ Q` by
   (`N.q0 ∈ {N.q0}` by fs[] >> `{N.q0} ⊆ N.Q` by fs[wfNFA_def] >> fs[] ) >>
-  qexists_tac`Q` >> qexists_tac`q` >> fs[] >> 
+  qexists_tac`Q` >> qexists_tac`q` >> fs[] >> fs[wfNFA_def] >>
+  ‘Q = dec (runMachine (NFA2DFA N) (enc (E N {N.q0})) cs)’
+
 QED
 
 
