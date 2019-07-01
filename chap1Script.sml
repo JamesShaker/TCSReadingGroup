@@ -476,15 +476,25 @@ DFA2NFA a = <|Q  := a.Q;
       q0 := a.q0;
       C := a.C |>`
 
-Theorem DFA_SUBSET_NFA:
-  Sipser_Accepts a cs ==> Sipser_ND_Accepts (DFA2NFA a) cs
+Theorem strip_option_length:
+  ¬MEM NONE l ==> LENGTH (strip_option l) = LENGTH l
 Proof
-  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
+  Induct_on`l` >> rw[] >> fs[] >> 
+QED
+
+Theorem DFA_SUBSET_NFA:
+  wfFA a ==> (Sipser_Accepts a cs <=> Sipser_ND_Accepts (DFA2NFA a) cs)
+Proof
+  rw[] >> eq_tac >- (rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
   map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[]
   >- fs[listTheory.EL_MAP]
   >- (‘Sipser_Accepts a cs’ by metis_tac[Sipser_Accepts_def] >>
       fs[Sipser_Accepts_runMachine_coincide_thm] >>
-      metis_tac[wfFA_accepts_characters_ok])
+      metis_tac[wfFA_accepts_characters_ok])) >>
+  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
+  qexists_tac`ss` >> rw[] 
+  >- ()
+  >- ()
 QED
 
 Theorem MEM_listOfN_enc[simp]:
@@ -657,6 +667,7 @@ Proof
   metis_tac[relationTheory.RTC_CASES_RTC_TWICE]
 QED
 
+
 Theorem NF_transition_NFA2DFA:
   wfNFA a ⇒
   ∀q0 cs q.
@@ -665,10 +676,10 @@ Theorem NF_transition_NFA2DFA:
      ∀Q0.
        q0 ∈ Q0 ∧ Q0 ⊆ a.Q ⇒
        ∃Q. enc Q = runMachine (NFA2DFA a) (enc (E a Q0)) (strip_option cs) ∧
-           q ∈ Q
+           q ∈ Q ∧ Q ⊆ a.Q
 Proof
   strip_tac >>
-  Induct_on ‘NF_transition’ >> rw[] >- metis_tac[E_SUBSET] >>
+  Induct_on ‘NF_transition’ >> rw[] >- metis_tac[E_SUBSET,e_closure_safe] >>
   rename [‘q1 ∈ a.tf q0 copt’] >> Cases_on ‘copt’ >> simp[]
   >- (fs[] >> first_x_assum (qspec_then ‘E a Q0’ mp_tac) >> simp[] >>
       disch_then irule >> conj_tac
@@ -746,7 +757,7 @@ Proof
   Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
 
-(* Up to here *)
+
 
 Theorem NFA_SUBSET_DFA:
   ∀N cs. wfNFA N ∧ Sipser_ND_Accepts N cs ⇒ ∃D. wfFA D ∧ Sipser_Accepts D cs
@@ -763,10 +774,19 @@ Proof
     (fs[Abbr`s`] >> `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
        fs[MEM_FLAT] >> qexists_tac`(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >> fs[MEM_MAP] >>
        qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>metis_tac[] ) >>
-    fs[]  ) >> fs[] >>
-  `∃Q. enc Q = runMachine (NFA2DFA N) (enc (E N {N.q0})) cs ∧ q ∈ Q` by
-  (`N.q0 ∈ {N.q0}` by fs[] >> `{N.q0} ⊆ N.Q` by fs[wfNFA_def] >> fs[] ) >>
-  qexists_tac`Q` >> qexists_tac`q` >> fs[] >> 
+    fs[]  ) >> fs[] >> 
+  `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]
+QED
+
+(* Up to here *)
+
+Theorem chap1_final:
+  {l | ∃M. wfFA M ∧ (recogLang M = l) } = 
+  {l | ∃N. wfNFA N ∧ ({w | Sipser_ND_Accepts N w} = l)}
+Proof
+  fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLang_def]
+  >- (metis_tac[DFA_SUBSET_NFA])
+  >- ()
 QED
 
 
