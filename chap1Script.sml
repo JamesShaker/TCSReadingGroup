@@ -389,7 +389,7 @@ val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
 open combinTheory;
 open relationTheory;
 
-Theorem enc_inj:
+(*Theorem enc_inj:
   INJ enc (λx. FINITE x) (𝕌 (: num))
 Proof
   ‘INJ (nlist_of o SET_TO_LIST) (λx. FINITE x) (𝕌 (: num))’
@@ -418,7 +418,7 @@ Proof
   fs[]
 
   CCONTR_TAC >>
-  
+
   fs[]
   ‘WF R’
     by cheat >>
@@ -432,7 +432,7 @@ Proof
   rw[SET_TO_LIST_primitive_def] >>
 
 QED
-
+*)
 val NFA2DFA_def = Define‘
   NFA2DFA a =
     <|Q  := {enc s| s SUBSET a.Q};
@@ -514,33 +514,48 @@ Proof
   simp[e_closure_def]
 QED
 
-val DFA2NFA_def = Define`
-DFA2NFA a = <|Q  := a.Q;
-      A  := a.A;
-      tf := λs copt. case copt of NONE => {}
-                                | SOME c => {a.tf s c};
-      q0 := a.q0;
-      C := a.C |>`
+Definition DFA2NFA_def:
+  DFA2NFA a = <|Q  := a.Q;
+                A  := a.A;
+                tf := λs copt. case copt of NONE => {}
+                                          | SOME c => {a.tf s c};
+                q0 := a.q0;
+                C := a.C |>
+End
 
 Theorem strip_option_length:
   ¬MEM NONE l ==> LENGTH (strip_option l) = LENGTH l
 Proof
-  Induct_on`l` >> rw[] >> fs[] >> 
+  Induct_on`l` >> rw[] >> fs[] >> Cases_on ‘h’ >> simp[] >> fs[]
+QED
+
+Theorem EL_strip_option:
+  ∀n. ¬MEM NONE l ∧ n < LENGTH l ⇒ EL n l = SOME (EL n (strip_option l))
+Proof
+  Induct_on ‘l’ >> simp[] >> Cases >> simp[] >>
+  Cases >> simp[]
 QED
 
 Theorem DFA_SUBSET_NFA:
-  wfFA a ==> (Sipser_Accepts a cs <=> Sipser_ND_Accepts (DFA2NFA a) cs)
+  wfFA a ==> (Sipser_ND_Accepts (DFA2NFA a) cs <=> Sipser_Accepts a cs)
 Proof
-  rw[] >> eq_tac >- (rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
-  map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[]
-  >- fs[listTheory.EL_MAP]
-  >- (‘Sipser_Accepts a cs’ by metis_tac[Sipser_Accepts_def] >>
-      fs[Sipser_Accepts_runMachine_coincide_thm] >>
-      metis_tac[wfFA_accepts_characters_ok])) >>
+  rw[] >> reverse eq_tac
+  >- (rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
+      map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[]
+      >- fs[listTheory.EL_MAP]
+      >- (‘Sipser_Accepts a cs’ by metis_tac[Sipser_Accepts_def] >>
+          fs[Sipser_Accepts_runMachine_coincide_thm] >>
+          metis_tac[wfFA_accepts_characters_ok])) >>
   rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
-  qexists_tac`ss` >> rw[] 
-  >- ()
-  >- ()
+  rename [‘LENGTH ss = LENGTH cs + 1’, ‘LAST ss ∈ A.C’] >>
+  qexists_tac`ss` >>
+  ‘¬MEM NONE cs’ by
+     (rw[MEM_EL] >> Cases_on ‘n < LENGTH cs’ >> simp[] >> strip_tac >>
+      rename [‘EL n cs’] >> pop_assum (assume_tac o GSYM) >>
+      last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
+  rw[strip_option_length] >>
+  rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
+  simp[EL_strip_option]
 QED
 
 Theorem MEM_listOfN_enc[simp]:
@@ -611,6 +626,13 @@ val (NF_transition_rules, NF_transition_ind, NF_transition_cases) = Hol_reln‘
     ⇒
      NF_transition a q0 (c::cs) q)
 ’;
+
+Theorem E_FINITE:
+  wfNFA N ∧ s ⊆ N.Q ⇒ FINITE (E N s)
+Proof
+  rw[] >> drule_all (GEN_ALL e_closure_safe) >> strip_tac >>
+  irule SUBSET_FINITE_I >> qexists_tac ‘N.Q’ >> fs[wfNFA_def]
+QED
 
 Theorem Sipser_ND_Accepts_NF_transition:
   Sipser_ND_Accepts a cs ⇔
@@ -693,7 +715,7 @@ Proof
    map_every qexists_tac [‘a0::IHss’, ‘SOME c :: IHcs’] >>
    simp[listTheory.LAST_CONS_cond] >> rw[]
 
-   >- (rename [‘N<LENGTH _ + 1’] >> 
+   >- (rename [‘N<LENGTH _ + 1’] >>
        Cases_on ‘N’ >> simp[] >> rename [‘SUC N0 < LENGTH IHcs + 1’] >>
        simp[arithmeticTheory.ADD_CLAUSES])
    >- (fs[])
@@ -774,14 +796,14 @@ QED
 Theorem fst_list_lem:
   (λ(c,n). [c]) = (λx. [x]) o FST
 Proof
-  simp[FUN_EQ_THM,pairTheory.FORALL_PROD] 
-QED  
+  simp[FUN_EQ_THM,pairTheory.FORALL_PROD]
+QED
 
 Theorem flat_map_sing[simp]:
   FLAT (MAP (λx. [x]) l) = l
 Proof
   Induct_on`l` >> simp[]
-QED  
+QED
 
 Theorem NFA2DFA_q0:
   (NFA2DFA a).q0 = enc (E a {a.q0})
@@ -793,7 +815,7 @@ Theorem NFA2DFA_C:
   (NFA2DFA a).C = {enc s | s ⊆ a.Q ∧ ∃c. c ∈ s ∧ c ∈ a.C}
 Proof
   simp[NFA2DFA_def]
-QED  
+QED
 
 Theorem nf_trasition_okay:
   ∀q0 copts q. NF_transition a q0 copts q ==> ∀c. MEM (SOME c) copts ==> c ∈ a.A
@@ -801,36 +823,41 @@ Proof
   Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
 
-
-
+(* Up to here *)
 Theorem NFA_SUBSET_DFA:
-  ∀N cs. wfNFA N ∧ Sipser_ND_Accepts N cs ⇒ ∃D. wfFA D ∧ Sipser_Accepts D cs
+  wfNFA N ⇒ (Sipser_Accepts (NFA2DFA N) cs ⇔ Sipser_ND_Accepts N cs)
 Proof
-  rw[Sipser_ND_Accepts_NF_transition] >>
-  qexists_tac ‘NFA2DFA N’ >>
-  rw[Sipser_Accepts_runMachine_coincide,accepts_def,wf_NFA2DFA] >>
-  drule_then (drule_then strip_assume_tac) NF_transition_NFA2DFA >>
-  rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,pairTheory.o_UNCURRY_R, combinTheory.o_ABS_R,fst_list_lem,MAP_ZIP,NFA2DFA_C,NFA2DFA_q0] >>
-  qabbrev_tac`s=(REPLICATE n NONE ⧺
-			   FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist))))` >> `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_trasition_okay] >>
-  `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)` by (rw[] >>
-    `MEM (SOME (EL n' cs)) s` by
-    (fs[Abbr`s`] >> `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
-       fs[MEM_FLAT] >> qexists_tac`(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >> fs[MEM_MAP] >>
-       qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>metis_tac[] ) >>
-    fs[]  ) >> fs[] >> 
-  `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]
+  strip_tac >> reverse eq_tac
+  >- (rw[Sipser_ND_Accepts_NF_transition, Sipser_Accepts_runMachine_coincide,accepts_def,wf_NFA2DFA] >>
+      drule_then (drule_then strip_assume_tac) NF_transition_NFA2DFA >>
+      rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,pairTheory.o_UNCURRY_R,
+          combinTheory.o_ABS_R,fst_list_lem,MAP_ZIP,NFA2DFA_C,NFA2DFA_q0] >>
+      qabbrev_tac`
+        s= (REPLICATE n NONE ⧺
+            FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist))))
+      ` >>
+      `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_trasition_okay] >>
+      `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)` by (rw[] >>
+        `MEM (SOME (EL n' cs)) s` by
+        (fs[Abbr`s`] >> `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
+           fs[MEM_FLAT] >> qexists_tac`(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >> fs[MEM_MAP] >>
+           qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>metis_tac[] ) >>
+        fs[]  ) >> fs[] >>
+      `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]) >>
+  rw[Sipser_Accepts_def, Sipser_ND_Accepts_def] >> (* use NFA2DFA_1step *)
+  cheat
 QED
 
-(* Up to here *)
+(* also need: wfNFA (DFA2NFA a) *)
+
 
 Theorem chap1_final:
-  {l | ∃M. wfFA M ∧ (recogLang M = l) } = 
+  {l | ∃M. wfFA M ∧ (recogLang M = l) } =
   {l | ∃N. wfNFA N ∧ ({w | Sipser_ND_Accepts N w} = l)}
 Proof
   fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLang_def]
-  >- (metis_tac[DFA_SUBSET_NFA])
-  >- ()
+  >- (simp[EXTENSION] >> cheat )
+  >- cheat
 QED
 
 
