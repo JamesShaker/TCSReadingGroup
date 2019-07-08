@@ -828,21 +828,29 @@ Theorem NFA_SUBSET_DFA:
   wfNFA N ⇒ (Sipser_Accepts (NFA2DFA N) cs ⇔ Sipser_ND_Accepts N cs)
 Proof
   strip_tac >> reverse eq_tac
-  >- (rw[Sipser_ND_Accepts_NF_transition, Sipser_Accepts_runMachine_coincide,accepts_def,wf_NFA2DFA] >>
+  >- (rw[Sipser_ND_Accepts_NF_transition, Sipser_Accepts_runMachine_coincide,
+         accepts_def,wf_NFA2DFA] >>
       drule_then (drule_then strip_assume_tac) NF_transition_NFA2DFA >>
-      rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,pairTheory.o_UNCURRY_R,
+      rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,
+          pairTheory.o_UNCURRY_R,
           combinTheory.o_ABS_R,fst_list_lem,MAP_ZIP,NFA2DFA_C,NFA2DFA_q0] >>
       qabbrev_tac`
-        s= (REPLICATE n NONE ⧺
-            FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist))))
+        s = REPLICATE n NONE ⧺
+            FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist)))
       ` >>
       `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_trasition_okay] >>
-      `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)` by (rw[] >>
-        `MEM (SOME (EL n' cs)) s` by
-        (fs[Abbr`s`] >> `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
-           fs[MEM_FLAT] >> qexists_tac`(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >> fs[MEM_MAP] >>
-           qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>metis_tac[] ) >>
-        fs[]  ) >> fs[] >>
+      `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)`
+        by (rw[] >>
+            `MEM (SOME (EL n' cs)) s`
+              by (fs[Abbr`s`] >>
+                  `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
+                  fs[MEM_FLAT] >>
+                  qexists_tac
+                    `(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >>
+                  fs[MEM_MAP] >>
+                  qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>
+                  metis_tac[]) >>
+            fs[]) >> fs[] >>
       `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]) >>
   rw[Sipser_Accepts_def, Sipser_ND_Accepts_def] >> (* use NFA2DFA_1step *)
   cheat
