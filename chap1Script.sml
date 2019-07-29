@@ -389,7 +389,14 @@ val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
 open combinTheory;
 open relationTheory;
 
-(*Theorem enc_inj:
+Theorem dec_enc_iden[simp]:
+  ∀s. FINITE s ⇒ dec (enc s) = s
+Proof
+  rw[listOfN_nlist,SET_TO_LIST_INV]
+QED
+
+(*
+Theorem enc_inj:
   INJ enc (λx. FINITE x) (𝕌 (: num))
 Proof
   ‘INJ (nlist_of o SET_TO_LIST) (λx. FINITE x) (𝕌 (: num))’
@@ -399,11 +406,6 @@ Proof
   rw [INJ_DEF]
 QED
 
-Theorem dec_enc_iden:
-  ∀s. FINITE s ⇒ dec (enc s) = s
-Proof
-  rw[listOfN_nlist,SET_TO_LIST_INV]
-QED
 
 Theorem enc_infin:
   ∀s. enc s ≠ nlist_of ARB ⇒ FINITE s
@@ -853,7 +855,49 @@ Proof
             fs[]) >> fs[] >>
       `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]) >>
   rw[Sipser_Accepts_def, Sipser_ND_Accepts_def] >> (* use NFA2DFA_1step *)
-  cheat
+  rfs[] >>
+  ‘∃cfs. cfs ∈ dec (LAST ss) ∧ cfs ∈ N.C’
+    by (qpat_x_assum ‘LAST ss ∈ _’ mp_tac >>
+        simp[NFA2DFA_def,PULL_EXISTS] >>
+        rw[] >> qexists_tac ‘c’ >>
+        ‘FINITE s’
+          by (‘FINITE N.Q’
+                suffices_by metis_tac[SUBSET_FINITE] >>
+              fs[wfNFA_def]) >>
+        simp[MEM_listOfN_enc]) >>
+  REPEAT_GTCL drule_then strip_assume_tac NFA2DFA_nsteps >>
+  rfs[] >>
+  qpat_x_assum ‘MEM (HD nss) _’ mp_tac >>
+  simp[NFA2DFA_def] >>
+  ‘FINITE (E N {N.q0})’
+    by fs[wfNFA_def,E_FINITE] >>
+  simp[MEM_listOfN_enc] >>
+  strip_tac >> drule_then strip_assume_tac E_CONNECT >>
+  rename [‘HD cnss = N.q0’] >>
+  qexists_tac ‘cnss++(TL nss)’ >>
+  qexists_tac ‘(REPLICATE (LENGTH cnss - 1) NONE)++copts’ >>
+  simp[LENGTH_TL] >> 
+  ‘LENGTH cnss ≠ 0’
+    by fs[] >>
+  Cases_on ‘cnss’ >>
+  fs[] >>
+  conj_tac
+  >- (rw[arithmeticTheory.ADD1] >>
+      Cases_on ‘t’ >> simp[]
+      >- (ONCE_REWRITE_TAC [EL_compute] >>
+          simp[GSYM arithmeticTheory.ADD1] >>
+          rw[] >> fs[]
+          >- (first_x_assum drule >>
+              simp[Once EL_compute])
+          >- (Cases_on ‘n’ >> fs[arithmeticTheory.ADD1] >>
+              first_x_assum drule >>
+              simp[GSYM arithmeticTheory.ADD1] >>
+              simp[EL])
+          )
+      >- ()
+      )
+
+
 QED
 
 (* also need: wfNFA (DFA2NFA a) *)
