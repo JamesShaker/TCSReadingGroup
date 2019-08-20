@@ -3,6 +3,7 @@ open pred_setTheory;
 open numpairTheory;
 open nlistTheory;
 open listTheory;
+open mp_then
 
 val _ = new_theory "chap1";
 
@@ -825,6 +826,52 @@ Proof
   Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
 
+Theorem NFA2DFA_nsteps:
+  ∀ss cs.
+     LENGTH ss = LENGTH cs + 1 ∧ (∀c. MEM c cs ⇒ c ∈ N.A) ∧
+     (∀n. n < LENGTH cs ⇒ (NFA2DFA N).tf (EL n ss) (EL n cs) = EL (n + 1) ss) ∧
+     (∀s. MEM s ss ⇒ s ∈ (NFA2DFA N).Q) ∧
+     wfNFA N
+    ⇒
+     ∀nqf.
+       MEM nqf (listOfN (LAST ss)) ⇒
+       ∃nss ncs.
+         nss ≠ [] ∧ strip_option ncs = cs ∧ LENGTH nss = LENGTH ncs + 1 ∧
+         LAST nss = nqf ∧
+         (∀n. n < LENGTH nss ⇒ MEM (EL n nss) (listOfN (EL n ss))) ∧
+         (∀n. n < LENGTH nss - 1 ⇒
+              EL (n + 1) nss ∈ N.tf (EL n nss) (EL n ncs))
+Proof
+  Induct_on ‘ss’ >> simp[] >> qx_gen_tac ‘ds0’ >> rw[] >>
+  Cases_on ‘ss’ >> fs[]
+  >- (map_every qexists_tac [‘[nqf]’, ‘[]’] >> simp[] >>
+      Cases_on ‘cs’ >> fs[] >> simp[DECIDE “n < 1 ⇔ n = 0”]) >>
+  fs[arithmeticTheory.ADD1] >>
+  ‘LENGTH t + 1 = LENGTH cs’ by simp[] >>
+  ‘0 < LENGTH cs’ by simp[] >>
+  first_assum drule >> simp_tac (srw_ss())[] >>
+  rename [‘_.tf ds0 (HD cs) = ds1’] >>
+  fs[DISJ_IMP_THM, FORALL_AND_THM] >>
+  ‘∃s0. enc s0 = ds0 ∧ s0 ⊆ N.Q’ by (fs[NFA2DFA_def] >> metis_tac[]) >>
+  ‘∃c0 crest. cs = c0::crest’ by (Cases_on ‘cs’ >> fs[]) >> rw[] >>
+  fs[DISJ_IMP_THM, FORALL_AND_THM] >>
+  drule_all_then assume_tac NFA2DFA_1step >> fs[arithmeticTheory.ADD1] >>
+  first_x_assum (qspec_then ‘crest’ mp_tac) >> simp[] >>
+  impl_tac
+  >- (qx_gen_tac ‘NN’ >> strip_tac >> ‘NN + 1 < LENGTH crest + 1’ by simp[] >>
+      first_x_assum drule >>
+      simp_tac bool_ss [arithmeticTheory.TWO, arithmeticTheory.ONE,
+                        arithmeticTheory.ADD_CLAUSES, EL_restricted]) >>
+  disch_then (drule_then (qx_choosel_then [‘nss0’, ‘ncs0’] strip_assume_tac)) >>
+  ‘0 < LENGTH nss0’ by simp[] >> first_assum drule >>
+  simp_tac (srw_ss()) [] >>
+  ‘(NFA2DFA N).tf (enc s0) c0 = (NFA2DFA N).tf (enc s0) c0’ by REFL_TAC >>
+  pop_assum mp_tac >> simp[] >> (* some progress *)
+QED
+
+
+
+
 (* Up to here *)
 Theorem NFA_SUBSET_DFA:
   wfNFA N ⇒ (Sipser_Accepts (NFA2DFA N) cs ⇔ Sipser_ND_Accepts N cs)
@@ -853,7 +900,7 @@ Proof
                   qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>
                   metis_tac[]) >>
             fs[]) >> fs[] >>
-      `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def]) >>
+      `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def])>>
   rw[Sipser_Accepts_def, Sipser_ND_Accepts_def] >> (* use NFA2DFA_1step *)
   rfs[] >>
   ‘∃cfs. cfs ∈ dec (LAST ss) ∧ cfs ∈ N.C’
@@ -865,7 +912,7 @@ Proof
                 suffices_by metis_tac[SUBSET_FINITE] >>
               fs[wfNFA_def]) >>
         simp[MEM_listOfN_enc]) >>
-  REPEAT_GTCL drule_then strip_assume_tac NFA2DFA_nsteps >>
+  REPEAT_GTCL drule_then strip_assume_tac NFA2DFA_1step >>
   rfs[] >>
   qpat_x_assum ‘MEM (HD nss) _’ mp_tac >>
   simp[NFA2DFA_def] >>
@@ -876,7 +923,7 @@ Proof
   rename [‘HD cnss = N.q0’] >>
   qexists_tac ‘cnss++(TL nss)’ >>
   qexists_tac ‘(REPLICATE (LENGTH cnss - 1) NONE)++copts’ >>
-  simp[LENGTH_TL] >> 
+  simp[LENGTH_TL] >>
   ‘LENGTH cnss ≠ 0’
     by fs[] >>
   Cases_on ‘cnss’ >>
