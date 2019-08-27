@@ -826,6 +826,18 @@ Proof
   Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
 
+Theorem RTC_LIST:
+  ∀x y. RTC R x y ⇒
+        ∃l. l ≠ [] ∧ HD l = x ∧ LAST l = y ∧
+            ∀i. i < LENGTH l - 1 ⇒ R (EL i l) (EL (i + 1) l)
+Proof
+  Induct_on ‘RTC’ >> rw[]
+  >- (rename [‘HD _ = a’] >> qexists_tac ‘[a]’ >> simp[]) >>
+  rename [‘R a (HD l0)’] >> qexists_tac ‘a::l0’ >> simp[] >>
+  conj_tac >- (Cases_on ‘l0’ >> fs[])>>
+  Cases >> simp[arithmeticTheory.ADD_CLAUSES]
+QED
+
 Theorem NFA2DFA_nsteps:
   ∀ss cs.
      LENGTH ss = LENGTH cs + 1 ∧ (∀c. MEM c cs ⇒ c ∈ N.A) ∧
@@ -865,8 +877,21 @@ Proof
   disch_then (drule_then (qx_choosel_then [‘nss0’, ‘ncs0’] strip_assume_tac)) >>
   ‘0 < LENGTH nss0’ by simp[] >> first_assum drule >>
   simp_tac (srw_ss()) [] >>
-  ‘(NFA2DFA N).tf (enc s0) c0 = (NFA2DFA N).tf (enc s0) c0’ by REFL_TAC >>
-  pop_assum mp_tac >> simp[] >> (* some progress *)
+  qpat_x_assum ‘∀q. (NFA2DFA N).tf _ _ = q ⇔ _’
+          (qspec_then ‘(NFA2DFA N).tf (enc s0) c0’ mp_tac) >>
+  simp[PULL_EXISTS] >> qx_gen_tac ‘s’ >> strip_tac >>
+  ‘FINITE s’ by metis_tac[wfNFA_def, SUBSET_FINITE_I] >> simp[PULL_EXISTS] >>
+  qx_gen_tac ‘nq0’ >> strip_tac >> drule IN_eclosure_originator >>
+  simp[PULL_EXISTS] >> qx_gen_tac ‘nq1’ >> strip_tac >>
+  drule_then (qx_choose_then ‘none_list’ strip_assume_tac) RTC_LIST >>
+  qexists_tac ‘nq0 :: none_list ++ TL nss0’ >>
+  qexists_tac ‘SOME c0 :: REPLICATE (LENGTH none_list - 1) NONE ++ ncs0’ >>
+  simp[] >>
+  ‘(∃nlist0. none_list = nq1 :: nlist0)’ by (Cases_on ‘none_list’ >> fs[]) >>
+  pop_assum SUBST_ALL_TAC >> fs[] >>
+  ‘(∃nq nss00. nss0 = nq::nss00)’ by (Cases_on ‘nss0’ >> fs[]) >>
+  pop_assum SUBST_ALL_TAC >> fs[] >>
+
 QED
 
 
