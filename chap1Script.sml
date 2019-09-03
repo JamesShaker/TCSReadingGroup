@@ -1,9 +1,11 @@
 open HolKernel Parse boolLib bossLib;
-open pred_setTheory;
-open numpairTheory;
-open nlistTheory;
-open listTheory;
-open mp_then
+open combinTheory
+     listTheory
+     mp_then
+     nlistTheory
+     numpairTheory
+     pred_setTheory
+     relationTheory;
 
 val _ = new_theory "chap1";
 
@@ -22,12 +24,12 @@ val _ = new_theory "chap1";
      - q0 ∈ Q
 *)
 
-val _ = type_abbrev("state", “:num”);
-val _ = type_abbrev("symbol", “:num”);
+Type state  = “:num”
+Type symbol = “:num”
 
 
 (* Definition 1.5 *)
-val _ = Datatype‘
+Datatype:
   fa = <|
     Q : state set ;
     A : symbol set ;
@@ -37,26 +39,26 @@ val _ = Datatype‘
     q0 : state ;
     C : state set
   |>
-’;
+End
 
-val wfFA_def = Define‘
+Definition wfFA_def:
   wfFA a ⇔
     FINITE a.Q ∧
     FINITE a.A ∧
     a.C ⊆ a.Q  ∧
     a.q0 ∈ a.Q ∧
     (∀q c.
-      c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q c ∈ a.Q) /\
+      c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q c ∈ a.Q) ∧
     (* if you apply the transition function to a state in
        the machine's state set, and a character in the
        machine's alphabet, then you'd better stay in the
        set of machine states *)
-    0 ∈ a.Q /\
-    0 ∉ a.C /\
-    0 ≠ a.q0 /\
+    0 ∈ a.Q ∧
+    0 ∉ a.C ∧
+    0 ≠ a.q0 ∧
     (∀q c. c ∉ a.A ⇒ (a.tf q c = 0)) ∧
     (∀c. a.tf 0 c = 0)
-’;
+End
 
 (* Note that the same automaton can be encoded as two different
    fa values because the two values can have tf functions that
@@ -77,7 +79,7 @@ val wfFA_def = Define‘
 
 *)
 
-val example_def = Define‘
+Definition example_def:
   example = <| Q := {0;1;2;3;4}; A := { 1 (* a *); 2 (* b *) };
                tf := (λq. case q of
                           |  1 => (λc. if c = 1 then 2 else
@@ -91,7 +93,7 @@ val example_def = Define‘
                           | _ => \c.0 ) ;
                q0 := 1;
                C := {2} |>
-’;
+End
 
 (* prove that example is well-formed *)
 Theorem example_wellformed:
@@ -103,25 +105,23 @@ Proof
   >- rw[] >> rfs[]
 QED
 
-val _ = type_abbrev("sipser_string", “:symbol list”);
-val _ = type_abbrev("language", “:sipser_string set”);
+Type sipser_string = “:symbol list”
+Type language = “:sipser_string set”
 
-val runMachine_def = Define‘
+Definition runMachine_def[simp]:
   (runMachine a q [] = q)  ∧
   (runMachine a q (c::cs) = runMachine a (a.tf q c) cs)
-’;
+End
 
-val _ = export_rewrites ["runMachine_def"];
-
-val accepts_def = Define‘
+Definition accepts_def:
   accepts a cs ⇔ runMachine a a.q0 cs ∈ a.C
-’;
+End
 
 Theorem example_acceptsA = EVAL “accepts example [1]”;
 Theorem example_doesnt_acceptB = EVAL “accepts example [2]”;
 Theorem example_doesnt_acceptAB = EVAL “accepts example [1;2]”;
 
-val Sipser_Accepts_def = Define‘
+Definition Sipser_Accepts_def:
   Sipser_Accepts A cs ⇔
     ∃ss : state list.
       ss ≠ [] ∧
@@ -131,7 +131,50 @@ val Sipser_Accepts_def = Define‘
            (A.tf (EL n ss) (EL n cs) = EL (n + 1) ss)) ∧
       LAST ss ∈ A.C ∧
       wfFA A
-’;
+End
+
+Theorem Sipser_Accepts_NoZero:
+  Sipser_Accepts A cs ⇔
+    ∃ss : state list.
+      ss ≠ [] ∧
+      (∀s. MEM s ss ⇒ s ≠ 0) ∧
+      (LENGTH ss = LENGTH cs + 1) ∧
+      (HD ss = A.q0) ∧
+      (∀n. n < LENGTH ss - 1 ⇒
+           (A.tf (EL n ss) (EL n cs) = EL (n + 1) ss)) ∧
+      LAST ss ∈ A.C ∧
+      wfFA A
+Proof
+  reverse (rw[EQ_IMP_THM])
+  >- metis_tac[Sipser_Accepts_def]
+  >- (fs[Sipser_Accepts_def] >>
+      qexists_tac ‘ss’ >>
+      rw[] >>
+      ‘∀ss cs. LAST ss ≠ 0 ∧
+               LENGTH ss = LENGTH cs + 1 ∧
+               (∀n. n < LENGTH ss - 1 ⇒
+                    A.tf (EL n ss) (EL n cs) =
+                    EL (n + 1) ss) ⇒
+              ¬(MEM 0 ss)’
+        suffices_by metis_tac[wfFA_def] >>
+      ntac 5 (last_x_assum (K ALL_TAC)) >>
+      Induct_on ‘ss’ >> simp[arithmeticTheory.ADD1] >>
+      rw[]
+      >> (Cases_on ‘ss’ >> fs[] >>
+          Cases_on ‘cs’ >> fs[] >>
+          rename [‘LAST (s1::st) ≠ 0’,‘EL _ (s0::s1::st)’,
+                  ‘LENGTH st = LENGTH ct’,‘EL _ (c0::ct)’] >>
+          last_x_assum (qspec_then ‘ct’ assume_tac) >>
+          rfs[arithmeticTheory.ADD1] >>
+          pop_assum mp_tac >>
+          impl_tac
+          >- (rw[] >>
+              first_x_assum (qspec_then ‘n + 1’ mp_tac) >>
+              simp[rich_listTheory.EL_CONS,
+                   DECIDE “PRE n = n - 1”])
+          >- (strip_tac >> first_x_assum (qspec_then ‘0’ mp_tac) >>
+              simp[] >> metis_tac[wfFA_def])))
+QED
 
 Theorem sipser_rm:
 ∀ss input.
@@ -150,12 +193,10 @@ Proof
      PULL_EXISTS, arithmeticTheory.ADD_CLAUSES]
 QED
 
-val buildstates_def = Define‘
+Definition buildstates_def[simp]:
   (buildstates A q [] = [q]) ∧
   (buildstates A q (c::cs) = q :: buildstates A (A.tf q c) cs)
-’;
-
-val _ = export_rewrites ["buildstates_def"];
+End
 
 Theorem LENGTH_buildstates[simp]:
   ∀q inp. LENGTH (buildstates A q inp) = LENGTH inp + 1
@@ -244,27 +285,27 @@ Proof
 QED
 
 (* Just prior to 1.16 *)
-val recogLang_def = Define‘
-  recogLang M = {w | Sipser_Accepts M w}
-’;
+Definition recogLangD_def:
+  recogLangD D = {w | Sipser_Accepts D w}
+End
 
 (* Definition 1.16 *)
-val regularLanguage_def = Define‘
-  regularLanguage l ⇔ ∃M. wfFA M /\ (recogLang M = l)
-’;
+Definition regularLanguage_def:
+  regularLanguage l ⇔ ∃M. wfFA M ∧ recogLangD M = l
+End
 
 (* Definition 1.23 *)
 (* The Regular Operations *)
 (* Union is already defined (set union...) *)
 
-val concat_def = Define‘
+Definition concat_def:
   concat lA lB = {x ++ y | x ∈ lA ∧ y ∈ lB}
-’;
+End
 
 
-val star_def = Define ‘
+Definition star_def:
   star l = {FLAT ls | ∀s. MEM s ls ⇒ s ∈ l}
-’;
+End
 
 Theorem empty_in_star:
   ∀ l. [] ∈ star l
@@ -274,29 +315,29 @@ Proof
   rw[]
 QED
 
-val machine_union_def = Define‘
+Definition machine_union_def:
   machine_union M1 M2 =
     <|Q  := {npair r1 r2 | r1 ∈ M1.Q ∧ r2 ∈ M2.Q };
       A  := M1.A ∪ M2.A;
       tf := λs c. npair (M1.tf (nfst s) c)
                         (M2.tf (nsnd s) c);
       q0 := npair M1.q0 M2.q0;
-      C  := {npair r1 r2 | (r1 ∈ M1.C /\ r2 ∈ M2.Q) \/
-                           (r1 ∈ M1.Q /\ r2 ∈ M2.C)};
+      C  := {npair r1 r2 | (r1 ∈ M1.C ∧ r2 ∈ M2.Q) ∨
+                           (r1 ∈ M1.Q ∧ r2 ∈ M2.C)};
     |>
-’;
+End
 
 
 (* Theorem 1.25 *)
 Theorem wfFA_machine_union :
-  !M1 M2. wfFA M1 /\ wfFA M2 ==> wfFA (machine_union M1 M2)
+  ∀M1 M2. wfFA M1 ∧ wfFA M2 ⇒ wfFA (machine_union M1 M2)
 Proof
   rw[wfFA_def,machine_union_def] (* 11 *) >> simp[]
   >- (qmatch_abbrev_tac ‘FINITE s’ >>
       ‘s = IMAGE (UNCURRY npair) (M1.Q CROSS M2.Q)’ suffices_by simp[] >>
       simp[Abbr‘s’, EXTENSION, pairTheory.EXISTS_PROD])
   >- (simp[SUBSET_DEF,PULL_EXISTS] >> metis_tac[SUBSET_DEF])
-  >- (Cases_on `c IN M2.A` >> simp[])
+  >- (Cases_on ‘c IN M2.A’ >> simp[])
   >- metis_tac[]
 QED
 
@@ -306,9 +347,9 @@ Theorem regular_closed_under_union:
            regularLanguage (lA ∪ lB)
 Proof
   rw [regularLanguage_def] >>
-  rename [‘recogLang M1 ∪ recogLang M2’] >>
+  rename [‘recogLangD M1 ∪ recogLangD M2’] >>
   qexists_tac ‘machine_union M1 M2’ >>
-  rw [recogLang_def, EXTENSION,
+  rw [recogLangD_def, EXTENSION,
       Sipser_Accepts_runMachine_coincide_thm,
       wfFA_machine_union] >>
   qabbrev_tac ‘MU = machine_union M1 M2’ >>
@@ -332,7 +373,7 @@ Proof
       metis_tac[wfFA_def])
 QED
 
-val _ = Datatype‘
+Datatype:
   nfa = <|
     Q : state set ;
     A : symbol set ;
@@ -340,9 +381,9 @@ val _ = Datatype‘
     q0 : state ;
     C : state set
   |>
-’;
+End
 
-val wfNFA_def = Define‘
+Definition wfNFA_def:
   wfNFA a ⇔
     FINITE a.Q ∧
     FINITE a.A ∧
@@ -351,22 +392,22 @@ val wfNFA_def = Define‘
     (∀q c. c ∈ a.A ∧ q ∈ a.Q ⇒ a.tf q (SOME c) ⊆ a.Q) ∧
     (∀q.   q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ∧
     (∀q c. c ∉ a.A ⇒ a.tf q (SOME c) = ∅)
-’;
+End
 
 
 Definition strip_option_def[simp]:
-  (strip_option [] = []) /\
-  (strip_option (NONE :: t) = strip_option t) /\
+  (strip_option [] = []) ∧
+  (strip_option (NONE :: t) = strip_option t) ∧
   (strip_option (SOME c :: t) = c :: strip_option t)
 End
 
 Theorem strip_MAP_SOME[simp]:
   strip_option (MAP SOME x) = x
 Proof
-  Induct_on`x` >> simp[]
+  Induct_on ‘x’ >> simp[]
 QED
 
-val Sipser_ND_Accepts_def = Define‘
+Definition Sipser_ND_Accepts_def:
   Sipser_ND_Accepts A cs ⇔
     ∃ss : state list cs':(symbol option) list.
       ss ≠ [] ∧
@@ -377,18 +418,21 @@ val Sipser_ND_Accepts_def = Define‘
            EL (n + 1) ss ∈ A.tf (EL n ss) (EL n cs')) ∧
       LAST ss ∈ A.C ∧
       (∀c. MEM c cs ⇒ c ∈ A.A)
-’;
+End
 
-val e_closure_def = Define‘
+Definition recogLangN_def:
+  recogLangN N = {w | Sipser_ND_Accepts N w}
+End
+
+
+Definition e_closure_def:
   e_closure a Q = {s | ∃q. q ∈ Q ∧  RTC (λs0 s. s ∈ a.tf s0 NONE) q s}
-’;
+End
 
 val _ = temp_overload_on ("E",“e_closure”);
 
 val _ = temp_overload_on ("enc", “λs. nlist_of (SET_TO_LIST s)”);
 val _ = temp_overload_on ("dec", “λs. set (listOfN s)”);
-open combinTheory;
-open relationTheory;
 
 Theorem dec_enc_iden[simp]:
   ∀s. FINITE s ⇒ dec (enc s) = s
@@ -436,23 +480,23 @@ Proof
 
 QED
 *)
-val NFA2DFA_def = Define‘
+Definition NFA2DFA_def:
   NFA2DFA a =
     <|Q  := {enc s| s SUBSET a.Q};
       A  := a.A;
       tf := λs c. enc (E a {s' | ∃s0. s0 ∈ dec s ∧ s' ∈ a.tf s0 (SOME c)});
       q0 := enc (E a {a.q0});
       C := {enc s |s ⊆ a.Q ∧ ∃c. c ∈ s ∧ c ∈ a.C} |>
-’;
+End
 
 
 Theorem e_in_states:
-  (∀q. q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ==>
-  s SUBSET a.Q ==> E a s SUBSET a.Q
+  (∀q. q ∈ a.Q ⇒ a.tf q NONE ⊆ a.Q) ⇒
+  s ⊆ a.Q ⇒ E a s ⊆ a.Q
 Proof
   strip_tac >>
   simp[e_closure_def,PULL_EXISTS,SUBSET_DEF] >>
-  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0∈a.Q ⇒ x ∈ a.Q`
+  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0 ∈ a.Q ⇒ x ∈ a.Q`
     suffices_by metis_tac[] >>
   ho_match_mp_tac relationTheory.RTC_INDUCT >> rw[] >>
   first_x_assum drule >> simp[SUBSET_DEF]
@@ -487,19 +531,17 @@ Proof
 QED
 
 Theorem wf_NFA2DFA:
-  wfNFA a ==> wfFA (NFA2DFA a)
+  wfNFA a ⇒ wfFA (NFA2DFA a)
 Proof
   fs[wfNFA_def,wfFA_def,NFA2DFA_def] >> rw[]
-  >- (`{enc s | s ⊆ a.Q} = IMAGE enc (POW a.Q)` by
+  >- (‘{enc s | s ⊆ a.Q} = IMAGE enc (POW a.Q)’ by
         fs[EXTENSION,IN_POW] >> simp[FINITE_POW] )
   >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
-  >- (qexists_tac`E a {a.q0}` >>
+  >- (qexists_tac ‘E a {a.q0}’ >>
       simp[e_in_states] )
-  >- (qmatch_abbrev_tac`
-        ∃s. SET_TO_LIST eas = SET_TO_LIST s ∧ s SUBSET a.Q
-      ` >>
-      qexists_tac`eas` >> simp[Abbr`eas`] >> irule e_in_states >>
-      rw[] >> `FINITE s` by metis_tac[SUBSET_FINITE_I] >>
+  >- (qmatch_abbrev_tac ‘∃s. SET_TO_LIST eas = SET_TO_LIST s ∧ s SUBSET a.Q’ >>
+      qexists_tac ‘eas’ >> simp[Abbr ‘eas’] >> irule e_in_states >>
+      rw[] >> ‘FINITE s’ by metis_tac[SUBSET_FINITE_I] >>
       simp[SUBSET_DEF,PULL_EXISTS,listOfN_nlist] >>
       metis_tac[SUBSET_DEF] )
   >- (qexists_tac ‘∅’ >> simp[])
@@ -520,16 +562,27 @@ QED
 Definition DFA2NFA_def:
   DFA2NFA a = <|Q  := a.Q;
                 A  := a.A;
-                tf := λs copt. case copt of NONE => {}
-                                          | SOME c => {a.tf s c};
+                tf := λs copt. case copt of
+                                  NONE => {}
+                                | SOME c =>
+                                    if a.tf s c = 0 then ∅
+                                    else {a.tf s c};
                 q0 := a.q0;
                 C := a.C |>
 End
 
-Theorem strip_option_length:
-  ¬MEM NONE l ==> LENGTH (strip_option l) = LENGTH l
+(* also need: wfNFA (DFA2NFA a) *)
+Theorem wfNFA_DFA2NFA:
+  ∀D. wfFA D ⇒ wfNFA (DFA2NFA D)
 Proof
-  Induct_on`l` >> rw[] >> fs[] >> Cases_on ‘h’ >> simp[] >> fs[]
+  rw[wfFA_def,wfNFA_def,DFA2NFA_def] >>
+  rw[]
+QED
+
+Theorem strip_option_length:
+  ¬MEM NONE l ⇒ LENGTH (strip_option l) = LENGTH l
+Proof
+  Induct_on ‘l’ >> rw[] >> fs[] >> Cases_on ‘h’ >> simp[] >> fs[]
 QED
 
 Theorem EL_strip_option:
@@ -540,25 +593,29 @@ Proof
 QED
 
 Theorem DFA_SUBSET_NFA:
-  wfFA a ==> (Sipser_ND_Accepts (DFA2NFA a) cs <=> Sipser_Accepts a cs)
+  wfFA a ⇒ (Sipser_ND_Accepts (DFA2NFA a) cs ⇔ Sipser_Accepts a cs)
 Proof
   rw[] >> reverse eq_tac
-  >- (rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
-      map_every qexists_tac [`ss`,`MAP SOME cs`] >> rw[]
-      >- fs[listTheory.EL_MAP]
+  >- (rw[Sipser_ND_Accepts_def,Sipser_Accepts_NoZero, DFA2NFA_def] >>
+      map_every qexists_tac [‘ss’,‘MAP SOME cs’] >> rw[]
+      >- (fs[listTheory.EL_MAP] >>
+          ‘EL (n + 1) ss ≠ 0’
+            suffices_by rw[] >>
+          metis_tac[MEM_EL,DECIDE“(n < x) ∧ (y = x + 1) ⇒ (n + 1 < y)”])
       >- (‘Sipser_Accepts a cs’ by metis_tac[Sipser_Accepts_def] >>
           fs[Sipser_Accepts_runMachine_coincide_thm] >>
           metis_tac[wfFA_accepts_characters_ok])) >>
-  rw[Sipser_ND_Accepts_def,Sipser_Accepts_def, DFA2NFA_def] >>
+  rw[Sipser_ND_Accepts_def,Sipser_Accepts_NoZero, DFA2NFA_def] >>
   rename [‘LENGTH ss = LENGTH cs + 1’, ‘LAST ss ∈ A.C’] >>
-  qexists_tac`ss` >>
+  qexists_tac ‘ss’ >>
   ‘¬MEM NONE cs’ by
      (rw[MEM_EL] >> Cases_on ‘n < LENGTH cs’ >> simp[] >> strip_tac >>
       rename [‘EL n cs’] >> pop_assum (assume_tac o GSYM) >>
       last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
-  rw[strip_option_length] >>
-  rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
-  simp[EL_strip_option]
+  reverse (rw[strip_option_length])
+  >- (rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
+      simp[EL_strip_option])
+  >- cheat
 QED
 
 Theorem MEM_listOfN_enc[simp]:
@@ -579,6 +636,12 @@ QED
 
 Theorem IN_eclosure_originator:
   x ∈ E a s ⇒ ∃x0. x0 ∈ s ∧ (λs0 s. s ∈ a.tf s0 NONE)^* x0 x
+Proof
+  simp[e_closure_def]
+QED
+
+Theorem IN_eclosure_originator_rev:
+  (∃x0. x0 ∈ s ∧ (λs0 s. s ∈ a.tf s0 NONE)^* x0 x) ⇒ x ∈ E a s
 Proof
   simp[e_closure_def]
 QED
@@ -622,13 +685,13 @@ Proof
   metis_tac[]
 QED
 
-val (NF_transition_rules, NF_transition_ind, NF_transition_cases) = Hol_reln‘
+Inductive NF_transition:
   (∀q0. NF_transition a q0 [] q0) ∧
   (∀q0 q1 q c cs.
      q1 ∈ a.tf q0 c ∧ NF_transition a q1 cs q ∧ (∀c0. c = SOME c0 ==> c0 ∈ a.A)
     ⇒
      NF_transition a q0 (c::cs) q)
-’;
+End
 
 Theorem E_FINITE:
   wfNFA N ∧ s ⊆ N.Q ⇒ FINITE (E N s)
@@ -648,8 +711,8 @@ Theorem Sipser_ND_Accepts_NF_transition:
 Proof
   simp[Sipser_ND_Accepts_def] >> qspec_tac(‘a.q0’, ‘s0’) >> rw[] >>
   eq_tac >> rw[]
-  >- (rpt (pop_assum mp_tac) >> map_every qid_spec_tac [`ss`, `s0`] >>
-      Induct_on `cs'` >> simp[]
+  >- (rpt (pop_assum mp_tac) >> map_every qid_spec_tac [‘ss’, ‘s0’] >>
+      Induct_on ‘cs'’ >> simp[]
       >- (Cases >> simp[] >> rw[] >>
           map_every qexists_tac [‘h’, ‘0’] >>
           simp[NF_transition_rules]) >>
@@ -659,7 +722,7 @@ Proof
       fs[indexedListsTheory.LT_SUC, DISJ_IMP_THM, FORALL_AND_THM, PULL_EXISTS,
          arithmeticTheory.ADD_CLAUSES] >>
       ‘∀x. LAST (x :: t) = LAST t’ by simp[listTheory.LAST_CONS_cond] >> fs[] >>
-      rename [‘HD ss ∈ A.tf s0 copt’] >> Cases_on`copt` >> fs[]>>
+      rename [‘HD ss ∈ A.tf s0 copt’] >> Cases_on ‘copt’ >> fs[]>>
       first_x_assum drule_all >> strip_tac >>
       qexists_tac ‘q’
       >- (map_every qexists_tac [‘SUC n’ , ‘nlist’] >> simp[] >>
@@ -773,27 +836,27 @@ Proof
 QED
 
 Theorem MEM_REPLICATE_CORR[simp]:
-  MEM x (REPLICATE n y) <=> 0<n ∧ x=y
+  MEM x (REPLICATE n y) ⇔ 0 < n ∧ x = y
 Proof
-  Induct_on`n` >> fs[] >> metis_tac[]
+  Induct_on ‘n’ >> fs[] >> metis_tac[]
 QED
 
 Theorem strip_option_append[simp]:
-  strip_option (a++b) = (strip_option a) ++ strip_option b
+  strip_option (a++b) = strip_option a ++ strip_option b
 Proof
-  Induct_on`a` >> fs[] >> Cases >> simp[]
+  Induct_on ‘a’ >> fs[] >> Cases >> simp[]
 QED
 
 Theorem strip_option_replicate_none[simp]:
   strip_option (REPLICATE n NONE) = []
 Proof
-  Induct_on`n` >> simp[]
+  Induct_on ‘n’ >> simp[]
 QED
 
 Theorem strip_option_flat:
   strip_option (FLAT l) = FLAT (MAP strip_option l)
 Proof
-  Induct_on`l` >> simp[]
+  Induct_on ‘l’ >> simp[]
 QED
 
 Theorem fst_list_lem:
@@ -838,6 +901,8 @@ Proof
   Cases >> simp[arithmeticTheory.ADD_CLAUSES]
 QED
 
+(* Michael: 'This is a disaster!' *)
+(*
 Theorem NFA2DFA_nsteps:
   ∀ss cs.
      LENGTH ss = LENGTH cs + 1 ∧ (∀c. MEM c cs ⇒ c ∈ N.A) ∧
@@ -897,6 +962,7 @@ Proof
 
 
 QED
+*)
 
 Theorem E_closure_NF_transition:
   ∀q0 q. q ∈ E N {q0} ⇒ ∃n. NF_transition N q0 (REPLICATE n NONE) q
@@ -926,8 +992,6 @@ Proof
   metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”]
 QED
 
-
-(* Up to here *)
 Theorem NFA_SUBSET_DFA:
   wfNFA N ⇒ (Sipser_Accepts (NFA2DFA N) cs ⇔ Sipser_ND_Accepts N cs)
 Proof
@@ -942,7 +1006,7 @@ Proof
         s = REPLICATE n NONE ⧺
             FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist)))
       ` >>
-      `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_trasition_okay] >>
+      `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_transition_okay] >>
       `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)`
         by (rw[] >>
             `MEM (SOME (EL n' cs)) s`
@@ -1008,25 +1072,26 @@ Proof
   drule IN_eclosure_originator >> simp[PULL_EXISTS] >> rw[] >>
   rename [‘nq1 ∈ N.tf nq0 (SOME c0)’, ‘nq0 ∈ s’, ‘RTC _ nq1 nq2’] >>
   qexists_tac ‘nq0’ >> qexists_tac ‘nq’ >> qexists_tac ‘0’ >>
-
-  qexists_tac ‘nn::nlist’ >> simp[] >>
-  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[]
-
-  E_closure_NF_transition
-
-
-
+  ‘nq2 ∈ E N {nq1}’
+    by (irule IN_eclosure_originator_rev >>
+        simp[]) >>
+  drule_then (qx_choose_then ‘nn’ assume_tac) E_closure_NF_transition >>
+  qexists_tac ‘(nn+n)::nlist’ >> simp[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >>
+  reverse conj_tac
+  >- metis_tac[NF_transition_prepend_NONEs,arithmeticTheory.ADD_COMM] >>
+  CCONTR_TAC >>
+  ‘N.tf nq0 (SOME c0) = ∅’
+    suffices_by metis_tac[NOT_IN_EMPTY] >>
+  fs[wfNFA_def]
 QED
 
-(* also need: wfNFA (DFA2NFA a) *)
-
-
 Theorem chap1_final:
-  {l | ∃M. wfFA M ∧ (recogLang M = l) } =
-  {l | ∃N. wfNFA N ∧ ({w | Sipser_ND_Accepts N w} = l)}
+  {l | ∃D. wfFA D  ∧ recogLangD D = l } =
+  {l | ∃N. wfNFA N ∧ recogLangN N = l }
 Proof
-  fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLang_def]
-  >- (simp[EXTENSION] >> cheat )
+  fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLangD_def,recogLangN_def]
+  >- simp[EXTENSION] >> metis_tac[DFA_SUBSET_NFA]
   >- cheat
 QED
 
