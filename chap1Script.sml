@@ -496,7 +496,7 @@ Theorem e_in_states:
 Proof
   strip_tac >>
   simp[e_closure_def,PULL_EXISTS,SUBSET_DEF] >>
-  `∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0 ∈ a.Q ⇒ x ∈ a.Q`
+  ‘∀x0 x. (λs0 s. s ∈ a.tf s0 NONE)^* x0 x ⇒ x0 ∈ a.Q ⇒ x ∈ a.Q’
     suffices_by metis_tac[] >>
   ho_match_mp_tac relationTheory.RTC_INDUCT >> rw[] >>
   first_x_assum drule >> simp[SUBSET_DEF]
@@ -868,7 +868,7 @@ QED
 Theorem flat_map_sing[simp]:
   FLAT (MAP (λx. [x]) l) = l
 Proof
-  Induct_on`l` >> simp[]
+  Induct_on‘l’ >> simp[]
 QED
 
 Theorem NFA2DFA_q0:
@@ -886,7 +886,7 @@ QED
 Theorem nf_transition_okay:
   ∀q0 copts q. NF_transition a q0 copts q ==> ∀c. MEM (SOME c) copts ==> c ∈ a.A
 Proof
-  Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
+  Induct_on‘NF_transition’ >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
 
 Theorem RTC_LIST:
@@ -1002,24 +1002,24 @@ Proof
       rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,
           pairTheory.o_UNCURRY_R,
           combinTheory.o_ABS_R,fst_list_lem,MAP_ZIP,NFA2DFA_C,NFA2DFA_q0] >>
-      qabbrev_tac`
+      qabbrev_tac‘
         s = REPLICATE n NONE ⧺
             FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist)))
-      ` >>
-      `∀c. MEM (SOME c) s ==> c ∈ N.A` by metis_tac[nf_transition_okay] >>
-      `(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)`
+      ’ >>
+      ‘∀c. MEM (SOME c) s ==> c ∈ N.A’ by metis_tac[nf_transition_okay] >>
+      ‘(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)’
         by (rw[] >>
-            `MEM (SOME (EL n' cs)) s`
-              by (fs[Abbr`s`] >>
-                  `MEM (EL n' cs) cs` by fs[rich_listTheory.EL_MEM] >>
+            ‘MEM (SOME (EL n' cs)) s’
+              by (fs[Abbr‘s’] >>
+                  ‘MEM (EL n' cs) cs’ by fs[rich_listTheory.EL_MEM] >>
                   fs[MEM_FLAT] >>
                   qexists_tac
-                    `(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)` >>
+                    ‘(SOME (EL n' cs))::(REPLICATE (EL n' nlist) NONE)’ >>
                   fs[MEM_MAP] >>
-                  qexists_tac`(EL n' cs,EL n' nlist)` >> fs[MEM_ZIP] >>
+                  qexists_tac‘(EL n' cs,EL n' nlist)’ >> fs[MEM_ZIP] >>
                   metis_tac[]) >>
             fs[]) >> fs[] >>
-      `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def])>>
+      ‘N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q’ suffices_by metis_tac[] >> fs[wfNFA_def])>>
   rw[Sipser_Accepts_runMachine_coincide, Sipser_ND_Accepts_NF_transition,
      wfFA_NFA2DFA, accepts_def] >>
   pop_assum mp_tac >>
@@ -1064,11 +1064,11 @@ Proof
   ‘FINITE s'’ by metis_tac[wfNFA_def, SUBSET_FINITE] >>
   qmatch_abbrev_tac ‘SET_TO_LIST ss = SET_TO_LIST _ ⇒ _’ >>
   ‘FINITE ss’
-    by (simp[Abbr`ss`] >> irule E_FINITE >> simp[] >>
+    by (simp[Abbr‘ss’] >> irule E_FINITE >> simp[] >>
         simp[SUBSET_DEF, PULL_EXISTS] >> fs[wfNFA_def] >>
         Cases_on ‘c0 ∈ N.A’ >- metis_tac[SUBSET_DEF] >>
         first_assum (pop_assum o mp_then Any mp_tac) >> simp[]) >>
-  simp[SET_TO_LIST_11] >> simp[Abbr`ss`] >> rw[] >>
+  simp[SET_TO_LIST_11] >> simp[Abbr‘ss’] >> rw[] >>
   drule IN_eclosure_originator >> simp[PULL_EXISTS] >> rw[] >>
   rename [‘nq1 ∈ N.tf nq0 (SOME c0)’, ‘nq0 ∈ s’, ‘RTC _ nq1 nq2’] >>
   qexists_tac ‘nq0’ >> qexists_tac ‘nq’ >> qexists_tac ‘0’ >>
