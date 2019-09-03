@@ -530,7 +530,7 @@ Proof
   simp[]
 QED
 
-Theorem wf_NFA2DFA:
+Theorem wfFA_NFA2DFA:
   wfNFA a ⇒ wfFA (NFA2DFA a)
 Proof
   fs[wfNFA_def,wfFA_def,NFA2DFA_def] >> rw[]
@@ -614,7 +614,7 @@ Proof
       last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
   reverse (rw[strip_option_length])
   >- (rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
-      simp[EL_strip_option])
+      simp[EL_strip_option] >> cheat)
   >- cheat
 QED
 
@@ -997,7 +997,7 @@ Theorem NFA_SUBSET_DFA:
 Proof
   strip_tac >> reverse eq_tac
   >- (rw[Sipser_ND_Accepts_NF_transition, Sipser_Accepts_runMachine_coincide,
-         accepts_def,wf_NFA2DFA] >>
+         accepts_def,wfFA_NFA2DFA] >>
       drule_then (drule_then strip_assume_tac) NF_transition_NFA2DFA >>
       rfs[MEM_FLAT,PULL_EXISTS,MEM_MAP,MEM_ZIP,strip_option_flat,MAP_MAP_o,
           pairTheory.o_UNCURRY_R,
@@ -1021,7 +1021,7 @@ Proof
             fs[]) >> fs[] >>
       `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def])>>
   rw[Sipser_Accepts_runMachine_coincide, Sipser_ND_Accepts_NF_transition,
-     wf_NFA2DFA, accepts_def] >>
+     wfFA_NFA2DFA, accepts_def] >>
   pop_assum mp_tac >>
   ‘∀s. s ⊆ N.Q ∧
        runMachine (NFA2DFA N) (enc s) cs ∈ (NFA2DFA N).C ⇒
@@ -1091,9 +1091,10 @@ Theorem chap1_final:
   {l | ∃N. wfNFA N ∧ recogLangN N = l }
 Proof
   fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLangD_def,recogLangN_def]
-  >- simp[EXTENSION] >> metis_tac[DFA_SUBSET_NFA]
-  >- cheat
+  >- (simp[EXTENSION] >> qexists_tac ‘DFA2NFA D’ >>
+      metis_tac[DFA_SUBSET_NFA,wfNFA_DFA2NFA])
+  >- (simp[EXTENSION] >> qexists_tac ‘NFA2DFA N’ >>
+      metis_tac[NFA_SUBSET_DFA,wfFA_NFA2DFA])
 QED
-
 
 val _ = export_theory();
