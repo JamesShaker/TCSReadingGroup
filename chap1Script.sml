@@ -820,7 +820,7 @@ Proof
   simp[NFA2DFA_def]
 QED
 
-Theorem nf_trasition_okay:
+Theorem nf_transition_okay:
   ∀q0 copts q. NF_transition a q0 copts q ==> ∀c. MEM (SOME c) copts ==> c ∈ a.A
 Proof
   Induct_on`NF_transition` >> simp[] >> metis_tac[optionTheory.SOME_11]
@@ -891,10 +891,40 @@ Proof
   pop_assum SUBST_ALL_TAC >> fs[] >>
   ‘(∃nq nss00. nss0 = nq::nss00)’ by (Cases_on ‘nss0’ >> fs[]) >>
   pop_assum SUBST_ALL_TAC >> fs[] >>
+  rw[]
+  >- (Cases_on ‘nss00’ >> simp[LAST_APPEND_CONS] >>
+      simp[GSYM APPEND, Excl "APPEND"]) >>
+
 
 QED
 
+Theorem E_closure_NF_transition:
+  ∀q0 q. q ∈ E N {q0} ⇒ ∃n. NF_transition N q0 (REPLICATE n NONE) q
+Proof
+  rw[] >> drule IN_eclosure_originator >> simp[] >> Induct_on ‘RTC’ >> rw[]
+  >- (qexists_tac ‘0’ >> simp[NF_transition_rules]) >>
+  rename [‘NF_transition N _ (REPLICATE m NONE) _’] >>
+  qexists_tac ‘SUC m’ >>
+  simp[] >> metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”]
+QED
 
+val _ = overload_on("munge", “λn cs nlist. REPLICATE n NONE ++ FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) (ZIP (cs,nlist)))”)
+
+Theorem NF_transition_prepend_NONEs:
+  ∀n0 n cs nlist.
+    NF_transition N q0 (REPLICATE n0 NONE) q1 ∧
+    NF_transition N q1 (munge n cs nlist) q2 ⇒
+    NF_transition N q0 (munge (n0 + n) cs nlist) q2
+Proof
+  Induct_on ‘NF_transition’ >> rw[rich_listTheory.REPLICATE_NIL] >>
+  rename [‘REPLICATE n0 NONE = none1::nones’] >>
+  Cases_on ‘n0’ >> fs[] >> rw[] >>
+  rename [‘REPLICATE _ NONE = REPLICATE nn NONE’] >>
+  first_x_assum (qspec_then ‘nn’ mp_tac) >> simp[] >>
+  disch_then (drule_then assume_tac) >>
+  simp[arithmeticTheory.ADD_CLAUSES] >>
+  metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”]
+QED
 
 
 (* Up to here *)
@@ -926,48 +956,64 @@ Proof
                   metis_tac[]) >>
             fs[]) >> fs[] >>
       `N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q` suffices_by metis_tac[] >> fs[wfNFA_def])>>
-  rw[Sipser_Accepts_def, Sipser_ND_Accepts_def] >> (* use NFA2DFA_1step *)
-  rfs[] >>
-  ‘∃cfs. cfs ∈ dec (LAST ss) ∧ cfs ∈ N.C’
-    by (qpat_x_assum ‘LAST ss ∈ _’ mp_tac >>
-        simp[NFA2DFA_def,PULL_EXISTS] >>
-        rw[] >> qexists_tac ‘c’ >>
-        ‘FINITE s’
-          by (‘FINITE N.Q’
-                suffices_by metis_tac[SUBSET_FINITE] >>
-              fs[wfNFA_def]) >>
-        simp[MEM_listOfN_enc]) >>
-  REPEAT_GTCL drule_then strip_assume_tac NFA2DFA_1step >>
-  rfs[] >>
-  qpat_x_assum ‘MEM (HD nss) _’ mp_tac >>
-  simp[NFA2DFA_def] >>
-  ‘FINITE (E N {N.q0})’
-    by fs[wfNFA_def,E_FINITE] >>
-  simp[MEM_listOfN_enc] >>
-  strip_tac >> drule_then strip_assume_tac E_CONNECT >>
-  rename [‘HD cnss = N.q0’] >>
-  qexists_tac ‘cnss++(TL nss)’ >>
-  qexists_tac ‘(REPLICATE (LENGTH cnss - 1) NONE)++copts’ >>
-  simp[LENGTH_TL] >>
-  ‘LENGTH cnss ≠ 0’
-    by fs[] >>
-  Cases_on ‘cnss’ >>
+  rw[Sipser_Accepts_runMachine_coincide, Sipser_ND_Accepts_NF_transition,
+     wf_NFA2DFA, accepts_def] >>
+  pop_assum mp_tac >>
+  ‘∀s. s ⊆ N.Q ∧
+       runMachine (NFA2DFA N) (enc s) cs ∈ (NFA2DFA N).C ⇒
+       ∃nq0 nq n nlist.
+           LENGTH nlist = LENGTH cs ∧ nq0 ∈ s ∧
+           NF_transition N nq0 (REPLICATE n NONE ++
+                                FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE)
+                                          (ZIP (cs, nlist))))
+                           nq ∧ nq ∈ N.C’
+     suffices_by (rpt strip_tac >>
+                  first_x_assum (qspec_then ‘E N {N.q0}’ mp_tac) >>
+                  impl_tac
+                  >- (‘{N.q0} ⊆ N.Q’ by fs[wfNFA_def] >> simp[e_closure_safe] >>
+                      ‘enc (E N {N.q0}) = (NFA2DFA N).q0’ suffices_by simp[] >>
+                      simp[NFA2DFA_def]) >>
+                  rw[] >>
+                  drule_then(qx_choose_then ‘n0’ assume_tac)
+                     E_closure_NF_transition >>
+                  drule_all NF_transition_prepend_NONEs >> metis_tac[]) >>
+  Induct_on ‘cs’ >> simp[]
+  >- (simp[NFA2DFA_def, PULL_EXISTS] >> rw[] >>
+      rename [‘SET_TO_LIST s1 = SET_TO_LIST s2’] >>
+      ‘FINITE s1 ∧ FINITE s2’ by metis_tac[wfNFA_def, SUBSET_FINITE] >>
+      fs[SET_TO_LIST_11] >> rw[] >>
+      map_every qexists_tac [‘c’, ‘c’, ‘0’] >> simp[NF_transition_rules]) >>
+  rw[] >> rename [‘(NFA2DFA N).tf (enc s) c0’] >>
+  ‘FINITE s’ by metis_tac[wfNFA_def, SUBSET_FINITE] >>
+  ‘∃s'. (NFA2DFA N).tf (enc s) c0 = enc s' ∧ s' ⊆ N.Q’
+    by (simp[NFA2DFA_def] >>
+        qmatch_abbrev_tac
+          ‘∃s'. SET_TO_LIST (E N ss) = SET_TO_LIST s' ∧ s' ⊆ N.Q’ >>
+        ‘ss ⊆ N.Q’ suffices_by metis_tac[e_closure_safe] >>
+        simp[Abbr‘ss’, SUBSET_DEF, PULL_EXISTS] >>
+        fs[wfNFA_def] >> Cases_on ‘c0 ∈ N.A’ >- metis_tac[SUBSET_DEF] >>
+        first_assum (pop_assum o mp_then Any mp_tac) >> simp[]) >>
   fs[] >>
-  conj_tac
-  >- (rw[arithmeticTheory.ADD1] >>
-      Cases_on ‘t’ >> simp[]
-      >- (ONCE_REWRITE_TAC [EL_compute] >>
-          simp[GSYM arithmeticTheory.ADD1] >>
-          rw[] >> fs[]
-          >- (first_x_assum drule >>
-              simp[Once EL_compute])
-          >- (Cases_on ‘n’ >> fs[arithmeticTheory.ADD1] >>
-              first_x_assum drule >>
-              simp[GSYM arithmeticTheory.ADD1] >>
-              simp[EL])
-          )
-      >- ()
-      )
+  first_x_assum (drule_all_then strip_assume_tac) >>
+  qpat_x_assum ‘_.tf (enc s) _ = _’ mp_tac >>
+  simp[NFA2DFA_def] >>
+  ‘FINITE s'’ by metis_tac[wfNFA_def, SUBSET_FINITE] >>
+  qmatch_abbrev_tac ‘SET_TO_LIST ss = SET_TO_LIST _ ⇒ _’ >>
+  ‘FINITE ss’
+    by (simp[Abbr`ss`] >> irule E_FINITE >> simp[] >>
+        simp[SUBSET_DEF, PULL_EXISTS] >> fs[wfNFA_def] >>
+        Cases_on ‘c0 ∈ N.A’ >- metis_tac[SUBSET_DEF] >>
+        first_assum (pop_assum o mp_then Any mp_tac) >> simp[]) >>
+  simp[SET_TO_LIST_11] >> simp[Abbr`ss`] >> rw[] >>
+  drule IN_eclosure_originator >> simp[PULL_EXISTS] >> rw[] >>
+  rename [‘nq1 ∈ N.tf nq0 (SOME c0)’, ‘nq0 ∈ s’, ‘RTC _ nq1 nq2’] >>
+  qexists_tac ‘nq0’ >> qexists_tac ‘nq’ >> qexists_tac ‘0’ >>
+
+  qexists_tac ‘nn::nlist’ >> simp[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[]
+
+  E_closure_NF_transition
+
 
 
 QED
