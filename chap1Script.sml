@@ -910,69 +910,6 @@ Proof
   Cases >> simp[arithmeticTheory.ADD_CLAUSES]
 QED
 
-(* Michael: 'This is a disaster!' *)
-(*
-Theorem NFA2DFA_nsteps:
-  ∀ss cs.
-     LENGTH ss = LENGTH cs + 1 ∧ (∀c. MEM c cs ⇒ c ∈ N.A) ∧
-     (∀n. n < LENGTH cs ⇒ (NFA2DFA N).tf (EL n ss) (EL n cs) = EL (n + 1) ss) ∧
-     (∀s. MEM s ss ⇒ s ∈ (NFA2DFA N).Q) ∧
-     wfNFA N
-    ⇒
-     ∀nqf.
-       MEM nqf (listOfN (LAST ss)) ⇒
-       ∃nss ncs.
-         nss ≠ [] ∧ strip_option ncs = cs ∧ LENGTH nss = LENGTH ncs + 1 ∧
-         LAST nss = nqf ∧
-         (∀n. n < LENGTH nss ⇒ MEM (EL n nss) (listOfN (EL n ss))) ∧
-         (∀n. n < LENGTH nss - 1 ⇒
-              EL (n + 1) nss ∈ N.tf (EL n nss) (EL n ncs))
-Proof
-  Induct_on ‘ss’ >> simp[] >> qx_gen_tac ‘ds0’ >> rw[] >>
-  Cases_on ‘ss’ >> fs[]
-  >- (map_every qexists_tac [‘[nqf]’, ‘[]’] >> simp[] >>
-      Cases_on ‘cs’ >> fs[] >> simp[DECIDE “n < 1 ⇔ n = 0”]) >>
-  fs[arithmeticTheory.ADD1] >>
-  ‘LENGTH t + 1 = LENGTH cs’ by simp[] >>
-  ‘0 < LENGTH cs’ by simp[] >>
-  first_assum drule >> simp_tac (srw_ss())[] >>
-  rename [‘_.tf ds0 (HD cs) = ds1’] >>
-  fs[DISJ_IMP_THM, FORALL_AND_THM] >>
-  ‘∃s0. enc s0 = ds0 ∧ s0 ⊆ N.Q’ by (fs[NFA2DFA_def] >> metis_tac[]) >>
-  ‘∃c0 crest. cs = c0::crest’ by (Cases_on ‘cs’ >> fs[]) >> rw[] >>
-  fs[DISJ_IMP_THM, FORALL_AND_THM] >>
-  drule_all_then assume_tac NFA2DFA_1step >> fs[arithmeticTheory.ADD1] >>
-  first_x_assum (qspec_then ‘crest’ mp_tac) >> simp[] >>
-  impl_tac
-  >- (qx_gen_tac ‘NN’ >> strip_tac >> ‘NN + 1 < LENGTH crest + 1’ by simp[] >>
-      first_x_assum drule >>
-      simp_tac bool_ss [arithmeticTheory.TWO, arithmeticTheory.ONE,
-                        arithmeticTheory.ADD_CLAUSES, EL_restricted]) >>
-  disch_then (drule_then (qx_choosel_then [‘nss0’, ‘ncs0’] strip_assume_tac)) >>
-  ‘0 < LENGTH nss0’ by simp[] >> first_assum drule >>
-  simp_tac (srw_ss()) [] >>
-  qpat_x_assum ‘∀q. (NFA2DFA N).tf _ _ = q ⇔ _’
-          (qspec_then ‘(NFA2DFA N).tf (enc s0) c0’ mp_tac) >>
-  simp[PULL_EXISTS] >> qx_gen_tac ‘s’ >> strip_tac >>
-  ‘FINITE s’ by metis_tac[wfNFA_def, SUBSET_FINITE_I] >> simp[PULL_EXISTS] >>
-  qx_gen_tac ‘nq0’ >> strip_tac >> drule IN_eclosure_originator >>
-  simp[PULL_EXISTS] >> qx_gen_tac ‘nq1’ >> strip_tac >>
-  drule_then (qx_choose_then ‘none_list’ strip_assume_tac) RTC_LIST >>
-  qexists_tac ‘nq0 :: none_list ++ TL nss0’ >>
-  qexists_tac ‘SOME c0 :: REPLICATE (LENGTH none_list - 1) NONE ++ ncs0’ >>
-  simp[] >>
-  ‘(∃nlist0. none_list = nq1 :: nlist0)’ by (Cases_on ‘none_list’ >> fs[]) >>
-  pop_assum SUBST_ALL_TAC >> fs[] >>
-  ‘(∃nq nss00. nss0 = nq::nss00)’ by (Cases_on ‘nss0’ >> fs[]) >>
-  pop_assum SUBST_ALL_TAC >> fs[] >>
-  rw[]
-  >- (Cases_on ‘nss00’ >> simp[LAST_APPEND_CONS] >>
-      simp[GSYM APPEND, Excl "APPEND"]) >>
-
-
-QED
-*)
-
 Theorem E_closure_NF_transition:
   ∀q0 q. q ∈ E N {q0} ⇒ ∃n. NF_transition N q0 (REPLICATE n NONE) q
 Proof
@@ -1095,15 +1032,74 @@ Proof
   fs[wfNFA_def]
 QED
 
-Theorem NFA_DFA_EQ:
-  {l | ∃D. wfFA D  ∧ recogLangD D = l } =
-  {l | ∃N. wfNFA N ∧ recogLangN N = l }
+Theorem thm_1_39:
+  (∃D. wfFA D ∧ recogLangD D = l) ⇔ (∃N. wfNFA N ∧ recogLangN N = l)
 Proof
-  fs[Once EXTENSION] >> rw[] >> eq_tac >> rw[recogLangD_def,recogLangN_def]
+  rw[] >> eq_tac >> rw[recogLangD_def,recogLangN_def]
   >- (simp[EXTENSION] >> qexists_tac ‘DFA2NFA D’ >>
       metis_tac[DFA_SUBSET_NFA,wfNFA_DFA2NFA])
   >- (simp[EXTENSION] >> qexists_tac ‘NFA2DFA N’ >>
       metis_tac[NFA_SUBSET_DFA,wfFA_NFA2DFA])
+QED
+
+Theorem regularLanguage_NFA_thm:
+  ∀L.
+    regularLanguage L ⇔ ∃M. wfNFA M ∧ recogLangN M = L
+Proof
+  metis_tac[regularLanguage_def,thm_1_39]
+QED
+
+Definition machine_link_def:
+  machine_link N1 N2 =
+    <|Q  := {npair 0 r1 | r1 ∈ N1.Q} ∪
+            {npair 1 r2 | r2 ∈ N2.Q};
+      A  := N1.A ∪ N2.A;
+      tf := λs copt.
+              if nfst s = 0 then
+                let
+                  frs = {npair 0 s' | s' ∈ N1.tf (nsnd s) copt}
+                in
+                  if nsnd s ∈ N1.C ∧ copt = NONE then
+                    frs ∪ {npair 1 N2.q0}
+                  else
+                    frs
+              else
+                {npair 1 s' | s' ∈ N2.tf (nsnd s) copt};
+      q0 := npair 0 N1.q0;
+      C  := {npair 1 r2 | r2 ∈ N2.C };
+    |>
+End
+
+Theorem wfNFA_machine_link:
+  ∀N1 N2.
+    wfNFA N1 ∧
+    wfNFA N2 ⇒
+    wfNFA (machine_link N1 N2)
+Proof
+  rw[wfNFA_def,machine_link_def]
+  >- (qmatch_abbrev_tac ‘FINITE s’ >>
+      ‘s = IMAGE (npair 0) N1.Q’
+        suffices_by metis_tac[IMAGE_FINITE] >>
+      simp[EXTENSION,Abbr ‘s’])
+  >- (qmatch_abbrev_tac ‘FINITE s’ >>
+      ‘s = IMAGE (npair 1) N2.Q’
+        suffices_by metis_tac[IMAGE_FINITE] >>
+      simp[EXTENSION,Abbr ‘s’]) >>
+  simp[SUBSET_DEF,PULL_EXISTS] >> rw[] >>
+  metis_tac[SUBSET_DEF,NOT_IN_EMPTY]
+QED
+
+(* UP TO HERE *)
+Theorem thm_1_47:
+  ∀L1 L2.
+    regularLanguage L1 ∧ regularLanguage L2 ⇒
+    regularLanguage (concat L1 L2)
+Proof
+  rw[regularLanguage_NFA_thm] >>
+  rename1 ‘recogLangN _ = concat (_ N1) (_ N2)’ >>
+  qexists_tac ‘machine_link N1 N2’ >>
+  rw[wfNFA_machine_link,EXTENSION,concat_def] >>
+  cheat
 QED
 
 val _ = export_theory();
