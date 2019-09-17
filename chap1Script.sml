@@ -337,7 +337,7 @@ Proof
       ‘s = IMAGE (UNCURRY npair) (M1.Q CROSS M2.Q)’ suffices_by simp[] >>
       simp[Abbr‘s’, EXTENSION, pairTheory.EXISTS_PROD])
   >- (simp[SUBSET_DEF,PULL_EXISTS] >> metis_tac[SUBSET_DEF])
-  >- (Cases_on ‘c IN M2.A’ >> simp[])
+  >- (Cases_on ‘c ∈ M2.A’ >> simp[])
   >- metis_tac[]
 QED
 
@@ -482,7 +482,7 @@ QED
 *)
 Definition NFA2DFA_def:
   NFA2DFA a =
-    <|Q  := {enc s| s SUBSET a.Q};
+    <|Q  := {enc s| s ⊆ a.Q};
       A  := a.A;
       tf := λs c. enc (E a {s' | ∃s0. s0 ∈ dec s ∧ s' ∈ a.tf s0 (SOME c)});
       q0 := enc (E a {a.q0});
@@ -539,7 +539,7 @@ Proof
   >- (rw[SUBSET_DEF,PULL_EXISTS] >> metis_tac[])
   >- (qexists_tac ‘E a {a.q0}’ >>
       simp[e_in_states] )
-  >- (qmatch_abbrev_tac ‘∃s. SET_TO_LIST eas = SET_TO_LIST s ∧ s SUBSET a.Q’ >>
+  >- (qmatch_abbrev_tac ‘∃s. SET_TO_LIST eas = SET_TO_LIST s ∧ s ⊆ a.Q’ >>
       qexists_tac ‘eas’ >> simp[Abbr ‘eas’] >> irule e_in_states >>
       rw[] >> ‘FINITE s’ by metis_tac[SUBSET_FINITE_I] >>
       simp[SUBSET_DEF,PULL_EXISTS,listOfN_nlist] >>
@@ -614,8 +614,17 @@ Proof
       last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
   reverse (rw[strip_option_length])
   >- (rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
-      simp[EL_strip_option] >> cheat)
-  >- cheat
+      simp[EL_strip_option] >> rw[])
+  >- (rw[MEM_EL] >>
+      Cases_on ‘n < LENGTH cs + 1’ >>
+      simp[] >>
+      qpat_x_assum ‘LENGTH ss = _’ (assume_tac o GSYM) >>
+      fs[] >> Cases_on ‘n’
+      >- fs[EL,wfFA_def] >>
+      rename1 ‘0 ≠ EL (SUC n) ss’ >>
+      last_x_assum (qspec_then ‘n’ mp_tac) >>
+      simp[] >> Cases_on ‘EL n cs’ >> simp[] >>
+      rw[arithmeticTheory.ADD1])
 QED
 
 Theorem MEM_listOfN_enc[simp]:
@@ -688,7 +697,7 @@ QED
 Inductive NF_transition:
   (∀q0. NF_transition a q0 [] q0) ∧
   (∀q0 q1 q c cs.
-     q1 ∈ a.tf q0 c ∧ NF_transition a q1 cs q ∧ (∀c0. c = SOME c0 ==> c0 ∈ a.A)
+     q1 ∈ a.tf q0 c ∧ NF_transition a q1 cs q ∧ (∀c0. c = SOME c0 ⇒ c0 ∈ a.A)
     ⇒
      NF_transition a q0 (c::cs) q)
 End
@@ -884,7 +893,7 @@ Proof
 QED
 
 Theorem nf_transition_okay:
-  ∀q0 copts q. NF_transition a q0 copts q ==> ∀c. MEM (SOME c) copts ==> c ∈ a.A
+  ∀q0 copts q. NF_transition a q0 copts q ⇒ ∀c. MEM (SOME c) copts ⇒ c ∈ a.A
 Proof
   Induct_on‘NF_transition’ >> simp[] >> metis_tac[optionTheory.SOME_11]
 QED
@@ -1006,7 +1015,7 @@ Proof
         s = REPLICATE n NONE ⧺
             FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (cs,nlist)))
       ’ >>
-      ‘∀c. MEM (SOME c) s ==> c ∈ N.A’ by metis_tac[nf_transition_okay] >>
+      ‘∀c. MEM (SOME c) s ⇒ c ∈ N.A’ by metis_tac[nf_transition_okay] >>
       ‘(∀n'. n' < LENGTH cs ⇒ EL n' cs ∈ N.A)’
         by (rw[] >>
             ‘MEM (SOME (EL n' cs)) s’
@@ -1086,7 +1095,7 @@ Proof
   fs[wfNFA_def]
 QED
 
-Theorem chap1_final:
+Theorem NFA_DFA_EQ:
   {l | ∃D. wfFA D  ∧ recogLangD D = l } =
   {l | ∃N. wfNFA N ∧ recogLangN N = l }
 Proof
