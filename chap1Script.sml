@@ -1070,6 +1070,12 @@ Definition machine_link_def:
     |>
 End
 
+Theorem machine_link_q0[simp]:
+  (machine_link N1 N2).q0 = 0 ⊗ N1.q0
+Proof
+  simp[machine_link_def]
+QED
+
 Theorem wfNFA_machine_link:
   ∀N1 N2.
     wfNFA N1 ∧
@@ -1089,6 +1095,109 @@ Proof
   metis_tac[SUBSET_DEF,NOT_IN_EMPTY]
 QED
 
+Theorem machine_link_tf0:
+  (machine_link N1 N2).tf (0 ⊗ n1) c =
+   if n1 ∈ N1.C ∧ c = NONE then
+      {0 ⊗ n | n ∈ N1.tf n1 NONE} ∪ {1 ⊗ N2.q0}
+    else {0 ⊗ n | n ∈ N1.tf n1 c}
+Proof
+  simp[machine_link_def]
+QED
+
+Theorem machine_link_A:
+  (machine_link N1 N2).A = N1.A ∪ N2.A
+Proof
+  simp[machine_link_def]
+QED
+
+Theorem machine_link_C[simp]:
+  (machine_link N1 N2).C = { 1 ⊗ n | n ∈ N2.C }
+Proof
+  simp[machine_link_def]
+QED
+
+Theorem NF_link2_1[local]:
+  ∀q1 ts q2. NF_transition (machine_link N1 N2) q1 ts q2 ⇒
+             wfNFA N2 ⇒
+             ∀n1 n2. q1 = 1 ⊗ n1 ∧ q2 = 1 ⊗ n2 ⇒
+                     NF_transition N2 n1 ts n2
+Proof
+  Induct_on ‘NF_transition’ >> fs[NF_transition_rules] >> rw[] >> fs[] >>
+  simp[NF_transition_rules] >>
+  qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >>
+  rw[machine_link_def] >> fs[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+  fs[machine_link_A] >> fs[wfNFA_def] >> conj_tac
+  >- (rw[] >> metis_tac[NOT_IN_EMPTY]) >>
+  metis_tac[NF_transition_rules]
+QED
+
+
+Theorem NF_transition_machine_link2[simp]:
+  wfNFA N2 ⇒
+  (NF_transition (machine_link N1 N2) (1 ⊗ q1) ts (1 ⊗ q2) ⇔
+   NF_transition N2 q1 ts q2)
+Proof
+  strip_tac >> eq_tac >- metis_tac[NF_link2_1] >>
+  Induct_on ‘NF_transition’ >> simp[NF_transition_rules] >> rw[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+  simp[machine_link_A] >> goal_assum (first_assum o mp_then Any mp_tac) >>
+  simp[machine_link_def]
+QED
+
+
+Theorem NF_transition_machine_link_shift12:
+  wfNFA N1 ∧ wfNFA N2 ∧
+  NF_transition (machine_link N1 N2) q0 ts q ∧
+  q0 ∈ { 0 ⊗ n1 | n1 ∈ N1.Q } ∧ q ∈ { 1 ⊗ n2 | n2 ∈ N2.Q }
+⇒
+  ∃q1 ts1 ts2.
+    q1 ∈ N1.C ∧ (* q2 = 1 ⊗ N2.q0 *)
+    NF_transition N1 (nsnd q0) ts1 q1 ∧
+    NF_transition N2 N2.q0 ts2 (nsnd q) ∧
+    ts = ts1 ++ [NONE] ++ ts2
+Proof
+  Induct_on ‘NF_transition’ >> rw[]
+  >- (qspec_then ‘q0’ strip_assume_tac npair_cases >> simp[] >>
+      rename [‘q0 = m ⊗ n’] >> Cases_on ‘m = 0’ >> simp[]) >>
+  fs[PULL_EXISTS] >>
+  rename [‘NF_transition _ q1 ts (1 ⊗ n2)’] >>
+  qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >>
+  rw[machine_link_def] >> fs[]
+  >- (rename [‘n1' ∈ N1.tf n1 _’] >>
+      ‘n1' ∈ N1.Q’ by metis_tac[wfNFA_def, SUBSET_DEF] >>
+      fs[] >>
+      rename [‘ts = ts1 ++ [NONE] ++ ts2’, ‘NF_transition N1 n1' ts1 q1’,
+              ‘NF_transition N2 N2.q0 ts2 n2’] >>
+      ‘NF_transition N1 n1 (NONE::ts1) q1’
+         by metis_tac[NF_transition_rules, optionTheory.NOT_SOME_NONE] >>
+      map_every qexists_tac [‘q1’, ‘NONE::ts1’, ‘ts2’] >> simp[])
+  >- (goal_assum drule >> qexists_tac ‘[]’ >> simp[NF_transition_rules])
+  >- (rename [‘n1' ∈ N1.tf n1 _’] >>
+      ‘n1' ∈ N1.Q’ by metis_tac[wfNFA_def, SUBSET_DEF, NOT_IN_EMPTY,
+                                optionTheory.option_CASES] >> fs[] >>
+      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
+      rename [‘ts = ts1 ++ [NONE] ++ ts2’, ‘NF_transition N1 n1' ts1 q1’,
+              ‘NF_transition N2 N2.q0 ts2 n2’] >>
+      ‘NF_transition N1 n1 (c::ts1) q1’
+         by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+             reverse conj_tac >- metis_tac[] >> fs[machine_link_A] >>
+             metis_tac[wfNFA_def, NOT_IN_EMPTY]) >>
+      metis_tac[APPEND])
+  >- (rename [‘n1' ∈ N1.tf n1 _’] >>
+      ‘n1' ∈ N1.Q’ by metis_tac[wfNFA_def, SUBSET_DEF, NOT_IN_EMPTY,
+                                optionTheory.option_CASES] >> fs[] >>
+      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
+      rename [‘ts = ts1 ++ [NONE] ++ ts2’, ‘NF_transition N1 n1' ts1 q1’,
+              ‘NF_transition N2 N2.q0 ts2 n2’] >>
+      ‘NF_transition N1 n1 (c::ts1) q1’
+         by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+             reverse conj_tac >- metis_tac[] >> fs[machine_link_A] >>
+             metis_tac[wfNFA_def, NOT_IN_EMPTY]) >>
+      metis_tac[APPEND])
+QED
+
+
 (* UP TO HERE *)
 Theorem thm_1_47:
   ∀L1 L2.
@@ -1098,8 +1207,13 @@ Proof
   rw[regularLanguage_NFA_thm] >>
   rename1 ‘recogLangN _ = concat (_ N1) (_ N2)’ >>
   qexists_tac ‘machine_link N1 N2’ >>
-  rw[wfNFA_machine_link,EXTENSION,concat_def] >>
-  cheat
+  rw[wfNFA_machine_link,EXTENSION,concat_def, recogLangN_def,
+     Sipser_ND_Accepts_NF_transition, EQ_IMP_THM]
+  >- (rename [‘LENGTH epslist = LENGTH s’,
+              ‘NF_transition (machine_link N1 N2) _ (munge eps0 _ _)’] >>
+      drule_then (drule_then drule) NF_transition_machine_link_shift12 >>
+      simp[] >> impl_tac >- metis_tac[wfNFA_def, SUBSET_DEF] >>
+      cheat) >> cheat
 QED
 
 val _ = export_theory();
