@@ -1078,8 +1078,7 @@ QED
 
 Theorem wfNFA_machine_link:
   ∀N1 N2.
-    wfNFA N1 ∧
-    wfNFA N2 ⇒
+    wfNFA N1 ∧ wfNFA N2 ⇒
     wfNFA (machine_link N1 N2)
 Proof
   rw[wfNFA_def,machine_link_def]
@@ -1116,29 +1115,54 @@ Proof
   simp[machine_link_def]
 QED
 
-Theorem NF_link2_1[local]:
-  ∀q1 ts q2. NF_transition (machine_link N1 N2) q1 ts q2 ⇒
-             wfNFA N2 ⇒
-             ∀n1 n2. q1 = 1 ⊗ n1 ∧ q2 = 1 ⊗ n2 ⇒
-                     NF_transition N2 n1 ts n2
+Theorem NF_transition_link2_E:
+  ∀q1 n. NF_transition (machine_link N1 N2) (1 ⊗ q1) ts n ⇒
+         ∃q2. n = 1 ⊗ q2
 Proof
-  Induct_on ‘NF_transition’ >> fs[NF_transition_rules] >> rw[] >> fs[] >>
-  simp[NF_transition_rules] >>
-  qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >>
-  rw[machine_link_def] >> fs[] >>
-  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
-  fs[machine_link_A] >> fs[wfNFA_def] >> conj_tac
-  >- (rw[] >> metis_tac[NOT_IN_EMPTY]) >>
-  metis_tac[NF_transition_rules]
+  Induct_on ‘NF_transition’ >> simp[] >> rw[] >> first_x_assum irule >>
+  qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >> simp[machine_link_def] >>
+  simp[PULL_EXISTS]
 QED
 
+Theorem NF_transition_link21_impossible[simp]:
+  ¬NF_transition (machine_link N1 N2) (1 ⊗ q1) ts (0 ⊗ q2)
+Proof
+  strip_tac >> drule NF_transition_link2_E >> simp[]
+QED
+
+Theorem NF_transition_machine_link1[simp]:
+  wfNFA N1 ⇒
+  (NF_transition (machine_link N1 N2) (0 ⊗ q1) ts (0 ⊗ q2) ⇔
+   NF_transition N1 q1 ts q2)
+Proof
+  strip_tac >> eq_tac
+  >- (map_every qid_spec_tac [‘q1’, ‘q2’] >> Induct_on ‘NF_transition’ >>
+      rw[] >> fs[NF_transition_rules] >>
+      qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >>
+      rw[machine_link_def] >> fs[] >>
+      irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+      fs[machine_link_A] >> fs[wfNFA_def] >>
+      metis_tac[NF_transition_rules, NOT_IN_EMPTY]) >>
+  Induct_on ‘NF_transition’ >> simp[NF_transition_rules] >> rw[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+  simp[machine_link_A] >> goal_assum (first_assum o mp_then Any mp_tac) >>
+  simp[machine_link_def] >>
+  asm_simp_tac (srw_ss() ++ boolSimps.COND_elim_ss)[] >> metis_tac[]
+QED
 
 Theorem NF_transition_machine_link2[simp]:
   wfNFA N2 ⇒
   (NF_transition (machine_link N1 N2) (1 ⊗ q1) ts (1 ⊗ q2) ⇔
    NF_transition N2 q1 ts q2)
 Proof
-  strip_tac >> eq_tac >- metis_tac[NF_link2_1] >>
+  strip_tac >> eq_tac
+  >- (map_every qid_spec_tac [‘q1’, ‘q2’] >> Induct_on ‘NF_transition’ >>
+      rw[] >> fs[NF_transition_rules] >>
+      qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >>
+      rw[machine_link_def] >> fs[] >>
+      irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+      fs[machine_link_A] >> fs[wfNFA_def] >>
+      metis_tac[NF_transition_rules, NOT_IN_EMPTY]) >>
   Induct_on ‘NF_transition’ >> simp[NF_transition_rules] >> rw[] >>
   irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
   simp[machine_link_A] >> goal_assum (first_assum o mp_then Any mp_tac) >>
@@ -1196,7 +1220,6 @@ Proof
              metis_tac[wfNFA_def, NOT_IN_EMPTY]) >>
       metis_tac[APPEND])
 QED
-
 
 (* UP TO HERE *)
 Theorem thm_1_47:
