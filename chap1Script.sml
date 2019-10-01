@@ -5,7 +5,8 @@ open combinTheory
      nlistTheory
      numpairTheory
      pred_setTheory
-     relationTheory;
+     relationTheory
+     rich_listTheory;
 
 val _ = new_theory "chap1";
 
@@ -1221,6 +1222,28 @@ Proof
       metis_tac[APPEND])
 QED
 
+
+Theorem munge_exists:
+!ts. ?n x nlist.
+  ts = munge n x nlist /\ LENGTH x = LENGTH nlist
+Proof
+Induct_on `ts` >> simp[REPLICATE_NIL,FLAT_EQ_NIL,EVERY_MAP] (* 2 *)
+>- (map_every qexists_tac [`[]`,`[]`] >> simp[]) >>
+strip_tac >> fs[] >> Cases_on `h` (* 2 *)
+>- (map_every qexists_tac [`SUC n`,`x`,`nlist`] >> simp[]) >>
+rename [‘SOME c :: munge n cs nlist’] >> 
+map_every qexists_tac [`0`,`c :: cs`,`n:: nlist`] >>
+simp[]
+QED
+
+Theorem strip_option_munge:
+!s ns. LENGTH s = LENGTH ns ==> 
+    strip_option (FLAT (MAP (λ(c,n). SOME c::REPLICATE n NONE) (ZIP (s,ns)))) = s
+Proof
+Induct_on `s` >> simp[] >>
+rw[] >> Cases_on `ns` >> fs[]
+QED
+
 (* UP TO HERE *)
 Theorem thm_1_47:
   ∀L1 L2.
@@ -1236,7 +1259,24 @@ Proof
               ‘NF_transition (machine_link N1 N2) _ (munge eps0 _ _)’] >>
       drule_then (drule_then drule) NF_transition_machine_link_shift12 >>
       simp[] >> impl_tac >- metis_tac[wfNFA_def, SUBSET_DEF] >>
-      cheat) >> cheat
+      strip_tac >> 
+      rename [‘munge _ _ _ = ts1 ⧺ [NONE] ⧺ ts2’,
+              ‘NF_transition _ _ _ (1 *, n)’] >>
+      simp[PULL_EXISTS] >> 
+      qspec_then `ts1` (qx_choosel_then [`n1`,`s1`,`nlist1`] strip_assume_tac) munge_exists >>
+      qspec_then `ts2` (qx_choosel_then [`n2`,`s2`,`nlist2`] strip_assume_tac) munge_exists >> rw[] >>
+      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
+      simp[] >> 
+      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >> 
+      simp[] >>
+      first_x_assum (mp_tac o AP_TERM ``strip_option: num option list -> num list``) >>
+      simp[strip_option_munge]) >>
+
+
+
+
+
+ cheat
 QED
 
 val _ = export_theory();
