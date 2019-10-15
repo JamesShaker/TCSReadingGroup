@@ -1244,6 +1244,28 @@ Induct_on `s` >> simp[] >>
 rw[] >> Cases_on `ns` >> fs[]
 QED
 
+Theorem NF_transition_concat:
+  NF_transition m q0 ts1 q1 ∧ NF_transition m q1 ts2 q2 
+==> 
+  NF_transition m q0 (ts1 ++ ts2) q2
+Proof 
+  Induct_on `NF_transition` >> rw[] >> fs[] >> 
+  metis_tac[NF_transition_rules]
+QED
+
+Theorem munge_middle_none:
+∀ x1 nlist1 x2 nlist2. 
+LENGTH nlist1 = LENGTH x1 ∧ LENGTH nlist2 = LENGTH x2 
+==> 
+munge n1 x1 nlist1 ⧺ NONE::munge n2 x2 nlist2 = 
+  if x1 = [] then munge (n1+n2+1) x2 nlist2
+    else munge n1 (x1 ⧺ x2) (FRONT nlist1 ++ (LAST nlist1+1+n2::nlist2))
+Proof 
+  ho_match_mp_tac SNOC_INDUCT >> rw[Excl"APPEND_ASSOC"] 
+  >- (Induct_on `n1` >> rw[GSYM arithmeticTheory.ADD1] >> rw[arithmeticTheory.ADD_CLAUSES])
+  >> cheat
+QED 
+
 (* UP TO HERE *)
 Theorem thm_1_47:
   ∀L1 L2.
@@ -1270,12 +1292,18 @@ Proof
       goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >> 
       simp[] >>
       first_x_assum (mp_tac o AP_TERM ``strip_option: num option list -> num list``) >>
-      simp[strip_option_munge]) >>
-
-
-
-
-
+      simp[strip_option_munge]) 
+  >>  simp[PULL_EXISTS]
+  >>  rename [`machine_link N1 N2`, `NF_transition N1 _ (munge n1 x1 nlist1) q1`,
+  `NF_transition N2 _ (munge n2 x2 nlist2) q2`]
+  >>  `NF_transition (machine_link N1 N2) (0 ⊗ N1.q0) (munge n1 x1 nlist1) (0 ⊗ q1)` 
+    by simp[]
+  >>  `NF_transition (machine_link N1 N2) (1 ⊗ N2.q0) (munge n2 x2 nlist2) (1 ⊗ q2)` 
+    by simp[]
+  >>  `NF_transition (machine_link N1 N2) (0 ⊗ q1) (NONE::munge n2 x2 nlist2) (1 ⊗ q2)` 
+    by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >> qexists_tac `1 ⊗ N2.q0`
+          >> simp[] >> simp[machine_link_def])
+  >>  drule_all NF_transition_concat >> 
  cheat
 QED
 
