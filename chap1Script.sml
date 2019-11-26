@@ -318,13 +318,11 @@ QED
 
 Definition machine_union_def:
   machine_union M1 M2 =
-    <|Q  := {npair r1 r2 | r1 ∈ M1.Q ∧ r2 ∈ M2.Q };
+    <|Q  := {r1 ⊗ r2 | r1 ∈ M1.Q ∧ r2 ∈ M2.Q };
       A  := M1.A ∪ M2.A;
-      tf := λs c. npair (M1.tf (nfst s) c)
-                        (M2.tf (nsnd s) c);
-      q0 := npair M1.q0 M2.q0;
-      C  := {npair r1 r2 | (r1 ∈ M1.C ∧ r2 ∈ M2.Q) ∨
-                           (r1 ∈ M1.Q ∧ r2 ∈ M2.C)};
+      tf := λs c. M1.tf (nfst s) c ⊗ M2.tf (nsnd s) c;
+      q0 := M1.q0 ⊗ M2.q0;
+      C  := {r1 ⊗ r2 | (r1 ∈ M1.C ∧ r2 ∈ M2.Q) ∨ (r1 ∈ M1.Q ∧ r2 ∈ M2.C)};
     |>
 End
 
@@ -355,7 +353,7 @@ Proof
       wfFA_machine_union] >>
   qabbrev_tac ‘MU = machine_union M1 M2’ >>
   rw[accepts_def] >>
-  ‘(MU.A = M1.A ∪ M2.A) ∧ (MU.q0 = npair M1.q0 M2.q0)’
+  ‘(MU.A = M1.A ∪ M2.A) ∧ (MU.q0 = M1.q0 ⊗ M2.q0)’
     by rw[machine_union_def, Abbr ‘MU’] >>
   simp[] >>
   ‘∀ q1 q2. q1 ∈ M1.Q ∧ q2 ∈ M2.Q
@@ -366,7 +364,7 @@ Proof
   Induct_on ‘x’
   >- (rw[Abbr ‘MU’, runMachine_def,machine_union_def])
   >- (rw[runMachine_def, DISJ_IMP_THM, FORALL_AND_THM] >>
-      ‘MU.tf (npair q1 q2) h = npair (M1.tf q1 h) (M2.tf q2 h)’
+      ‘MU.tf (q1 ⊗ q2) h = M1.tf q1 h ⊗ M2.tf q2 h’
         by rw[Abbr ‘MU’, machine_union_def] >>
       first_x_assum (fn x => SUBST_TAC [x]) >>
       ‘M1.tf q1 h ∈ M1.Q ∧ M2.tf q2 h ∈ M2.Q’
@@ -1069,35 +1067,35 @@ QED
 
 Definition machine_link_def:
   machine_link N1 N2 =
-    <|Q  := {npair 0 r1 | r1 ∈ N1.Q} ∪
-            {npair 1 r2 | r2 ∈ N2.Q};
+    <|Q  := {0 ⊗ r1 | r1 ∈ N1.Q} ∪ {1 ⊗ r2 | r2 ∈ N2.Q};
       A  := N1.A ∪ N2.A;
       tf := λs copt.
               if nfst s = 0 then
                 let
-                  frs = {npair 0 s' | s' ∈ N1.tf (nsnd s) copt}
+                  frs = { 0 ⊗ s' | s' ∈ N1.tf (nsnd s) copt}
                 in
-                  if nsnd s ∈ N1.C ∧ copt = NONE then
-                    frs ∪ {npair 1 N2.q0}
-                  else
-                    frs
+                  if nsnd s ∈ N1.C ∧ copt = NONE then frs ∪ {1 ⊗ N2.q0}
+                  else frs
               else
-                {npair 1 s' | s' ∈ N2.tf (nsnd s) copt};
-      q0 := npair 0 N1.q0;
-      C  := {npair 1 r2 | r2 ∈ N2.C };
+                {1 ⊗ s' | s' ∈ N2.tf (nsnd s) copt};
+      q0 := 0 ⊗ N1.q0;
+      C  := {1 ⊗ r2 | r2 ∈ N2.C };
     |>
 End
 
+val _ = set_mapped_fixity {term_name = "machine_link",
+                           fixity = Infixl 500,
+                           tok = "⌢"}
+
 Theorem machine_link_q0[simp]:
-  (machine_link N1 N2).q0 = 0 ⊗ N1.q0
+  (N1 ⌢ N2).q0 = 0 ⊗ N1.q0
 Proof
   simp[machine_link_def]
 QED
 
 Theorem wfNFA_machine_link:
   ∀N1 N2.
-    wfNFA N1 ∧ wfNFA N2 ⇒
-    wfNFA (machine_link N1 N2)
+    wfNFA N1 ∧ wfNFA N2 ⇒ wfNFA (N1 ⌢ N2)
 Proof
   rw[wfNFA_def,machine_link_def]
   >- (qmatch_abbrev_tac ‘FINITE s’ >>
@@ -1113,7 +1111,7 @@ Proof
 QED
 
 Theorem machine_link_tf0:
-  (machine_link N1 N2).tf (0 ⊗ n1) c =
+  (N1 ⌢ N2).tf (0 ⊗ n1) c =
    if n1 ∈ N1.C ∧ c = NONE then
       {0 ⊗ n | n ∈ N1.tf n1 NONE} ∪ {1 ⊗ N2.q0}
     else {0 ⊗ n | n ∈ N1.tf n1 c}
@@ -1122,20 +1120,19 @@ Proof
 QED
 
 Theorem machine_link_A:
-  (machine_link N1 N2).A = N1.A ∪ N2.A
+  (N1 ⌢ N2).A = N1.A ∪ N2.A
 Proof
   simp[machine_link_def]
 QED
 
 Theorem machine_link_C[simp]:
-  (machine_link N1 N2).C = { 1 ⊗ n | n ∈ N2.C }
+  (N1 ⌢ N2).C = { 1 ⊗ n | n ∈ N2.C }
 Proof
   simp[machine_link_def]
 QED
 
 Theorem NF_transition_link2_E:
-  ∀q1 n. NF_transition (machine_link N1 N2) (1 ⊗ q1) ts n ⇒
-         ∃q2. n = 1 ⊗ q2
+  ∀q1 n. NF_transition (N1 ⌢ N2) (1 ⊗ q1) ts n ⇒ ∃q2. n = 1 ⊗ q2
 Proof
   Induct_on ‘NF_transition’ >> simp[] >> rw[] >> first_x_assum irule >>
   qpat_x_assum ‘_ ∈ _.tf _ _’ mp_tac >> simp[machine_link_def] >>
@@ -1143,15 +1140,14 @@ Proof
 QED
 
 Theorem NF_transition_link21_impossible[simp]:
-  ¬NF_transition (machine_link N1 N2) (1 ⊗ q1) ts (0 ⊗ q2)
+  ¬NF_transition (N1 ⌢ N2) (1 ⊗ q1) ts (0 ⊗ q2)
 Proof
   strip_tac >> drule NF_transition_link2_E >> simp[]
 QED
 
 Theorem NF_transition_machine_link1[simp]:
   wfNFA N1 ⇒
-  (NF_transition (machine_link N1 N2) (0 ⊗ q1) ts (0 ⊗ q2) ⇔
-   NF_transition N1 q1 ts q2)
+  (NF_transition (N1 ⌢ N2) (0 ⊗ q1) ts (0 ⊗ q2) ⇔ NF_transition N1 q1 ts q2)
 Proof
   strip_tac >> eq_tac
   >- (map_every qid_spec_tac [‘q1’, ‘q2’] >> Induct_on ‘NF_transition’ >>
@@ -1170,8 +1166,7 @@ QED
 
 Theorem NF_transition_machine_link2[simp]:
   wfNFA N2 ⇒
-  (NF_transition (machine_link N1 N2) (1 ⊗ q1) ts (1 ⊗ q2) ⇔
-   NF_transition N2 q1 ts q2)
+  (NF_transition (N1 ⌢ N2) (1 ⊗ q1) ts (1 ⊗ q2) ⇔ NF_transition N2 q1 ts q2)
 Proof
   strip_tac >> eq_tac
   >- (map_every qid_spec_tac [‘q1’, ‘q2’] >> Induct_on ‘NF_transition’ >>
@@ -1190,7 +1185,7 @@ QED
 
 Theorem NF_transition_machine_link_shift12:
   wfNFA N1 ∧ wfNFA N2 ∧
-  NF_transition (machine_link N1 N2) q0 ts q ∧
+  NF_transition (N1 ⌢ N2) q0 ts q ∧
   q0 ∈ { 0 ⊗ n1 | n1 ∈ N1.Q } ∧ q ∈ { 1 ⊗ n2 | n2 ∈ N2.Q }
 ⇒
   ∃q1 ts1 ts2.
@@ -1291,7 +1286,8 @@ Proof
   >> map_every qid_spec_tac [`n2`, `n1`, `xnlist2`, `xnlist1`]
   >> ho_match_mp_tac SNOC_INDUCT >> rw[Excl"APPEND_ASSOC"]
   >> Cases_on`xnlist1` >> fs[]
-  >> rename [`SOME (FST cn)`] >> Cases_on`cn` >> simp[rich_listTheory.REPLICATE_APPEND]
+  >> rename [`SOME (FST cn)`] >> Cases_on`cn` >>
+  simp[rich_listTheory.REPLICATE_APPEND]
 QED
 
 Theorem WF_IND_I:
@@ -1302,7 +1298,7 @@ QED
 
 
 Theorem munge_inj[simp]:
- ∀n1 l1 n2 l2. munge n1 l1 = munge n2 l2 <=> n1=n2 ∧ l1 = l2
+ ∀n1 l1 n2 l2. munge n1 l1 = munge n2 l2 <=> n1 = n2 ∧ l1 = l2
 Proof
   ‘∀p n2 l2 n1 l1.
      p = (n1,l1) ⇒ (munge n1 l1 = munge n2 l2 ⇔ n1 = n2 ∧ l1 = l2)’
@@ -1351,16 +1347,15 @@ QED
 
 Theorem thm_1_47:
   ∀L1 L2.
-    regularLanguage L1 ∧ regularLanguage L2 ⇒
-    regularLanguage (concat L1 L2)
+    regularLanguage L1 ∧ regularLanguage L2 ⇒ regularLanguage (concat L1 L2)
 Proof
   rw[regularLanguage_NFA_thm] >>
   rename1 ‘recogLangN _ = concat (_ N1) (_ N2)’ >>
-  qexists_tac ‘machine_link N1 N2’ >>
+  qexists_tac ‘N1 ⌢ N2’ >>
   rw[wfNFA_machine_link,EXTENSION,concat_def, recogLangN_def,
      Sipser_ND_Accepts_NF_transition, EQ_IMP_THM]
   >- (rename [‘LENGTH epslist = LENGTH s’,
-              ‘NF_transition (machine_link N1 N2) _ (munge eps0 _)’] >>
+              ‘NF_transition (N1 ⌢ N2) _ (munge eps0 _)’] >>
       drule_then (drule_then drule) NF_transition_machine_link_shift12 >>
       simp[] >> impl_tac >- metis_tac[wfNFA_def, SUBSET_DEF] >>
       strip_tac >>
@@ -1381,14 +1376,13 @@ Proof
   rename [‘machine_link N1 N2’,
           ‘NF_transition N1 _ (munge n1 (ZIP (s1,nlist1))) q1’,
           ‘NF_transition N2 _ (munge n2 (ZIP (s2,nlist2))) q2’] >>
-  ‘NF_transition (machine_link N1 N2) (0 ⊗ N1.q0)
-                 (munge n1 (ZIP (s1,nlist1))) (0 ⊗ q1)’ by simp[] >>
-  ‘NF_transition (machine_link N1 N2) (1 ⊗ N2.q0)
-                 (munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’ by simp[] >>
-  ‘NF_transition (machine_link N1 N2) (0 ⊗ q1)
-                 (NONE::munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’
-    by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >>
-        qexists_tac `1 ⊗ N2.q0` >> simp[] >> simp[machine_link_def]) >>
+  ‘NF_transition (N1 ⌢ N2) (0 ⊗ N1.q0) (munge n1 (ZIP (s1,nlist1))) (0 ⊗ q1)’
+     by simp[] >>
+  ‘NF_transition (N1 ⌢ N2) (1 ⊗ N2.q0) (munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’
+     by simp[] >>
+  ‘NF_transition (N1 ⌢ N2) (0 ⊗ q1) (NONE::munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’
+     by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >>
+         qexists_tac `1 ⊗ N2.q0` >> simp[] >> simp[machine_link_def]) >>
   drule_all NF_transition_concat >> rw[munge_middle_none]
   >- (`s1 = [] ∧ nlist1 = []` by metis_tac[ZIP_EQ_NIL] >> rw[] >> metis_tac[])>>
   simp[PULL_EXISTS] >>
