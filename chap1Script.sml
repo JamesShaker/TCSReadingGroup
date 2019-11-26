@@ -959,7 +959,7 @@ QED
 Theorem strip_option_munge:
   ∀cs nlist. LENGTH cs = LENGTH nlist ==> strip_option (munge n (ZIP (cs,nlist))) = cs
 Proof
-  simp[munge_def,strip_option_flat,MAP_MAP_o,combinTheory.o_DEF,pairTheory.UNCURRY] >> 
+  simp[munge_def,strip_option_flat,MAP_MAP_o,combinTheory.o_DEF,pairTheory.UNCURRY] >>
   Induct_on`cs` >> simp[] >> Cases_on`nlist` >> simp[]
 QED
 
@@ -983,7 +983,7 @@ Proof
                   simp[MEM_FLAT,MEM_munge,MEM_ZIP] >>
                   metis_tac[]) >>
             fs[]) >> fs[] >>
-      ‘N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q ∧ strip_option s = cs’ suffices_by metis_tac[] >> 
+      ‘N.q0 ∈ {N.q0} ∧ {N.q0} ⊆ N.Q ∧ strip_option s = cs’ suffices_by metis_tac[] >>
       fs[wfNFA_def,Abbr`s`,strip_option_munge])
 
   >> rw[Sipser_Accepts_runMachine_coincide, Sipser_ND_Accepts_NF_transition,
@@ -1247,52 +1247,52 @@ Proof
   Induct_on `ts` >> csimp[ZIP_EQ_NIL] >>
   strip_tac >> fs[] >> Cases_on `h` (* 2 *)
   >- (map_every qexists_tac [`SUC n`,`xnlist`, `cs`] >> simp[munge_SUC]) >>
-  rename [‘SOME c :: munge n (ZIP (cs, xnlist))’] >> 
+  rename [‘SOME c :: munge n (ZIP (cs, xnlist))’] >>
   map_every qexists_tac [`0`,`n::xnlist`, `c::cs`] >>
   simp[]
 QED
 
 Theorem NF_transition_concat:
-  NF_transition m q0 ts1 q1 ∧ NF_transition m q1 ts2 q2 
-  ==> 
+  NF_transition m q0 ts1 q1 ∧ NF_transition m q1 ts2 q2
+  ==>
   NF_transition m q0 (ts1 ++ ts2) q2
-Proof 
-  Induct_on `NF_transition` >> rw[] >> fs[] >> 
+Proof
+  Induct_on `NF_transition` >> rw[] >> fs[] >>
   metis_tac[NF_transition_rules]
 QED
 
 Theorem front_cons_snoc[simp]:
 ∀h t x.  FRONT (h::(t++[x])) = h::t
-Proof 
+Proof
   Induct_on`t` >> simp[]
 QED
 
 Theorem replicate_single[simp]:
   REPLICATE 1 e = [e]
-Proof 
+Proof
   rw[rich_listTheory.REPLICATE_compute]
 QED
 
 Theorem replicate_snoc[simp]:
 ∀r.  REPLICATE r NONE ⧺ [NONE] = REPLICATE (r + 1) NONE
-Proof 
+Proof
    Induct_on `r` >> rw[GSYM arithmeticTheory.ADD1] >> rw[arithmeticTheory.ADD_CLAUSES]
-QED 
+QED
 
 Theorem munge_middle_none:
-∀ xnlist1 xnlist2 n1 n2. 
-  munge n1 xnlist1 ⧺ NONE::munge n2 xnlist2 = 
+∀ xnlist1 xnlist2 n1 n2.
+  munge n1 xnlist1 ⧺ NONE::munge n2 xnlist2 =
     if xnlist1 = [] then munge (n1+n2+1) xnlist2
-    else munge n1 (FRONT xnlist1 ++ 
+    else munge n1 (FRONT xnlist1 ++
                    (FST $ LAST xnlist1, (SND $ LAST xnlist1) + 1 + n2)::xnlist2)
-Proof      
-  rw[munge_def,rich_listTheory.REPLICATE_APPEND] 
+Proof
+  rw[munge_def,rich_listTheory.REPLICATE_APPEND]
   >> pop_assum mp_tac
   >> map_every qid_spec_tac [`n2`, `n1`, `xnlist2`, `xnlist1`]
-  >> ho_match_mp_tac SNOC_INDUCT >> rw[Excl"APPEND_ASSOC"] 
-  >> Cases_on`xnlist1` >> fs[] 
-  >> rename [`SOME (FST cn)`] >> Cases_on`cn` >> simp[rich_listTheory.REPLICATE_APPEND] 
-QED 
+  >> ho_match_mp_tac SNOC_INDUCT >> rw[Excl"APPEND_ASSOC"]
+  >> Cases_on`xnlist1` >> fs[]
+  >> rename [`SOME (FST cn)`] >> Cases_on`cn` >> simp[rich_listTheory.REPLICATE_APPEND]
+QED
 
 Theorem WF_IND_I:
   ∀R P. WF R ∧ (∀x. (∀y. R y x ⇒ P y) ⇒ P x) ⇒ ∀x. P x
@@ -1363,17 +1363,17 @@ Proof
               ‘NF_transition (machine_link N1 N2) _ (munge eps0 _)’] >>
       drule_then (drule_then drule) NF_transition_machine_link_shift12 >>
       simp[] >> impl_tac >- metis_tac[wfNFA_def, SUBSET_DEF] >>
-      strip_tac >> 
+      strip_tac >>
       rename [‘munge _ _ = ts1 ⧺ [NONE] ⧺ ts2’,
               ‘NF_transition _ _ _ (1 *, n)’] >>
-      simp[PULL_EXISTS] >> 
+      simp[PULL_EXISTS] >>
       qspec_then `ts1`
          (qx_choosel_then [`n1`,`s1`,`nlist1`] strip_assume_tac) munge_exists >>
       qspec_then `ts2`
          (qx_choosel_then [`n2`,`s2`,`nlist2`] strip_assume_tac) munge_exists >>      rw[] >>
       goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
-      simp[] >> 
-      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >> 
+      simp[] >>
+      goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
       simp[] >>
       first_x_assum
         (mp_tac o AP_TERM “strip_option: num option list -> num list”) >>
@@ -1395,9 +1395,9 @@ Proof
   map_every qexists_tac [
     ‘n1’, ‘FRONT nlist1 ++ (n2 + LAST nlist1 + 1) :: nlist2’, ‘q2’
   ] >> rw[]
-  >- (Cases_on`nlist1 = []` 
-      >- (fs[] >> rw[] >> fs[]) 
-      >> rw[rich_listTheory.LENGTH_FRONT] 
+  >- (Cases_on`nlist1 = []`
+      >- (fs[] >> rw[] >> fs[])
+      >> rw[rich_listTheory.LENGTH_FRONT]
       >> Cases_on `LENGTH s1` >> simp[] >> fs[]) >> pop_assum mp_tac >>
   qmatch_abbrev_tac`NF_transition _ _ l1 _ ==> NF_transition _ _ l2 _` >>
   `l1 = l2` suffices_by fs[] >> simp[Abbr`l1`,Abbr`l2`] >>
