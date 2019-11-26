@@ -710,25 +710,40 @@ Proof
   irule SUBSET_FINITE_I >> qexists_tac ‘N.Q’ >> fs[wfNFA_def]
 QED
 
+Definition munge_def:
+   munge n cnlist =
+    REPLICATE n NONE ++ FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) cnlist)
+End
+
+Theorem munge_SUC:
+  munge (SUC n) cs = NONE :: munge n cs
+Proof
+  simp[munge_def]
+QED
+
+Theorem munge0NIL[simp]:
+  munge 0 [] = []
+Proof
+  simp[munge_def]
+QED
+
 Theorem Sipser_ND_Accepts_NF_transition:
   Sipser_ND_Accepts a cs ⇔
   ∃q n nlist.
      LENGTH nlist = LENGTH cs ∧
-     NF_transition a a.q0
-       (REPLICATE n NONE ++
-        FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) (ZIP (cs,nlist))))
-     q ∧ q ∈ a.C
+     NF_transition a a.q0 (munge n (ZIP (cs,nlist))) q ∧ q ∈ a.C
 Proof
   simp[Sipser_ND_Accepts_def] >> qspec_tac(‘a.q0’, ‘s0’) >> rw[] >>
   eq_tac >> rw[]
-  >- (rpt (pop_assum mp_tac) >> map_every qid_spec_tac [‘ss’, ‘s0’] >>
-      Induct_on ‘cs'’ >> simp[]
+  >- (rpt (pop_assum mp_tac) >> qid_spec_tac ‘ss’ >>
+      rename [‘strip_option cs’] >> Induct_on ‘cs’ >> simp[]
       >- (Cases >> simp[] >> rw[] >>
           map_every qexists_tac [‘h’, ‘0’] >>
           simp[NF_transition_rules]) >>
       rw[] >> Cases_on ‘ss’ >> fs[] >>
-      ‘t ≠ []’ by (strip_tac >> fs[]) >>
-      ‘LENGTH t = LENGTH cs' + 1’ by fs[arithmeticTheory.ADD1] >>
+      rename [‘NF_transition _ s0 _ _’, ‘LAST (s0::ss) ∈ a.C’] >>
+      ‘ss ≠ []’ by (strip_tac >> fs[]) >>
+      ‘LENGTH ss = LENGTH cs + 1’ by fs[arithmeticTheory.ADD1] >>
       fs[indexedListsTheory.LT_SUC, DISJ_IMP_THM, FORALL_AND_THM, PULL_EXISTS,
          arithmeticTheory.ADD_CLAUSES] >>
       ‘∀x. LAST (x :: t) = LAST t’ by simp[listTheory.LAST_CONS_cond] >> fs[] >>
@@ -921,9 +936,6 @@ Proof
   simp[] >> metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”]
 QED
 
-Overload munge = “λn cnlist. 
-    REPLICATE n NONE ++ FLAT (MAP (λ(c,n). SOME c :: REPLICATE n NONE) cnlist)”
-
 Theorem NF_transition_prepend_NONEs:
   ∀n0 n cnlist.
     NF_transition N q0 (REPLICATE n0 NONE) q1 ∧
@@ -937,7 +949,7 @@ Proof
   first_x_assum (qspec_then ‘nn’ mp_tac) >> simp[] >>
   disch_then (drule_then assume_tac) >>
   simp[arithmeticTheory.ADD_CLAUSES] >>
-  metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”]
+  metis_tac[NF_transition_rules, TypeBase.distinct_of “:α option”, munge_SUC]
 QED
 
 Theorem NFA_SUBSET_DFA:
