@@ -1294,21 +1294,59 @@ Proof
   >> rename [`SOME (FST cn)`] >> Cases_on`cn` >> simp[rich_listTheory.REPLICATE_APPEND] 
 QED 
 
-
-
-(* UP TO HERE *)
-
-Theorem munge_inj:
- ∀n1 n2 l1 l2. munge n1 l1 = munge n2 l2 <=> n1=n2 ∧ l1 = l2
+Theorem WF_IND_I:
+  ∀R P. WF R ∧ (∀x. (∀y. R y x ⇒ P y) ⇒ P x) ⇒ ∀x. P x
 Proof
-  simp[EQ_IMP_THM] >> Induct_on`l1` >> simp[] 
-  >- (Cases_on`l2` >> simp[] 
-      >- (simp[munge_def] >> Induct_on`n1` >> simp[] >> Cases_on`n2` >> simp[]) >>
-      rpt strip_tac >> Cases_on`h` >> fs[] >> rename[`(c,n)`] >> pop_assum (mp_tac o Q.AP_TERM`MEM (SOME c)`) >> simp[MEM_munge] >> metis_tac[] ) >>
-  Cases >> simp[] >> rpt GEN_TAC >> Cases_on`n1` >> simp[munge_SUC,munge0CONS]
-  >- (Cases_on`n2` >> simp[] >- (Cases_on`l2` >> simp[] >> Cases_on`h` >> simp[munge0CONS] >> metis_tac[]) >>
-      simp[munge_def] ) >>
+  metis_tac[relationTheory.WF_INDUCTION_THM]
+QED
 
+
+Theorem munge_inj[simp]:
+ ∀n1 l1 n2 l2. munge n1 l1 = munge n2 l2 <=> n1=n2 ∧ l1 = l2
+Proof
+  ‘∀p n2 l2 n1 l1.
+     p = (n1,l1) ⇒ (munge n1 l1 = munge n2 l2 ⇔ n1 = n2 ∧ l1 = l2)’
+     suffices_by simp[] >>
+  ho_match_mp_tac WF_IND_I >> simp[GSYM RIGHT_FORALL_IMP_THM] >>
+  qexists_tac ‘inv_image ($< LEX $<) (λ(n,l). (LENGTH l, n))’ >>
+  conj_tac
+  >- simp[relationTheory.WF_inv_image, pairTheory.WF_LEX] >>
+  simp[pairTheory.LEX_DEF] >> rw[] >>
+  Cases_on ‘n1’ >> simp[]
+  >- (reverse (Cases_on ‘n2’) >> simp[munge_SUC]
+      >- (Cases_on ‘l1’ >> simp[] >> Cases_on ‘h’ >> simp[munge0CONS]) >>
+      map_every Cases_on [‘l1’, ‘l2’] >> simp[] >>
+      rename [‘munge 0 (h1::t1) = munge 0 (h2::t2)’] >>
+      map_every Cases_on [‘h1’, ‘h2’] >> simp[munge0CONS] >> metis_tac[]) >>
+  Cases_on ‘n2’ >> simp[munge_SUC] >>
+  Cases_on ‘l2’ >> simp[] >> Cases_on ‘h’ >> simp[munge0CONS]
+QED
+
+Theorem NON_NIL_FRONT:
+  t ≠ [] ⇒ FRONT(h::t) = h::FRONT t
+Proof
+  Cases_on ‘t’ >> simp[]
+QED
+
+Theorem FRONT_ZIP:
+  ∀l1 l2. l1 ≠ [] ∧ LENGTH l1 = LENGTH l2 ⇒
+          FRONT (ZIP (l1,l2)) = ZIP (FRONT l1, FRONT l2)
+Proof
+  Induct >> simp[] >> Cases_on ‘l2’ >> simp[] >>
+  Cases_on ‘l1 = []’ >> simp[] >> fs[] >>
+  rename [‘LENGTH l1 = LENGTH l2’] >> rw[] >>
+  ‘l2 ≠ []’ by (strip_tac >> fs[]) >>
+  simp[NON_NIL_FRONT, ZIP_EQ_NIL]
+QED
+
+Theorem LAST_ZIP:
+  ∀l1 l2. l1 ≠ [] ∧ LENGTH l1 = LENGTH l2 ⇒
+          LAST (ZIP (l1, l2)) = (LAST l1, LAST l2)
+Proof
+  Induct >> simp[] >> Cases_on ‘l2’ >> simp[] >>
+  Cases_on ‘l1 = []’ >> simp[] >> fs[] >> rw[] >>
+  rename [‘LENGTH l1 = LENGTH l2’] >> ‘l2 ≠ []’ by (strip_tac >> fs[]) >>
+  simp[LAST_CONS_cond, ZIP_EQ_NIL]
 QED
 
 Theorem thm_1_47:
@@ -1329,37 +1367,45 @@ Proof
       rename [‘munge _ _ = ts1 ⧺ [NONE] ⧺ ts2’,
               ‘NF_transition _ _ _ (1 *, n)’] >>
       simp[PULL_EXISTS] >> 
-      qspec_then `ts1` (qx_choosel_then [`n1`,`s1`,`nlist1`] strip_assume_tac) munge_exists >>
-      qspec_then `ts2` (qx_choosel_then [`n2`,`s2`,`nlist2`] strip_assume_tac) munge_exists >> rw[] >>
+      qspec_then `ts1`
+         (qx_choosel_then [`n1`,`s1`,`nlist1`] strip_assume_tac) munge_exists >>
+      qspec_then `ts2`
+         (qx_choosel_then [`n2`,`s2`,`nlist2`] strip_assume_tac) munge_exists >>      rw[] >>
       goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >>
       simp[] >> 
       goal_assum (first_assum o mp_then (Pos (el 3)) mp_tac) >> 
       simp[] >>
-      first_x_assum (mp_tac o AP_TERM ``strip_option: num option list -> num list``) >>
-      simp[strip_option_munge]) 
-  >>  simp[PULL_EXISTS]
-  >>  rename [`machine_link N1 N2`, `NF_transition N1 _ (munge n1 (ZIP (s1,nlist1))) q1`,
-  `NF_transition N2 _ (munge n2 (ZIP (s2,nlist2))) q2`]
-  >>  `NF_transition (machine_link N1 N2) (0 ⊗ N1.q0) (munge n1 (ZIP (s1,nlist1))) (0 ⊗ q1)` 
-    by simp[]
-  >>  `NF_transition (machine_link N1 N2) (1 ⊗ N2.q0) (munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)` 
-    by simp[]
-  >>  `NF_transition (machine_link N1 N2) (0 ⊗ q1) (NONE::munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)` 
-    by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >> qexists_tac `1 ⊗ N2.q0`
-          >> simp[] >> simp[machine_link_def])
-  >>  drule_all NF_transition_concat 
-  >> rw[munge_middle_none] 
-  >- (`s1 = [] ∧ nlist1 = []` by metis_tac[ZIP_EQ_NIL] >> rw[] >> metis_tac[])
-  >> map_every qexists_tac [`n1`, 
-      `FRONT nlist1 ++ (n2 + LAST nlist1 + 1) :: nlist2`, `q2`]
-  >> rw[]
+      first_x_assum
+        (mp_tac o AP_TERM “strip_option: num option list -> num list”) >>
+      simp[strip_option_munge]) >>
+  rename [‘machine_link N1 N2’,
+          ‘NF_transition N1 _ (munge n1 (ZIP (s1,nlist1))) q1’,
+          ‘NF_transition N2 _ (munge n2 (ZIP (s2,nlist2))) q2’] >>
+  ‘NF_transition (machine_link N1 N2) (0 ⊗ N1.q0)
+                 (munge n1 (ZIP (s1,nlist1))) (0 ⊗ q1)’ by simp[] >>
+  ‘NF_transition (machine_link N1 N2) (1 ⊗ N2.q0)
+                 (munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’ by simp[] >>
+  ‘NF_transition (machine_link N1 N2) (0 ⊗ q1)
+                 (NONE::munge n2 (ZIP (s2,nlist2))) (1 ⊗ q2)’
+    by (irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >> simp[] >>
+        qexists_tac `1 ⊗ N2.q0` >> simp[] >> simp[machine_link_def]) >>
+  drule_all NF_transition_concat >> rw[munge_middle_none]
+  >- (`s1 = [] ∧ nlist1 = []` by metis_tac[ZIP_EQ_NIL] >> rw[] >> metis_tac[])>>
+  simp[PULL_EXISTS] >>
+  map_every qexists_tac [
+    ‘n1’, ‘FRONT nlist1 ++ (n2 + LAST nlist1 + 1) :: nlist2’, ‘q2’
+  ] >> rw[]
   >- (Cases_on`nlist1 = []` 
       >- (fs[] >> rw[] >> fs[]) 
       >> rw[rich_listTheory.LENGTH_FRONT] 
-      >> Cases_on `LENGTH s1` >> simp[] >> fs[])
-  >> pop_assum mp_tac >> 
+      >> Cases_on `LENGTH s1` >> simp[] >> fs[]) >> pop_assum mp_tac >>
   qmatch_abbrev_tac`NF_transition _ _ l1 _ ==> NF_transition _ _ l2 _` >>
-  `l1 = l2` suffices_by fs[] >> simp[Abbr`l1`,Abbr`l2`] >> 
+  `l1 = l2` suffices_by fs[] >> simp[Abbr`l1`,Abbr`l2`] >>
+  ‘s1 ≠ [] ∧ nlist1 ≠ []’ by (rfs[ZIP_EQ_NIL] >> strip_tac >> fs[]) >>
+  ‘0 < LENGTH nlist1’ by (Cases_on ‘nlist1’ >> fs[]) >>
+  simp[FRONT_ZIP, LAST_ZIP, GSYM ZIP_APPEND, LENGTH_FRONT] >>
+  simp[GSYM ZIP_SNOC, Excl "LIST_EQ_SIMP_CONV",LENGTH_FRONT,GSYM SNOC_APPEND] >>
+  simp[SNOC_APPEND, APPEND_FRONT_LAST]
 QED
 
 val _ = export_theory();
