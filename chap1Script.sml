@@ -340,7 +340,8 @@ Proof
   >- metis_tac[]
 QED
 
-Theorem regular_closed_under_union:
+(* regular languages closed under union *)
+Theorem thm_1_25:
   ∀ lA lB. regularLanguage lA ∧
            regularLanguage lB ⇒
            regularLanguage (lA ∪ lB)
@@ -1058,7 +1059,7 @@ Proof
       metis_tac[NFA_SUBSET_DFA,wfFA_NFA2DFA])
 QED
 
-Theorem regularLanguage_NFA_thm:
+Theorem corollary_1_40:
   ∀L.
     regularLanguage L ⇔ ∃M. wfNFA M ∧ recogLangN M = L
 Proof
@@ -1345,11 +1346,12 @@ Proof
   simp[LAST_CONS_cond, ZIP_EQ_NIL]
 QED
 
+(* regular languages are closed under concatenation *)
 Theorem thm_1_47:
   ∀L1 L2.
     regularLanguage L1 ∧ regularLanguage L2 ⇒ regularLanguage (concat L1 L2)
 Proof
-  rw[regularLanguage_NFA_thm] >>
+  rw[corollary_1_40] >>
   rename1 ‘recogLangN _ = concat (_ N1) (_ N2)’ >>
   qexists_tac ‘N1 ⌢ N2’ >>
   rw[wfNFA_machine_link,EXTENSION,concat_def, recogLangN_def,
@@ -1401,5 +1403,95 @@ Proof
   simp[GSYM ZIP_SNOC, Excl "LIST_EQ_SIMP_CONV",LENGTH_FRONT,GSYM SNOC_APPEND] >>
   simp[SNOC_APPEND, APPEND_FRONT_LAST]
 QED
+
+(* ----------------------------------------------------------------------
+    Regular languages closed under the Kleene star operator
+   ---------------------------------------------------------------------- *)
+
+Definition machine_star_def:
+  machine_star N =
+   <|
+     Q :=  IMAGE SUC N.Q ∪ {0} ;
+     A :=  N.A ;
+     q0 := 0 ;
+     tf := λs0 copt.
+             case s0 of
+               0 => if copt = NONE then {SUC N.q0} else ∅
+             | SUC s0' =>
+                if copt = NONE ∧ s0' ∈ N.C then
+                  IMAGE SUC (N.tf s0' copt) ∪ {0}
+                else IMAGE SUC (N.tf s0' copt) ;
+     C := {0} ∪ IMAGE SUC N.C;
+   |>
+End
+
+Theorem wfNFA_machine_star:
+  wfNFA N ⇒ wfNFA (machine_star N)
+Proof
+  simp[wfNFA_def, machine_star_def, DISJ_IMP_THM, PULL_EXISTS,
+       AllCaseEqs()] >>
+  rw[] >> simp[]
+  >- fs[SUBSET_DEF, PULL_EXISTS]
+  >- (simp[] >> fs[SUBSET_DEF, PULL_EXISTS] >> metis_tac[])
+  >- (rw[] >> fs[SUBSET_DEF, PULL_EXISTS] >> metis_tac[])
+  >- metis_tac[TypeBase.nchotomy_of “:num”]
+QED
+
+Theorem machine_star_accepting_states[simp]:
+  (machine_star N).C = {0} ∪ { SUC n | n ∈ N.C }
+Proof
+  simp[machine_star_def, EXTENSION]
+QED
+
+Theorem machine_star_alphabet[simp]:
+  (machine_star N).A = N.A
+Proof
+  simp[machine_star_def]
+QED
+
+Theorem machine_star_tf0[simp]:
+  (machine_star N).tf 0 NONE = {SUC N.q0} ∧
+  (machine_star N).tf 0 (SOME c) = ∅
+Proof
+  simp[machine_star_def]
+QED
+
+Theorem machine_star_tfSUC:
+  (machine_star N).tf (SUC q0) (SOME c) =
+    {SUC q | q ∈ N.tf q0 (SOME c)} ∧
+  (machine_star N).tf (SUC q0) NONE =
+    {SUC q | q ∈ N.tf q0 NONE} ∪
+    (if q0 ∈ N.C then {0} else ∅)
+Proof
+  simp[machine_star_def, EXTENSION] >> rw[]
+QED
+
+Definition Lpow_def:
+  Lpow lang 0 = {[]} ∧
+  Lpow lang (SUC n) = concat lang (Lpow lang n)
+End
+
+Theorem star_Lpow:
+  star L = BIGUNION (IMAGE (Lpow L) UNIV)
+Proof
+  simp[Once EXTENSION, star_def, PULL_EXISTS] >> qx_gen_tac ‘s’ >>
+  eq_tac >> rw[]
+  >- (qexists_tac ‘LENGTH ls’ >> simp[] >>
+      Induct_on ‘ls’ >> simp[Lpow_def, DISJ_IMP_THM, FORALL_AND_THM]>>
+      simp[concat_def] >> metis_tac[]) >>
+  rename [‘s ∈ Lpow L n’] >> pop_assum mp_tac >> qid_spec_tac ‘s’ >>
+  Induct_on ‘n’ >> simp[Lpow_def] >> rw[]
+  >- (qexists_tac ‘[]’ >> simp[]) >>
+  fs[concat_def] >> first_x_assum (drule_then strip_assume_tac) >>
+  qexists_tac ‘x::ls’ >> simp[DISJ_IMP_THM]
+QED
+(*
+Theorem thm_1_50:
+  regularLanguage L ⇒ regularLanguage (star L)
+Proof
+  simp[corollary_1_40] >>
+  disch_then (qx_choose_then ‘M0’ strip_assume_tac) >>
+  qexists_tac ‘machine_star M0’ >> simp[wfNFA_machine_star] >>
+*)
 
 val _ = export_theory();
