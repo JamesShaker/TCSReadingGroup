@@ -1421,7 +1421,7 @@ Definition machine_star_def:
                 if copt = NONE ∧ s0' ∈ N.C then
                   IMAGE SUC (N.tf s0' copt) ∪ {0}
                 else IMAGE SUC (N.tf s0' copt) ;
-     C := {0} ∪ IMAGE SUC N.C;
+     C := {0};
    |>
 End
 
@@ -1431,16 +1431,15 @@ Proof
   simp[wfNFA_def, machine_star_def, DISJ_IMP_THM, PULL_EXISTS,
        AllCaseEqs()] >>
   rw[] >> simp[]
-  >- fs[SUBSET_DEF, PULL_EXISTS]
   >- (simp[] >> fs[SUBSET_DEF, PULL_EXISTS] >> metis_tac[])
   >- (rw[] >> fs[SUBSET_DEF, PULL_EXISTS] >> metis_tac[])
   >- metis_tac[TypeBase.nchotomy_of “:num”]
 QED
 
 Theorem machine_star_accepting_states[simp]:
-  (machine_star N).C = {0} ∪ { SUC n | n ∈ N.C }
+  (machine_star N).C = {0}
 Proof
-  simp[machine_star_def, EXTENSION]
+  simp[machine_star_def]
 QED
 
 Theorem machine_star_alphabet[simp]:
@@ -1455,6 +1454,12 @@ Theorem machine_star_tf0[simp]:
 Proof
   simp[machine_star_def]
 QED
+
+Theorem machine_star_q0[simp]:
+  (machine_star N).q0 = 0
+Proof 
+  simp[machine_star_def]
+QED 
 
 Theorem machine_star_tfSUC:
   (machine_star N).tf (SUC q0) (SOME c) =
@@ -1485,13 +1490,44 @@ Proof
   fs[concat_def] >> first_x_assum (drule_then strip_assume_tac) >>
   qexists_tac ‘x::ls’ >> simp[DISJ_IMP_THM]
 QED
-(*
+
+Theorem NF_transition_machine_star_SUC:
+∀q cs. NF_transition (machine_star N) (SUC q) cs 0 ⇒ 
+  ∃s1 s2 nc. cs = s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N q s1 nc ∧ 
+             NF_transition (machine_star N) 0 s2 0
+Proof 
+  Induct_on `NF_transition` >> rw[] >> cheat  
+QED 
+
+Theorem NF_transition_machine_star:
+  NF_transition (machine_star N) 0 cs 0 ⇒ 
+  cs = [] ∨ 
+  ∃s1 s2 nc. cs = NONE::s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N N.q0 s1 nc ∧ 
+             NF_transition (machine_star N) 0 s2 0
+Proof 
+  completeInduct_on `LENGTH cs`
+  >> fs[PULL_FORALL] 
+  >> Cases_on `v=0`
+  >- rw[]
+  >> gen_tac >> strip_tac
+  >> simp[SimpL``$==>``, Once NF_transition_cases]
+  >> simp[DISJ_IMP_THM, PULL_EXISTS]
+  >> Cases_on `c`
+  >> simp[machine_star_tf0]
+  >> cheat
+QED 
+
 Theorem thm_1_50:
   regularLanguage L ⇒ regularLanguage (star L)
 Proof
   simp[corollary_1_40] >>
   disch_then (qx_choose_then ‘M0’ strip_assume_tac) >>
-  qexists_tac ‘machine_star M0’ >> simp[wfNFA_machine_star] >>
-*)
+  qexists_tac ‘machine_star M0’ >> 
+  simp[wfNFA_machine_star, star_Lpow, Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
+  qx_gen_tac `str` >> conj_tac
+  >- (simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >> 
+      rw[] >> cheat)
+  >> cheat
+QED
 
 val _ = export_theory();
