@@ -1458,9 +1458,9 @@ QED
 
 Theorem machine_star_q0[simp]:
   (machine_star N).q0 = 0
-Proof 
+Proof
   simp[machine_star_def]
-QED 
+QED
 
 Theorem machine_star_tfSUC:
   (machine_star N).tf (SUC q0) (SOME c) =
@@ -1495,10 +1495,10 @@ Proof
 QED
 
 Theorem NF_transition_machine_star_SUC:
-∀q cs. NF_transition (machine_star N) (SUC q) cs 0 ⇒ 
-  ∃s1 s2 nc. cs = s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N q s1 nc ∧ 
+∀q cs. NF_transition (machine_star N) (SUC q) cs 0 ⇒
+  ∃s1 s2 nc. cs = s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N q s1 nc ∧
              NF_transition (machine_star N) 0 s2 0
-Proof 
+Proof
   Induct_on `NF_transition` >> rw[] >>
   rename [‘qI ∈ _ _ _’] >> Cases_on ‘qI’
   >- (Cases_on ‘c’ >> fs[machine_star_tfSUC] >>
@@ -1506,19 +1506,19 @@ Proof
       rw[] >> MAP_EVERY qexists_tac [‘[]’,‘cs’,‘q’] >>
       simp[NF_transition_rules])
   >- (fs[] >> MAP_EVERY qexists_tac [‘c::s1’,‘s2’,‘nc’] >> simp[] >>
-      fs[machine_star_tfSUC] >> metis_tac[NF_transition_rules])  
-QED 
+      fs[machine_star_tfSUC] >> metis_tac[NF_transition_rules])
+QED
 
 Theorem NF_transition_machine_star:
-  NF_transition (machine_star N) 0 cs 0 ⇒ 
-  cs = [] ∨ 
-  ∃s1 s2 nc. cs = NONE::s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N N.q0 s1 nc ∧ 
+  NF_transition (machine_star N) 0 cs 0 ⇒
+  cs = [] ∨
+  ∃s1 s2 nc. cs = NONE::s1++[NONE]++s2 ∧ nc ∈ N.C ∧ NF_transition N N.q0 s1 nc ∧
              NF_transition (machine_star N) 0 s2 0
-Proof 
+Proof
   Cases_on ‘cs’ >> simp[] >>
   simp[SimpL“$==>”, Once NF_transition_cases] >>
   csimp[] >> metis_tac[NF_transition_machine_star_SUC]
-QED 
+QED
 
 Theorem munge_split:
  munge n (ZIP (str,nlist)) = NONE::(s1 ⧺ [NONE] ⧺ s2) ⇒
@@ -1543,10 +1543,10 @@ Theorem thm_1_50:
 Proof
   simp[corollary_1_40] >>
   disch_then (qx_choose_then ‘M0’ strip_assume_tac) >>
-  qexists_tac ‘machine_star M0’ >> 
+  qexists_tac ‘machine_star M0’ >>
   simp[wfNFA_machine_star, star_Lpow, Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
   qx_gen_tac `str` >> conj_tac
-  >- (simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >> 
+  >- (simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >>
       rw[] >> pop_assum mp_tac >>
       completeInduct_on ‘LENGTH (munge n (ZIP (str,nlist)))’ >>
       fs[PULL_FORALL] >> rw[] >> drule NF_transition_machine_star >>
@@ -1561,7 +1561,7 @@ Proof
       MAP_EVERY qexists_tac [‘strip_option s1’,‘strR’] >>
       simp[recogLangN_def,Sipser_ND_Accepts_NF_transition] >>
       metis_tac[munge_exists]) >>
-  Induct 
+  Induct
   >- (cheat) >>
   cheat
 QED
