@@ -1574,28 +1574,52 @@ Proof
 QED
 
 
-Definition munge'_def:
+Definition munge'_def[simp]:
   munge' 0 [] = [] ∧
   munge' 0 ((c,n)::t) = SOME c :: munge' n t ∧
   munge' (SUC n) cs = NONE :: munge' n cs
 End
 
+Theorem munge_alt_def:
+  ∀n l. munge n l = munge' n l
+Proof
+  ho_match_mp_tac munge'_ind >>
+  rw[munge_SUC,munge_eq_nil]
+QED
+
+Theorem munge'_split:
+  ∀n l str nlist s1 s2.
+   munge' n l = s1 ⧺ [NONE] ⧺ s2 ∧
+   ZIP (str,nlist) = l ∧
+   LENGTH str = LENGTH nlist ⇒
+   ∃nR strR nlistR.
+    s2 = munge' nR (ZIP (strR,nlistR)) ∧
+    LENGTH strR = LENGTH nlistR ∧
+    str = strip_option s1 ++ strR
+Proof
+  ho_match_mp_tac munge'_ind >>
+  simp[] >> rw[] >> Cases_on ‘n’ >> fs[] >>
+  Cases_on ‘s1’ >> fs[] >> rw[]
+  >- (Cases_on ‘str’ >> Cases_on ‘nlist’ >> fs[] >>
+      last_x_assum irule >> metis_tac[])
+  >- (Cases_on ‘str’ >> Cases_on ‘nlist’ >> fs[] >>
+      rw[] >> last_x_assum irule >> metis_tac[])
+  >- metis_tac[]
+  >- (last_x_assum irule >> metis_tac[])
+  >- metis_tac[munge'_def]
+  >- (last_x_assum irule >> metis_tac[])
+QED
 
 Theorem munge_split:
  ∀str n nlist s1 s2.
-   munge n (ZIP (str,nlist)) = NONE::(s1 ⧺ [NONE] ⧺ s2) ∧
+   munge n (ZIP (str,nlist)) = (s1 ⧺ [NONE] ⧺ s2) ∧
    LENGTH str = LENGTH nlist ⇒
    ∃nR strR nlistR.
     s2 = munge nR (ZIP (strR,nlistR)) ∧
     LENGTH strR = LENGTH nlistR ∧
     str = strip_option s1 ++ strR
 Proof
-  simp[munge_def]
- Induct_on ‘str’ >> simp[] >> rpt strip_tac
- >- (fs[mungeNIL_IFF, strip_option_EQ_NIL] >>
-     Cases_on ‘n’ >> fs[REPLICATE_EQ_APPEND] >>
-     metis_tac[]) >>
-
+ metis_tac[munge_alt_def,munge'_split]
 QED
 
 (*
