@@ -1520,16 +1520,91 @@ Proof
   csimp[] >> metis_tac[NF_transition_machine_star_SUC]
 QED
 
-Theorem munge_split:
- munge n (ZIP (str,nlist)) = NONE::(s1 ⧺ [NONE] ⧺ s2) ⇒
- ∃nR strR nlistR.
-  s2 = munge nR (ZIP (strR,nlistR)) ∧
-  LENGTH strR = LENGTH nlistR ∧
-  str = strip_option s1 ++ strR
+Theorem LENGTH_mungeNIL[simp]:
+  LENGTH (munge n []) = n
 Proof
- cheat
+  Induct_on ‘n’ >> simp[munge_SUC]
 QED
 
+Theorem mungeNIL_IFF:
+  (munge n [] = s ⇔ s = REPLICATE n NONE) ∧
+  (s = munge n [] ⇔ s = REPLICATE n NONE)
+Proof
+  simp[munge_def, EQ_SYM_EQ]
+QED
+
+Triviality EXISTS_NUM:
+  (∃n. P n) ⇔ P 0 ∨ (∃n. P (SUC n))
+Proof
+  rw[EQ_IMP_THM] >- (Cases_on ‘n’ >> metis_tac[]) >>
+  metis_tac[]
+QED
+
+Triviality FORALL_NUM:
+  (∀n. P n) ⇔ P 0 ∧ ∀n. P (SUC n)
+Proof
+  rw[EQ_IMP_THM] >> Cases_on ‘n’ >> simp[]
+QED
+
+Theorem strip_option_EQ_NIL:
+  strip_option l = [] ⇔ ∃n. l = REPLICATE n NONE
+Proof
+  Induct_on ‘l’ >> simp[]
+  >- metis_tac[REPLICATE_NIL] >>
+  Cases >> simp[] >- simp[Once EXISTS_NUM, SimpRHS] >>
+  Cases >> simp[]
+QED
+
+Triviality REPLICATE_NIL'[simp]:
+  [] = REPLICATE n e ⇔ n = 0
+Proof
+  metis_tac[REPLICATE_NIL]
+QED
+
+Theorem REPLICATE_EQ_APPEND:
+  ∀n e l1 l2.
+     REPLICATE n e = l1 ++ l2 ⇔
+     ∃n1 n2. n1 + n2 = n ∧ l1 = REPLICATE n1 e ∧ l2 = REPLICATE n2 e
+Proof
+  Induct_on ‘n’ >> simp[APPEND_EQ_CONS, PULL_EXISTS] >>
+  rw[EQ_IMP_THM] >> simp[]
+  >- (simp[Once EXISTS_NUM, arithmeticTheory.ADD_CLAUSES] >> metis_tac[]) >>
+  Cases_on ‘n1’ >> simp[] >> fs[arithmeticTheory.ADD_CLAUSES] >>
+  metis_tac[]
+QED
+
+
+Definition munge'_def:
+  munge' 0 [] = [] ∧
+  munge' 0 ((c,n)::t) = SOME c :: munge' n t ∧
+  munge' (SUC n) cs = NONE :: munge' n cs
+End
+
+
+Theorem munge_split:
+ ∀str n nlist s1 s2.
+   munge n (ZIP (str,nlist)) = NONE::(s1 ⧺ [NONE] ⧺ s2) ∧
+   LENGTH str = LENGTH nlist ⇒
+   ∃nR strR nlistR.
+    s2 = munge nR (ZIP (strR,nlistR)) ∧
+    LENGTH strR = LENGTH nlistR ∧
+    str = strip_option s1 ++ strR
+Proof
+  simp[munge_def]
+ Induct_on ‘str’ >> simp[] >> rpt strip_tac
+ >- (fs[mungeNIL_IFF, strip_option_EQ_NIL] >>
+     Cases_on ‘n’ >> fs[REPLICATE_EQ_APPEND] >>
+     metis_tac[]) >>
+
+QED
+
+(*
+
+          |-   x = y
+        -------------- AP_TERM f
+          |- f x = f y
+
+*)
 Theorem munge_exists:
   ∃n nlist.
     munge n (ZIP (strip_option s, nlist)) = s ∧
