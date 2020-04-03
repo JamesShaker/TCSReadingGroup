@@ -1629,12 +1629,14 @@ QED
           |- f x = f y
 
 *)
-Theorem munge_exists:
-  ∃n nlist.
-    munge n (ZIP (strip_option s, nlist)) = s ∧
-    LENGTH nlist = LENGTH (strip_option s)
+
+Theorem munge_strip_option_exists:
+  ∀s.
+    ∃n nlist.
+      munge n (ZIP (strip_option s, nlist)) = s ∧
+      LENGTH nlist = LENGTH (strip_option s)
 Proof
-  cheat
+  metis_tac[munge_exists,strip_option_munge]
 QED
 
 Theorem thm_1_50:
@@ -1646,22 +1648,31 @@ Proof
   simp[wfNFA_machine_star, star_Lpow, Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
   qx_gen_tac `str` >> conj_tac
   >- (simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >>
-      rw[] >> pop_assum mp_tac >>
+      rw[] >> pop_assum mp_tac >> 
       completeInduct_on ‘LENGTH (munge n (ZIP (str,nlist)))’ >>
       fs[PULL_FORALL] >> rw[] >> drule NF_transition_machine_star >>
-      rw[]
+      rw[] 
       >- (rfs[ZIP_EQ_NIL] >> qexists_tac ‘0’ >> rw[Lpow_def]) >>
+      rename1 ‘NONE::(s1 ++ [NONE] ++ s2)’ >>
+      ‘NONE::(s1 ++ [NONE] ++ s2) = (NONE::s1 ++ [NONE] ++ s2)’
+        by rw[] >>
+      pop_assum SUBST_ALL_TAC >>
       drule_then strip_assume_tac munge_split >> rw[] >>
+      rfs[] >> rw[] >>
       first_x_assum (first_assum o mp_then.mp_then (mp_then.Pos last) mp_tac) >>
       simp[] >> disch_then (qx_choose_then ‘N’ strip_assume_tac) >>
       qexists_tac ‘SUC N’ >>
       simp[Lpow_def] >>
       simp[concat_def] >>
-      MAP_EVERY qexists_tac [‘strip_option s1’,‘strR’] >>
+      qexistsl_tac [‘strip_option s1’,‘strR’] >>
       simp[recogLangN_def,Sipser_ND_Accepts_NF_transition] >>
-      metis_tac[munge_exists]) >>
-  Induct
-  >- (cheat) >>
+      metis_tac[munge_strip_option_exists]) >>
+  qx_gen_tac ‘n’ >> MAP_EVERY qid_spec_tac [‘str’,‘n’] >> Induct >>
+  simp[Lpow_def,recogLangN_def,Sipser_ND_Accepts_NF_transition]
+  >- (qexists_tac ‘0’ >> rw[NF_transition_rules]) >>
+  simp[concat_def,PULL_EXISTS] >> rw[] >>
+  rename1 ‘y ∈ Lpow _ _’ >> 
+  first_x_assum (drule_then assume_tac) >>
   cheat
 QED
 
