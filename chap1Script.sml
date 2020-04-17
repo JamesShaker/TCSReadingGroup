@@ -1636,6 +1636,25 @@ Proof
   metis_tac[munge_exists,strip_option_munge]
 QED
 
+Theorem NF_transition_machine_star_i:
+  NF_transition M q0 cs q ⇒ NF_transition (machine_star M) (SUC q0) cs (SUC q)
+Proof
+  Induct_on `NF_transition` >> simp[NF_transition_rules] >> rw[] >>
+  irule (NF_transition_rules |> SPEC_ALL |> CONJUNCT2) >>
+  rw[] >> qexists_tac `SUC q0'` >> rw[] >> rw[machine_star_def] >> rw[]
+QED
+
+Theorem machine_star_single:
+  x ∈ recogLangN M0 ⇒ x ∈ recogLangN (machine_star M0)
+Proof 
+  simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >> 
+  rw[] >> drule NF_transition_machine_star_i >> rw[] >>
+  Cases_on `nlist = []` 
+  >- (fs[] >> qexists_tac `0` >> rw[NF_transition_rules])
+  >> qexists_tac `SUC n` >> rw[munge_SUC] >> simp[Once NF_transition_cases] >>
+  cheat
+QED
+
 Theorem thm_1_50:
   regularLanguage L ⇒ regularLanguage (star L)
 Proof
@@ -1670,7 +1689,7 @@ Proof
   simp[concat_def,PULL_EXISTS] >> rw[] >>
   rename1 ‘y ∈ Lpow _ _’ >> 
   first_x_assum (drule_then assume_tac) >>
-  cheat
+  `x ∈ recogLangN (machine_star M0)` by
 QED
 
 val _ = export_theory();
