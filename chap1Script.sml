@@ -610,18 +610,16 @@ Proof
   qexists_tac ‘ss’ >>
   ‘¬MEM NONE cs’ by
      (rw[MEM_EL] >> Cases_on ‘n < LENGTH cs’ >> simp[] >> strip_tac >>
-      rename [‘EL n cs’] >> pop_assum (assume_tac o GSYM) >>
-      last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
+      rename [‘EL n cs’] >> last_x_assum (qspec_then ‘n’ mp_tac) >> simp[]) >>
   reverse (rw[strip_option_length])
   >- (rename [‘n < LENGTH cs’] >> last_x_assum (qspec_then‘n’ mp_tac) >>
       simp[EL_strip_option] >> rw[])
   >- (rw[MEM_EL] >>
       Cases_on ‘n < LENGTH cs + 1’ >>
       simp[] >>
-      qpat_x_assum ‘LENGTH ss = _’ (assume_tac o GSYM) >>
       fs[] >> Cases_on ‘n’
       >- fs[EL,wfFA_def] >>
-      rename1 ‘0 ≠ EL (SUC n) ss’ >>
+      rename1 ‘EL (SUC n) ss ≠ 0’ >>
       last_x_assum (qspec_then ‘n’ mp_tac) >>
       simp[] >> Cases_on ‘EL n cs’ >> simp[] >>
       rw[arithmeticTheory.ADD1])
@@ -1549,8 +1547,7 @@ QED
 Theorem strip_option_EQ_NIL:
   strip_option l = [] ⇔ ∃n. l = REPLICATE n NONE
 Proof
-  Induct_on ‘l’ >> simp[]
-  >- metis_tac[REPLICATE_NIL] >>
+  Induct_on ‘l’ >> simp[] >>
   Cases >> simp[] >- simp[Once EXISTS_NUM, SimpRHS] >>
   Cases >> simp[]
 QED
