@@ -808,6 +808,30 @@ Proof
    >- (metis_tac[])
 QED
 
+Theorem list_to_munge:
+  ∀l. 
+      ∃n nlist. 
+        LENGTH nlist = LENGTH (strip_option l) ∧ 
+        munge n (ZIP (strip_option l,nlist)) = l
+Proof
+  Induct >> rw[] >> 
+  Cases_on `h` >> rw[]
+  >- (qexistsl_tac [`SUC n`, `nlist`] >> rw[munge_SUC])
+  >> (qexistsl_tac [`0`, `n::nlist`] >> rw[])
+QED
+
+Theorem Sipser_ND_Accepts_NF_transition_l:
+  Sipser_ND_Accepts a cs ⇔
+  ∃q l. strip_option l = cs ∧
+     NF_transition a a.q0 l q ∧ q ∈ a.C
+Proof 
+  eq_tac 
+  >- (rw[Sipser_ND_Accepts_NF_transition] >> 
+      qexistsl_tac [`q`, `munge n (ZIP (cs,nlist))`] >> rw[strip_option_munge]) 
+  >> simp[PULL_EXISTS, Sipser_ND_Accepts_NF_transition] >> 
+  metis_tac[list_to_munge]
+QED
+
 Theorem E_SUBSET:
   x ∈ Q ⇒ x ∈ E a Q
 Proof
@@ -1644,15 +1668,17 @@ Proof
   rw[] >> qexists_tac `SUC q0'` >> rw[] >> rw[machine_star_def] >> rw[]
 QED
 
+Theorem NF_transition_cons = NF_transition_rules |> SPEC_ALL |> CONJUNCT2 |> Q.GEN`a`
+
 Theorem machine_star_single:
   x ∈ recogLangN M0 ⇒ x ∈ recogLangN (machine_star M0)
 Proof 
-  simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >> 
+  simp[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >> 
   rw[] >> drule NF_transition_machine_star_i >> rw[] >>
-  Cases_on `nlist = []` 
-  >- (fs[] >> qexists_tac `0` >> rw[NF_transition_rules])
-  >> qexists_tac `SUC n` >> rw[munge_SUC] >> simp[Once NF_transition_cases] >>
-  cheat
+  qexists_tac `NONE::l ++ [NONE]` >> irule NF_transition_cons >> rw[] >>
+  irule NF_transition_concat >> rw[] >> qexists_tac `SUC q` >> rw[] >>
+  irule NF_transition_cons >> rw[] >> qexists_tac `0` >> rw[NF_transition_rules]
+  >> rw[machine_star_def]
 QED
 
 Theorem thm_1_50:
@@ -1683,13 +1709,18 @@ Proof
       qexistsl_tac [‘strip_option s1’,‘strR’] >>
       simp[recogLangN_def,Sipser_ND_Accepts_NF_transition] >>
       metis_tac[munge_strip_option_exists]) >>
-  qx_gen_tac ‘n’ >> MAP_EVERY qid_spec_tac [‘str’,‘n’] >> Induct >>
-  simp[Lpow_def,recogLangN_def,Sipser_ND_Accepts_NF_transition]
-  >- (qexists_tac ‘0’ >> rw[NF_transition_rules]) >>
-  simp[concat_def,PULL_EXISTS] >> rw[] >>
-  rename1 ‘y ∈ Lpow _ _’ >> 
-  first_x_assum (drule_then assume_tac) >>
-  `x ∈ recogLangN (machine_star M0)` by
+  qx_gen_tac ‘n’ >> MAP_EVERY qid_spec_tac [‘str’,‘n’] >> 
+  fs[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >> 
+  rw[] >> pop_assum mp_tac >> qid_spec_tac `str` >> 
+  Induct_on `n`
+  >- (simp[Lpow_def] >> qexists_tac `[]` >> rw[NF_transition_rules])
+  >> simp[Lpow_def, concat_def, PULL_EXISTS] >> rw[] >> 
+  first_x_assum (drule_then strip_assume_tac) >> qexists_tac `NONE::l++[NONE]++l'` >>
+  rw[] >> irule NF_transition_cons >> rw[] >> irule NF_transition_concat >> 
+  qexists_tac `0` >> rw[] >> irule NF_transition_concat >> qexists_tac `SUC q` >> rw[]
+  >- rw[NF_transition_machine_star_i]
+  >> irule NF_transition_cons >> rw[] >> qexists_tac `0` >> rw[NF_transition_rules] >>
+  rw[machine_star_def]
 QED
 
 val _ = export_theory();
