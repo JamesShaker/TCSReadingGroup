@@ -809,26 +809,52 @@ Proof
 QED
 
 Theorem list_to_munge:
-  ∀l. 
-      ∃n nlist. 
-        LENGTH nlist = LENGTH (strip_option l) ∧ 
+  ∀l.
+      ∃n nlist.
+        LENGTH nlist = LENGTH (strip_option l) ∧
         munge n (ZIP (strip_option l,nlist)) = l
 Proof
-  Induct >> rw[] >> 
+  Induct >> rw[] >>
   Cases_on `h` >> rw[]
-  >- (qexistsl_tac [`SUC n`, `nlist`] >> rw[munge_SUC])
-  >> (qexistsl_tac [`0`, `n::nlist`] >> rw[])
+  >- (qexistsl_tac [‘SUC n’, ‘nlist’] >> rw[munge_SUC])
+  >> (qexistsl_tac [‘0’, ‘n::nlist’] >> rw[])
+QED
+
+Theorem strip_option_append[simp]:
+  strip_option (a++b) = strip_option a ++ strip_option b
+Proof
+  Induct_on ‘a’ >> fs[] >> Cases >> simp[]
+QED
+
+Theorem strip_option_replicate_none[simp]:
+  strip_option (REPLICATE n NONE) = []
+Proof
+  Induct_on ‘n’ >> simp[]
+QED
+
+Theorem strip_option_flat:
+  strip_option (FLAT l) = FLAT (MAP strip_option l)
+Proof
+  Induct_on ‘l’ >> simp[]
+QED
+
+Theorem strip_option_munge:
+  ∀cs nlist. LENGTH cs = LENGTH nlist ⇒
+             strip_option (munge n (ZIP (cs,nlist))) = cs
+Proof
+  simp[munge_def,strip_option_flat,MAP_MAP_o,combinTheory.o_DEF,
+       pairTheory.UNCURRY] >>
+  Induct_on`cs` >> simp[] >> Cases_on`nlist` >> simp[]
 QED
 
 Theorem Sipser_ND_Accepts_NF_transition_l:
   Sipser_ND_Accepts a cs ⇔
-  ∃q l. strip_option l = cs ∧
-     NF_transition a a.q0 l q ∧ q ∈ a.C
-Proof 
-  eq_tac 
-  >- (rw[Sipser_ND_Accepts_NF_transition] >> 
-      qexistsl_tac [`q`, `munge n (ZIP (cs,nlist))`] >> rw[strip_option_munge]) 
-  >> simp[PULL_EXISTS, Sipser_ND_Accepts_NF_transition] >> 
+  ∃q l. strip_option l = cs ∧ NF_transition a a.q0 l q ∧ q ∈ a.C
+Proof
+  eq_tac
+  >- (rw[Sipser_ND_Accepts_NF_transition] >>
+      qexistsl_tac [`q`, `munge n (ZIP (cs,nlist))`] >> rw[strip_option_munge])
+  >> simp[PULL_EXISTS, Sipser_ND_Accepts_NF_transition] >>
   metis_tac[list_to_munge]
 QED
 
@@ -885,23 +911,6 @@ Proof
   Induct_on ‘n’ >> fs[] >> metis_tac[]
 QED
 
-Theorem strip_option_append[simp]:
-  strip_option (a++b) = strip_option a ++ strip_option b
-Proof
-  Induct_on ‘a’ >> fs[] >> Cases >> simp[]
-QED
-
-Theorem strip_option_replicate_none[simp]:
-  strip_option (REPLICATE n NONE) = []
-Proof
-  Induct_on ‘n’ >> simp[]
-QED
-
-Theorem strip_option_flat:
-  strip_option (FLAT l) = FLAT (MAP strip_option l)
-Proof
-  Induct_on ‘l’ >> simp[]
-QED
 
 Theorem fst_list_lem:
   (λ(c,n). [c]) = (λx. [x]) o FST
@@ -975,13 +984,6 @@ Theorem MEM_munge:
   MEM (SOME c) (munge n l) <=> ∃m. MEM (c,m) l
 Proof
   simp[munge_def,MEM_FLAT,MEM_MAP,pairTheory.EXISTS_PROD,PULL_EXISTS]
-QED
-
-Theorem strip_option_munge:
-  ∀cs nlist. LENGTH cs = LENGTH nlist ==> strip_option (munge n (ZIP (cs,nlist))) = cs
-Proof
-  simp[munge_def,strip_option_flat,MAP_MAP_o,combinTheory.o_DEF,pairTheory.UNCURRY] >>
-  Induct_on`cs` >> simp[] >> Cases_on`nlist` >> simp[]
 QED
 
 Theorem NFA_SUBSET_DFA:
@@ -1668,17 +1670,17 @@ Proof
   rw[] >> qexists_tac `SUC q0'` >> rw[] >> rw[machine_star_def] >> rw[]
 QED
 
-Theorem NF_transition_cons = NF_transition_rules |> SPEC_ALL |> CONJUNCT2 |> Q.GEN`a`
+Theorem NF_transition_cons = NF_transition_rules |> SPEC_ALL |> CONJUNCT2 |> Q.GEN‘a’;
 
 Theorem machine_star_single:
   x ∈ recogLangN M0 ⇒ x ∈ recogLangN (machine_star M0)
-Proof 
-  simp[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >> 
+Proof
+  simp[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >>
   rw[] >> drule NF_transition_machine_star_i >> rw[] >>
-  qexists_tac `NONE::l ++ [NONE]` >> irule NF_transition_cons >> rw[] >>
+  qexists_tac `NONE::l ++ [NONE]` >> simp[] >> irule NF_transition_cons >> rw[] >>
   irule NF_transition_concat >> rw[] >> qexists_tac `SUC q` >> rw[] >>
-  irule NF_transition_cons >> rw[] >> qexists_tac `0` >> rw[NF_transition_rules]
-  >> rw[machine_star_def]
+  irule NF_transition_cons >> rw[] >> qexists_tac `0` >> rw[NF_transition_rules] >>
+  rw[machine_star_def]
 QED
 
 Theorem thm_1_50:
@@ -1690,10 +1692,10 @@ Proof
   simp[wfNFA_machine_star, star_Lpow, Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
   qx_gen_tac `str` >> conj_tac
   >- (simp[recogLangN_def, Sipser_ND_Accepts_NF_transition] >>
-      rw[] >> pop_assum mp_tac >> 
+      rw[] >> pop_assum mp_tac >>
       completeInduct_on ‘LENGTH (munge n (ZIP (str,nlist)))’ >>
       fs[PULL_FORALL] >> rw[] >> drule NF_transition_machine_star >>
-      rw[] 
+      rw[]
       >- (rfs[ZIP_EQ_NIL] >> qexists_tac ‘0’ >> rw[Lpow_def]) >>
       rename1 ‘NONE::(s1 ++ [NONE] ++ s2)’ >>
       ‘NONE::(s1 ++ [NONE] ++ s2) = (NONE::s1 ++ [NONE] ++ s2)’
@@ -1709,14 +1711,14 @@ Proof
       qexistsl_tac [‘strip_option s1’,‘strR’] >>
       simp[recogLangN_def,Sipser_ND_Accepts_NF_transition] >>
       metis_tac[munge_strip_option_exists]) >>
-  qx_gen_tac ‘n’ >> MAP_EVERY qid_spec_tac [‘str’,‘n’] >> 
-  fs[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >> 
-  rw[] >> pop_assum mp_tac >> qid_spec_tac `str` >> 
+  qx_gen_tac ‘n’ >> MAP_EVERY qid_spec_tac [‘str’,‘n’] >>
+  fs[recogLangN_def, Sipser_ND_Accepts_NF_transition_l] >>
+  rw[] >> pop_assum mp_tac >> qid_spec_tac `str` >>
   Induct_on `n`
   >- (simp[Lpow_def] >> qexists_tac `[]` >> rw[NF_transition_rules])
-  >> simp[Lpow_def, concat_def, PULL_EXISTS] >> rw[] >> 
+  >> simp[Lpow_def, concat_def, PULL_EXISTS] >> rw[] >>
   first_x_assum (drule_then strip_assume_tac) >> qexists_tac `NONE::l++[NONE]++l'` >>
-  rw[] >> irule NF_transition_cons >> rw[] >> irule NF_transition_concat >> 
+  rw[] >> irule NF_transition_cons >> rw[] >> irule NF_transition_concat >>
   qexists_tac `0` >> rw[] >> irule NF_transition_concat >> qexists_tac `SUC q` >> rw[]
   >- rw[NF_transition_machine_star_i]
   >> irule NF_transition_cons >> rw[] >> qexists_tac `0` >> rw[NF_transition_rules] >>
