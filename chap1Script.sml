@@ -1725,4 +1725,75 @@ Proof
   rw[machine_star_def]
 QED
 
+Datatype: 
+regexp = Concat regexp regexp | 
+         Star regexp | 
+         Alt regexp regexp |
+         Single num | 
+         Epsilon |
+         Empty
+End
+
+(* Definition 1.52 *)
+Definition regexp_lang[simp]:
+  regexp_lang (Concat r1 r2) = concat (regexp_lang r1) (regexp_lang r2) ∧
+  regexp_lang (Star r) = star (regexp_lang r) ∧
+  regexp_lang (Alt r1 r2) = regexp_lang r1 ∪ regexp_lang r2 ∧
+  regexp_lang (Single c) = { [c] } ∧
+  regexp_lang Epsilon = { [] } ∧
+  regexp_lang Empty = {}
+End
+
+Theorem lemma_1_55:
+  ∀r. regularLanguage (regexp_lang r)
+Proof
+  Induct >> simp[] 
+  >- metis_tac[thm_1_47]
+  >- metis_tac[thm_1_50]
+  >- metis_tac[thm_1_25]
+  >- (rw[regularLanguage_def] >> 
+      qexists_tac `<| Q := {0;1;2};
+                      A := {n};
+                      tf := (λs0 c. if c = n ∧ s0 = 1 then 2 else 0);
+                      q0 := 1;
+                      C := {2};|>` >> 
+      conj_asm1_tac >> 
+      rw[wfFA_def, recogLangD_def] >>
+      rw[EXTENSION, Sipser_Accepts_runMachine_coincide] >>
+      rw[accepts_def] >> eq_tac
+      >- (Cases_on `x` >> rw[] 
+          >- (Cases_on `t` >> fs[runMachine_def] >> Induct_on`t'` >> fs[])
+          >> Induct_on `t` >> fs[])
+      >> simp[])
+  >- (rw[regularLanguage_def] >> 
+      qexists_tac `<| Q := {0;1};
+                      A := {};
+                      tf := (λs0 c. 0);
+                      q0 := 1;
+                      C := {1};|>` >>
+      conj_asm1_tac >> 
+      rw[wfFA_def, recogLangD_def] >>
+      rw[EXTENSION, Sipser_Accepts_runMachine_coincide] >>
+      rw[accepts_def] >> eq_tac 
+      >- (Cases_on `x` >> rw[] >> Induct_on `t` >> simp[])
+      >> simp[])
+  >> rw[regularLanguage_def] >> 
+     qexists_tac `<| Q := {0;1;2};
+                      A := {};
+                      tf := (λs0 c. 0);
+                      q0 := 1;
+                      C := {2};|>` >> 
+     conj_asm1_tac >> 
+     rw[wfFA_def, recogLangD_def] >>
+     rw[EXTENSION, Sipser_Accepts_runMachine_coincide] >>
+     rw[accepts_def] >> 
+     Cases_on `x` >> rw[] >> Induct_on `t` >> rw[]
+QED
+
+Theorem thm_1_54_ltr:
+  ∀l. regularLanguage l ⇒ ∃r. regexp_lang r = l
+Proof
+  cheat
+QED
+
 val _ = export_theory();
