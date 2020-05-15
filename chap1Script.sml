@@ -1750,6 +1750,77 @@ Proof
      Cases_on `x` >> rw[] >> Induct_on `t` >> rw[]
 QED
 
+(* Definition 1.64 *)
+Datatype:
+  gnfa = <|
+    Q : state set;
+    A : symbol set;
+    tf : state -> state -> regexp;
+    q0 : state;
+    C : state;
+  |>
+End
+
+Definition wfm_gnfa_def:
+  wfm_gnfa G ⇔ G.q0 ∈ G.Q ∧ 
+               G.C ∈ G.Q ∧ 
+               (∀s. G.tf s G.q0 = Empty) ∧
+               (∀s. G.tf G.C  s = Empty) 
+End
+
+Inductive gnfa_accepts:
+  gnfa_accepts G q0 [] q0 ∧
+  ∀q'. c1 ∈ regexp_lang (G.tf q0 q') ∧ gnfa_accepts G q' c2 q
+       ⇒ gnfa_accepts G q0 (c1++c2) q
+End
+
+Inductive charset_reR:
+  charset_reR ∅ Empty ∧
+  (e ∉ s ∧charset_reR s re ⇒ charset_reR (e INSERT s) (Alt (Single e) re))
+End
+
+Theorem charset_reR_correct:
+  charset_reR cs re ⇒ regexp_lang re = {[c] | c ∈ cs}
+Proof
+  Induct_on `charset_reR` >> rw[EXTENSION] >> metis_tac[]
+QED
+
+Theorem charset_reR_exists:
+  ∀cs. FINITE cs ⇒ ∃re. charset_reR cs re
+Proof
+  Induct_on `FINITE` >> metis_tac[charset_reR_rules]
+QED
+
+Definition charset_re_def:
+  charset_re cs = @re. charset_reR cs re
+End
+
+Definition dfa_to_gnfa_def:
+  dfa_to_gnfa d = <| Q := {0; 1} ∪ IMAGE ($+2) d.Q;
+                          A := d.A;
+                          tf := (λs1 s2. if s1 = 0 ∧ s2 = d.q0+2 then Epsilon 
+                                         else if s1 ∈ IMAGE ($+2) d.C ∧ s2 = 1 then Epsilon
+                                         else if 1 < s1 ∧ 1 < s2 then 
+                                         let s = {cs | d.tf (s1-2) cs = s2-2} 
+                                         in
+                                            charset_re s
+                                         else Empty); 
+                          q0 := 0;
+                          C := 1; |>
+End                  
+
+Theorem dfa_to_gnfa_wfm:
+  wfFA d ⇒ wfm_gnfa (dfa_to_gnfa d)
+Proof
+  rw[wfFA_def, wfm_gnfa_def, dfa_to_gnfa_def]
+QED 
+
+Theorem dfa_to_gnfa_correct:
+  ∀d. wfFA d ⇒ ∃g. wfm_gnfa g ∧ ∀cs. Sipser_Accepts d cs ⇔ gnfa_accepts g g.q0 cs g.C
+Proof
+  rw[] >> qexists_tac `dfa_to_gnfa d` >> rw[dfa_to_gnfa_wfm] >> cheat
+QED
+
 Theorem thm_1_54_ltr:
   ∀l. regularLanguage l ⇒ ∃r. regexp_lang r = l
 Proof
