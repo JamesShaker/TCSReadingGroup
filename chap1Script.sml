@@ -440,46 +440,6 @@ Proof
   rw[listOfN_nlist,SET_TO_LIST_INV]
 QED
 
-(*
-Theorem enc_inj:
-  INJ enc (λx. FINITE x) (𝕌 (: num))
-Proof
-  ‘INJ (nlist_of o SET_TO_LIST) (λx. FINITE x) (𝕌 (: num))’
-    suffices_by rw[o_DEF] >>
-  irule INJ_COMPOSE >>
-  qexists_tac ‘𝕌 (: num list)’ >>
-  rw [INJ_DEF]
-QED
-
-
-Theorem enc_infin:
-  ∀s. enc s ≠ nlist_of ARB ⇒ FINITE s
-Proof
-  rpt strip_tac >>
-  fs[SET_TO_LIST_primitive_def] >>
-  qabbrev_tac ‘P = (@X. WF X ∧ ∀Y. FINITE Y ∧ Y ≠ ∅ ⇒ X (REST Y) Y)’ >>
-  qabbrev_tac ‘M = (λSET_TO_LIST a.
-               if FINITE a then
-                 if a = ∅ then [] else CHOICE a::SET_TO_LIST (REST a)
-               else ARB)’ >>
-  fs[]
-
-  CCONTR_TAC >>
-
-  fs[]
-  ‘WF R’
-    by cheat >>
-  Q.ISPECL_THEN [‘R’,‘M’] strip_assume_tac WFREC_THM >>
-  rfs[] >>
-  first_x_assum (qspec_then ‘s’ assume_tac)
-  rw[WFREC_THM]
-
-  ‘SET_TO_LIST s = ARB’
-    suffices_by simp[nlist_of_def]
-  rw[SET_TO_LIST_primitive_def] >>
-
-QED
-*)
 Definition NFA2DFA_def:
   NFA2DFA a =
     <|Q  := {enc s| s ⊆ a.Q};
