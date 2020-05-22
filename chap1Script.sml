@@ -1776,7 +1776,7 @@ End
 
 Inductive charset_reR:
   charset_reR ∅ Empty ∧
-  (e ∉ s ∧charset_reR s re ⇒ charset_reR (e INSERT s) (Alt (Single e) re))
+  (e ∉ s ∧ charset_reR s re ⇒ charset_reR (e INSERT s) (Alt (Single e) re))
 End
 
 Theorem charset_reR_correct:
@@ -1815,10 +1815,51 @@ Proof
   rw[wfFA_def, wfm_gnfa_def, dfa_to_gnfa_def]
 QED 
 
+Theorem dfa_to_gnfa_q0[simp]:
+  ∀d. (dfa_to_gnfa d).q0 = 0
+Proof
+  rw[dfa_to_gnfa_def]
+QED
+
+Theorem dfa_to_gnfa_tf_0[simp]:
+  ∀d x. ((dfa_to_gnfa d).tf 0 x = if x = d.q0 + 2 then Epsilon else Empty) ∧
+        ((dfa_to_gnfa d).tf x 0 = Empty)
+Proof
+  rw[dfa_to_gnfa_def]
+QED
+
+Theorem dfa_to_gnfa_never_looks_back:
+  ∀d s. gnfa_accepts (dfa_to_gnfa d) s cs 0 ⇒ (s = 0 ∧ cs = []) 
+Proof
+  rpt gen_tac >> Induct_on ‘gnfa_accepts’ >>
+  rw[] >> fs[]
+QED
+
+Theorem dfa_prod_gnfa_shuffle_start:
+  ∀d. ∀cs es. gnfa_accepts (dfa_to_gnfa d) (d.q0 + 2) cs es
+              ⇔ es ≠ 0 ∧ gnfa_accepts (dfa_to_gnfa d) (dfa_to_gnfa d).q0 cs es
+Proof
+  rw[SimpRHS, Once gnfa_accepts_cases] >>
+  simp_tac (srw_ss () ++ boolSimps.COND_elim_ss) [] >>
+  rw[EQ_IMP_THM] >>
+  fs[Once gnfa_accepts_cases] >>
+  strip_tac >>
+  fs[] >>
+  drule_all_then strip_assume_tac dfa_to_gnfa_never_looks_back >>
+  fs[]
+QED
+
 Theorem dfa_to_gnfa_correct:
   ∀d. wfFA d ⇒ ∃g. wfm_gnfa g ∧ ∀cs. Sipser_Accepts d cs ⇔ gnfa_accepts g g.q0 cs g.C
 Proof
-  rw[] >> qexists_tac `dfa_to_gnfa d` >> rw[dfa_to_gnfa_wfm] >> cheat
+  rw[] >> qexists_tac `dfa_to_gnfa d` >> rw[dfa_to_gnfa_wfm] >>
+  rw[Sipser_Accepts_runMachine_coincide_thm,accepts_def] >>
+  ‘∀s. s ∈ d.Q ⇒
+    (runMachine d s cs ∈ d.C ⇔
+    gnfa_accepts (dfa_to_gnfa d) (s + 2) cs (dfa_to_gnfa d).C)’
+    suffices_by (fs[dfa_prod_gnfa_shuffle_start,wfFA_def] >>
+                 simp[dfa_to_gnfa_def]) >>
+  cheat
 QED
 
 Theorem thm_1_54_ltr:
