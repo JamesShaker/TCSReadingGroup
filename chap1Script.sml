@@ -1795,6 +1795,13 @@ Definition charset_re_def:
   charset_re cs = @re. charset_reR cs re
 End
 
+Theorem regexp_lang_charset_re:
+  ∀cs. FINITE cs ⇒ regexp_lang (charset_re cs) = {[c] | c ∈ cs}
+Proof
+  rw[charset_re_def] >> SELECT_ELIM_TAC >> 
+  simp[charset_reR_correct, charset_reR_exists] 
+QED
+
 Definition dfa_to_gnfa_def:
   dfa_to_gnfa d = <| Q := {0; 1} ∪ IMAGE ($+2) d.Q;
                           A := d.A;
@@ -1849,6 +1856,33 @@ Proof
   fs[]
 QED
 
+Theorem dfa_to_gnfa_c[simp]:
+  (dfa_to_gnfa d).C = 1
+Proof
+  rw[dfa_to_gnfa_def]
+QED
+
+val op$ = Portable.$ 
+infixr 1 $
+
+Theorem dfa_to_gnfa_final_state_no_op:
+∀d s.
+  wfFA d ∧ s ∈ d.Q ∧ s ∈ d.C
+  ⇒
+  gnfa_accepts (dfa_to_gnfa d) (s + 2) [] 1
+Proof
+  rw[] >> `[] ∈ regexp_lang ((dfa_to_gnfa d).tf (s+2) 1)` by rw[dfa_to_gnfa_def] >>
+  drule_then strip_assume_tac $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> 
+  fs[] >> simp[gnfa_accepts_rules]
+QED
+
+Theorem runMachine_c_in_A:
+  ∀d s c cs. runMachine d (d.tf s c) cs ∈ d.C ∧ wfFA d ⇒ c ∈ d.A
+Proof
+  CCONTR_TAC >> fs[] >> `d.tf s c = 0` by fs[wfFA_def] >> fs[] >>
+  drule_then strip_assume_tac runMachine_0_sticks >> metis_tac[wfFA_def]
+QED
+
 Theorem dfa_to_gnfa_correct:
   ∀d. wfFA d ⇒ ∃g. wfm_gnfa g ∧ ∀cs. Sipser_Accepts d cs ⇔ gnfa_accepts g g.q0 cs g.C
 Proof
@@ -1859,7 +1893,20 @@ Proof
     gnfa_accepts (dfa_to_gnfa d) (s + 2) cs (dfa_to_gnfa d).C)’
     suffices_by (fs[dfa_prod_gnfa_shuffle_start,wfFA_def] >>
                  simp[dfa_to_gnfa_def]) >>
-  cheat
+  simp[EQ_IMP_THM, IMP_CONJ_THM, FORALL_AND_THM] >> conj_tac
+  >- (Induct_on `cs`  
+      >- rw[dfa_to_gnfa_final_state_no_op]
+      >> rw[] >> `h::cs = [h]++cs` by simp[] >> pop_assum SUBST_ALL_TAC >>
+      irule $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> 
+      qexists_tac `(d.tf s h)+2` >> rw[] 
+      >- (rw[dfa_to_gnfa_def] >> 
+         `FINITE {cs | d.tf s cs = d.tf s h}` 
+            by (irule SUBSET_FINITE_I >> qexists_tac `d.A` >> conj_tac 
+                >- fs[wfFA_def]
+                >> rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A]) >>
+          simp[regexp_lang_charset_re])
+      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A])
+  >> cheat
 QED
 
 Theorem thm_1_54_ltr:
