@@ -1883,6 +1883,31 @@ Proof
   drule_then strip_assume_tac runMachine_0_sticks >> metis_tac[wfFA_def]
 QED
 
+Theorem gnfa_error_sink:
+  ∀d. (wfFA d ⇒ ∀q cs. gnfa_accepts (dfa_to_gnfa d) 2 cs q ⇒ (q = 2))
+Proof
+  ntac 2 strip_tac >>
+  Induct_on ‘gnfa_accepts’ >>
+  rw[] >>
+  pop_assum irule >>
+  pop_assum kall_tac >>
+  CCONTR_TAC >>
+  fs[dfa_to_gnfa_def] >>
+  ‘0 ∉ d.C’
+    by fs[wfFA_def] >>
+  fs[] >>
+  pop_assum kall_tac >>
+  rename1 ‘1 < xI’ >>
+  ‘1 < xI’
+    by (CCONTR_TAC >> fs[regexp_lang]) >>
+  fs[] >>
+  rfs[wfFA_def] >>
+  fs[] >>
+  qspec_then ‘∅’ assume_tac regexp_lang_charset_re >>
+  pop_assum mp_tac >> impl_tac >- rw[] >>
+  strip_tac >> fs[]
+QED
+
 Theorem dfa_to_gnfa_correct:
   ∀d. wfFA d ⇒ ∃g. wfm_gnfa g ∧ ∀cs. Sipser_Accepts d cs ⇔ gnfa_accepts g g.q0 cs g.C
 Proof
@@ -1905,8 +1930,34 @@ Proof
                 >- fs[wfFA_def]
                 >> rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A]) >>
           simp[regexp_lang_charset_re])
-      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A])
-  >> cheat
+      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A]) >>
+  Induct_on ‘cs’ >>
+  >- (rw[runMachine_def,Once gnfa_accepts_cases] >>
+      rename1 ‘[] ∈ regexp_lang (_ _ qM)’ >>
+      ‘qM = 1’
+        suffices_by (rw[] >> fs[dfa_to_gnfa_def] >>
+                     CCONTR_TAC >> fs[]) >>
+      ‘qM ≠ 2’
+        by (CCONTR_TAC >> fs[] >>
+            pop_assum kall_tac >>
+            drule_all_then assume_tac gnfa_error_sink >>
+            fs[]) >>
+      qpat_x_assum ‘gnfa_accpets _ _ _ _’ kall_tac >>
+      fs[dfa_to_gnfa_def] >>
+      CCONTR_TAC >> fs[] >>
+      reverse (Cases_on ‘1 < qM’)
+      >- fs[regexp_lang] >>
+      fs[] >>
+      ‘FINITE {cs | d.tf s cs = qM - 2}’
+        suffices_by (strip_tac >>
+                     fs[regexp_lang_charset_re]) >>
+      fs[wfFA_def] >>
+      drule_then irule SUBSET_FINITE >>
+      rw[SUBSET_DEF] >>
+      CCONTR_TAC >> 
+      first_x_assum (drule_then assume_tac) >>
+      pop_assum (qspec_then ‘s’ assume_tac) >> fs[]) >>
+  cheat
 QED
 
 Theorem thm_1_54_ltr:
