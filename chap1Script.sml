@@ -114,6 +114,21 @@ Definition runMachine_def[simp]:
   (runMachine a q (c::cs) = runMachine a (a.tf q c) cs)
 End
 
+Theorem runMachine_append:
+  ∀d s ca cb.
+    runMachine d s (ca ++ cb) = runMachine d (runMachine d s ca) cb 
+Proof
+  Induct_on ‘ca’ >> rw[] 
+QED
+
+Theorem runMachine_in_Q:
+  ∀d s cs.
+    wfFA d ∧ s ∈ d.Q ⇒ runMachine d s cs ∈ d.Q
+Proof
+  Induct_on ‘cs’ >> rw[] >>
+  metis_tac[wfFA_def]
+QED
+
 Definition accepts_def:
   accepts a cs ⇔ runMachine a a.q0 cs ∈ a.C
 End
@@ -1931,33 +1946,43 @@ Proof
                 >> rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A]) >>
           simp[regexp_lang_charset_re])
       >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A]) >>
-  Induct_on ‘cs’ >>
-  >- (rw[runMachine_def,Once gnfa_accepts_cases] >>
-      rename1 ‘[] ∈ regexp_lang (_ _ qM)’ >>
-      ‘qM = 1’
-        suffices_by (rw[] >> fs[dfa_to_gnfa_def] >>
-                     CCONTR_TAC >> fs[]) >>
-      ‘qM ≠ 2’
-        by (CCONTR_TAC >> fs[] >>
-            pop_assum kall_tac >>
-            drule_all_then assume_tac gnfa_error_sink >>
-            fs[]) >>
-      qpat_x_assum ‘gnfa_accpets _ _ _ _’ kall_tac >>
-      fs[dfa_to_gnfa_def] >>
-      CCONTR_TAC >> fs[] >>
-      reverse (Cases_on ‘1 < qM’)
-      >- fs[regexp_lang] >>
-      fs[] >>
-      ‘FINITE {cs | d.tf s cs = qM - 2}’
-        suffices_by (strip_tac >>
-                     fs[regexp_lang_charset_re]) >>
-      fs[wfFA_def] >>
-      drule_then irule SUBSET_FINITE >>
-      rw[SUBSET_DEF] >>
-      CCONTR_TAC >> 
-      first_x_assum (drule_then assume_tac) >>
-      pop_assum (qspec_then ‘s’ assume_tac) >> fs[]) >>
-  cheat
+  ‘∀s.
+    gnfa_accepts (dfa_to_gnfa d) s cs 1 ∧
+    s ≠ 0 ⇒
+    (s = 1 ⇒ cs = []) ∧
+    (1 < s ⇒ runMachine d (s - 2) cs ∈ d.C)’
+    suffices_by (rw[IMP_CONJ_THM,FORALL_AND_THM] >>
+                 first_x_assum (qspec_then ‘s+2’ assume_tac) >>
+                 fs[]) >>
+  Induct_on ‘gnfa_accepts’ >> rw[runMachine_append]
+  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+      rw[dfa_to_gnfa_def])
+  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+      rw[dfa_to_gnfa_def]) >>
+  qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+  rw[dfa_to_gnfa_def]
+  >- simp[] >>
+  fs[] >> rw[] >>
+  rename1 ‘runMachine d (sI - 2) cs ∈ d.C’ >>
+  ‘runMachine d (s - 2) c1 = sI - 2’
+    suffices_by rw[] >>
+  qmatch_asmsub_abbrev_tac ‘charset_re SetInt’ >>
+  ‘FINITE SetInt’
+    by (simp[Abbr ‘SetInt’] >>
+        irule SUBSET_FINITE >>
+        qexists_tac ‘d.A’ >> rw[]
+        >- fs[wfFA_def] >>
+        rw[SUBSET_DEF] >>
+        ‘sI - 2 ≠ 0’
+          suffices_by (rw[] >> CCONTR_TAC >> fs[wfFA_def] >>
+                       ‘sI - 2 = 0’ by metis_tac[] >>
+                       fs[]) >>
+        strip_tac >> ‘sI = 2’ by simp[] >> fs[] >> rw[] >>
+        drule_then assume_tac runMachine_0_sticks >>
+        pop_assum (qspec_then ‘cs’ assume_tac) >> fs[wfFA_def]) >>
+  qunabbrev_tac ‘SetInt’ >>
+  drule_all_then assume_tac regexp_lang_charset_re >>
+  fs[]
 QED
 
 Theorem thm_1_54_ltr:
