@@ -1985,6 +1985,41 @@ Proof
   fs[]
 QED
 
+Definition rip_def:
+rip G q = if q IN G.Q ∧ q ≠ G.q0 ∧ q <> G.C then
+          G with 
+          <| Q := G.Q DELETE q ;
+             tf := \i j. if i = G.C then Empty
+                         else if j = G.q0 then Empty
+                         else 
+                         Alt (Concat (G.tf i q)
+                         (Concat (Star (G.tf q q)) (G.tf q j)))
+                         (G.tf i j)
+             |>
+          else G
+End
+
+Theorem wfm_rip_wfm:
+  wfm_gnfa G ⇒ wfm_gnfa (rip G q)
+Proof
+  rw[rip_def,wfm_gnfa_def]
+QED
+  
+
+Theorem G_rip_equiv:
+  ∀q0 s. wfm_gnfa G ∧ q ≠ q0 ∧ q0 IN G.Q ⇒
+  (gnfa_accepts (rip G q) q0 s G.C ⇔ gnfa_accepts G q0 s G.C)
+Proof        
+  simp[EQ_IMP_THM,IMP_CONJ_THM,FORALL_AND_THM] >> CONJ_TAC 
+  >- (Induct_on ‘gnfa_accepts’ >>
+      rw[rip_def,gnfa_accepts_rules] (* 2 *)
+      >- (qpat_x_assum ‘_ IN regexp_lang _’ mp_tac >>
+          reverse (rw[]) (* 2 *)
+          >- 
+         )
+     )
+
+ 
 Theorem thm_1_54_ltr:
   ∀l. regularLanguage l ⇒ ∃r. regexp_lang r = l
 Proof
