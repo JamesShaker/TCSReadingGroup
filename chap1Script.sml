@@ -1980,44 +1980,6 @@ Proof
             simp[]) >>
   fs[regexp_lang_charset_re] >> rw[] >> fs[wfFA_def] >> 
   `s2 - 2 ≠ 0` suffices_by metis_tac[] >> simp[]
-      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A]) >>
-  ‘∀s.
-    gnfa_accepts (dfa_to_gnfa d) s cs 1 ∧
-    s ≠ 0 ⇒
-    (s = 1 ⇒ cs = []) ∧
-    (1 < s ⇒ runMachine d (s - 2) cs ∈ d.C)’
-    suffices_by (rw[IMP_CONJ_THM,FORALL_AND_THM] >>
-                 first_x_assum (qspec_then ‘s+2’ assume_tac) >>
-                 fs[]) >>
-  Induct_on ‘gnfa_accepts’ >> rw[runMachine_append]
-  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
-      rw[dfa_to_gnfa_def])
-  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
-      rw[dfa_to_gnfa_def]) >>
-  qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
-  rw[dfa_to_gnfa_def]
-  >- simp[] >>
-  fs[] >> rw[] >>
-  rename1 ‘runMachine d (sI - 2) cs ∈ d.C’ >>
-  ‘runMachine d (s - 2) c1 = sI - 2’
-    suffices_by rw[] >>
-  qmatch_asmsub_abbrev_tac ‘charset_re SetInt’ >>
-  ‘FINITE SetInt’
-    by (simp[Abbr ‘SetInt’] >>
-        irule SUBSET_FINITE >>
-        qexists_tac ‘d.A’ >> rw[]
-        >- fs[wfFA_def] >>
-        rw[SUBSET_DEF] >>
-        ‘sI - 2 ≠ 0’
-          suffices_by (rw[] >> CCONTR_TAC >> fs[wfFA_def] >>
-                       ‘sI - 2 = 0’ by metis_tac[] >>
-                       fs[]) >>
-        strip_tac >> ‘sI = 2’ by simp[] >> fs[] >> rw[] >>
-        drule_then assume_tac runMachine_0_sticks >>
-        pop_assum (qspec_then ‘cs’ assume_tac) >> fs[wfFA_def]) >>
-  qunabbrev_tac ‘SetInt’ >>
-  drule_all_then assume_tac regexp_lang_charset_re >>
-  fs[]
 QED
 
 Definition rip_def:
@@ -2050,9 +2012,13 @@ Proof
       rw[rip_def,gnfa_accepts_rules] (* 2 *)
       >- (qpat_x_assum ‘_ IN regexp_lang _’ mp_tac >>
           reverse (rw[]) (* 2 *)
-          >- 
+          >- cheat
+          >> cheat
          )
+      >> cheat
      )
+  >> cheat
+QED
 
  
 Theorem thm_1_54_ltr:
