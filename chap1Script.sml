@@ -114,6 +114,21 @@ Definition runMachine_def[simp]:
   (runMachine a q (c::cs) = runMachine a (a.tf q c) cs)
 End
 
+Theorem runMachine_append:
+  ∀d s ca cb.
+    runMachine d s (ca ++ cb) = runMachine d (runMachine d s ca) cb 
+Proof
+  Induct_on ‘ca’ >> rw[] 
+QED
+
+Theorem runMachine_in_Q:
+  ∀d s cs.
+    wfFA d ∧ s ∈ d.Q ⇒ runMachine d s cs ∈ d.Q
+Proof
+  Induct_on ‘cs’ >> rw[] >>
+  metis_tac[wfFA_def]
+QED
+
 Definition accepts_def:
   accepts a cs ⇔ runMachine a a.q0 cs ∈ a.C
 End
@@ -1883,6 +1898,31 @@ Proof
   drule_then strip_assume_tac runMachine_0_sticks >> metis_tac[wfFA_def]
 QED
 
+Theorem gnfa_error_sink:
+  ∀d. (wfFA d ⇒ ∀q cs. gnfa_accepts (dfa_to_gnfa d) 2 cs q ⇒ (q = 2))
+Proof
+  ntac 2 strip_tac >>
+  Induct_on ‘gnfa_accepts’ >>
+  rw[] >>
+  pop_assum irule >>
+  pop_assum kall_tac >>
+  CCONTR_TAC >>
+  fs[dfa_to_gnfa_def] >>
+  ‘0 ∉ d.C’
+    by fs[wfFA_def] >>
+  fs[] >>
+  pop_assum kall_tac >>
+  rename1 ‘1 < xI’ >>
+  ‘1 < xI’
+    by (CCONTR_TAC >> fs[regexp_lang]) >>
+  fs[] >>
+  rfs[wfFA_def] >>
+  fs[] >>
+  qspec_then ‘∅’ assume_tac regexp_lang_charset_re >>
+  pop_assum mp_tac >> impl_tac >- rw[] >>
+  strip_tac >> fs[]
+QED
+
 Theorem runMachine_append[simp]:
   ∀d s c1 c2. runMachine d s (c1++c2) = runMachine d (runMachine d s c1) c2
 Proof
@@ -1940,8 +1980,81 @@ Proof
             simp[]) >>
   fs[regexp_lang_charset_re] >> rw[] >> fs[wfFA_def] >> 
   `s2 - 2 ≠ 0` suffices_by metis_tac[] >> simp[]
+      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A]) >>
+  ‘∀s.
+    gnfa_accepts (dfa_to_gnfa d) s cs 1 ∧
+    s ≠ 0 ⇒
+    (s = 1 ⇒ cs = []) ∧
+    (1 < s ⇒ runMachine d (s - 2) cs ∈ d.C)’
+    suffices_by (rw[IMP_CONJ_THM,FORALL_AND_THM] >>
+                 first_x_assum (qspec_then ‘s+2’ assume_tac) >>
+                 fs[]) >>
+  Induct_on ‘gnfa_accepts’ >> rw[runMachine_append]
+  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+      rw[dfa_to_gnfa_def])
+  >- (qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+      rw[dfa_to_gnfa_def]) >>
+  qpat_x_assum ‘c1 ∈ regexp_lang _’ mp_tac >>
+  rw[dfa_to_gnfa_def]
+  >- simp[] >>
+  fs[] >> rw[] >>
+  rename1 ‘runMachine d (sI - 2) cs ∈ d.C’ >>
+  ‘runMachine d (s - 2) c1 = sI - 2’
+    suffices_by rw[] >>
+  qmatch_asmsub_abbrev_tac ‘charset_re SetInt’ >>
+  ‘FINITE SetInt’
+    by (simp[Abbr ‘SetInt’] >>
+        irule SUBSET_FINITE >>
+        qexists_tac ‘d.A’ >> rw[]
+        >- fs[wfFA_def] >>
+        rw[SUBSET_DEF] >>
+        ‘sI - 2 ≠ 0’
+          suffices_by (rw[] >> CCONTR_TAC >> fs[wfFA_def] >>
+                       ‘sI - 2 = 0’ by metis_tac[] >>
+                       fs[]) >>
+        strip_tac >> ‘sI = 2’ by simp[] >> fs[] >> rw[] >>
+        drule_then assume_tac runMachine_0_sticks >>
+        pop_assum (qspec_then ‘cs’ assume_tac) >> fs[wfFA_def]) >>
+  qunabbrev_tac ‘SetInt’ >>
+  drule_all_then assume_tac regexp_lang_charset_re >>
+  fs[]
 QED
 
+Definition rip_def:
+rip G q = if q IN G.Q ∧ q ≠ G.q0 ∧ q <> G.C then
+          G with 
+          <| Q := G.Q DELETE q ;
+             tf := \i j. if i = G.C then Empty
+                         else if j = G.q0 then Empty
+                         else 
+                         Alt (Concat (G.tf i q)
+                         (Concat (Star (G.tf q q)) (G.tf q j)))
+                         (G.tf i j)
+             |>
+          else G
+End
+
+Theorem wfm_rip_wfm:
+  wfm_gnfa G ⇒ wfm_gnfa (rip G q)
+Proof
+  rw[rip_def,wfm_gnfa_def]
+QED
+  
+
+Theorem G_rip_equiv:
+  ∀q0 s. wfm_gnfa G ∧ q ≠ q0 ∧ q0 IN G.Q ⇒
+  (gnfa_accepts (rip G q) q0 s G.C ⇔ gnfa_accepts G q0 s G.C)
+Proof        
+  simp[EQ_IMP_THM,IMP_CONJ_THM,FORALL_AND_THM] >> CONJ_TAC 
+  >- (Induct_on ‘gnfa_accepts’ >>
+      rw[rip_def,gnfa_accepts_rules] (* 2 *)
+      >- (qpat_x_assum ‘_ IN regexp_lang _’ mp_tac >>
+          reverse (rw[]) (* 2 *)
+          >- 
+         )
+     )
+
+ 
 Theorem thm_1_54_ltr:
   ∀l. regularLanguage l ⇒ ∃r. regexp_lang r = l
 Proof
