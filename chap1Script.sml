@@ -1883,6 +1883,29 @@ Proof
   drule_then strip_assume_tac runMachine_0_sticks >> metis_tac[wfFA_def]
 QED
 
+Theorem runMachine_append[simp]:
+  ∀d s c1 c2. runMachine d s (c1++c2) = runMachine d (runMachine d s c1) c2
+Proof
+  Induct_on `c1` >> rw[]
+QED
+
+Theorem gnfa_accepts_1_to_1:
+  ∀d cs. wfFA d ∧ gnfa_accepts (dfa_to_gnfa d) 1 cs 1 ⇒ cs = []
+Proof
+  rw[Once gnfa_accepts_cases] >> qpat_x_assum `c1 ∈ _` mp_tac >> 
+  rw[dfa_to_gnfa_def]
+QED
+
+Theorem gnfa_accepts_2_to_1:
+  ∀d cs. wfFA d ⇒ ¬gnfa_accepts (dfa_to_gnfa d) 2 cs 1
+Proof
+  `∀d x cs y. gnfa_accepts (dfa_to_gnfa d) x cs y ⇒ x = 2 ⇒ y = 1 ⇒ wfFA d ⇒ F` 
+    suffices_by metis_tac[] >> gen_tac >>
+  ho_match_mp_tac gnfa_accepts_ind >> rw[] >> 
+  fs[dfa_to_gnfa_def] >> strip_tac >> fs[] >> fs[wfFA_def] >> 
+  Cases_on `1 < x'` >> fs[regexp_lang_charset_re]
+QED
+
 Theorem dfa_to_gnfa_correct:
   ∀d. wfFA d ⇒ ∃g. wfm_gnfa g ∧ ∀cs. Sipser_Accepts d cs ⇔ gnfa_accepts g g.q0 cs g.C
 Proof
@@ -1906,7 +1929,17 @@ Proof
                 >> rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A]) >>
           simp[regexp_lang_charset_re])
       >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A])
-  >> cheat
+  >> Induct_on `gnfa_accepts` >> rw[] >> qpat_x_assum `c1 ∈ _` mp_tac >> 
+  rw[dfa_to_gnfa_def]
+  >- (drule gnfa_accepts_1_to_1 >> rw[]) >> rename [`1 < s2`]
+  >> fs[] >> first_x_assum irule >> Cases_on `s2 = 2` >> fs[] 
+  >- metis_tac[gnfa_accepts_2_to_1]
+  >> `FINITE {cs | d.tf s cs = s2 − 2}` 
+        by (irule SUBSET_FINITE_I >> qexists_tac `d.A` >> fs[wfFA_def] >> 
+            rw[SUBSET_DEF] >> `s2 - 2 ≠ 0` suffices_by metis_tac[] >>
+            simp[]) >>
+  fs[regexp_lang_charset_re] >> rw[] >> fs[wfFA_def] >> 
+  `s2 - 2 ≠ 0` suffices_by metis_tac[] >> simp[]
 QED
 
 Theorem thm_1_54_ltr:
