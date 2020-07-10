@@ -1784,11 +1784,13 @@ Definition wfm_gnfa_def:
 End
 
 Inductive gnfa_accepts:
-  gnfa_accepts G q0 [] q0 ∧
-  ∀q'. c1 ∈ regexp_lang (G.tf q0 q') ∧ gnfa_accepts G q' c2 q
+  (∀q0. q0 IN G.Q ⇒ gnfa_accepts G q0 [] q0) ∧
+  ∀q' q. q0 IN G.Q ∧ q' IN G.Q ∧ c1 ∈ regexp_lang (G.tf q0 q') ∧ gnfa_accepts G q' c2 q
        ⇒ gnfa_accepts G q0 (c1++c2) q
 End
 
+Theorem gnfa_accepts_step = gnfa_accepts_rules |> SPEC_ALL |> CONJUNCT2        
+        
 Inductive charset_reR:
   charset_reR ∅ Empty ∧
   (e ∉ s ∧ charset_reR s re ⇒ charset_reR (e INSERT s) (Alt (Single e) re))
@@ -1983,17 +1985,17 @@ Proof
 QED
 
 Definition rip_def:
-rip G q = if q IN G.Q ∧ q ≠ G.q0 ∧ q <> G.C then
-          G with 
-          <| Q := G.Q DELETE q ;
-             tf := \i j. if i = G.C then Empty
-                         else if j = G.q0 then Empty
-                         else 
-                         Alt (Concat (G.tf i q)
-                         (Concat (Star (G.tf q q)) (G.tf q j)))
-                         (G.tf i j)
+  rip G q = if q IN G.Q ∧ q ≠ G.q0 ∧ q <> G.C then
+            G with 
+            <| Q := G.Q DELETE q ;
+               tf := \i j. if i = G.C then Empty
+                           else if j = G.q0 then Empty
+                           else 
+                             Alt (Concat (G.tf i q)
+                                  (Concat (Star (G.tf q q)) (G.tf q j)))
+                                 (G.tf i j)
              |>
-          else G
+            else G
 End
 
 Theorem wfm_rip_wfm:
@@ -2001,23 +2003,38 @@ Theorem wfm_rip_wfm:
 Proof
   rw[rip_def,wfm_gnfa_def]
 QED
-  
+
+Theorem gnfa_accepts_star:
+ ∀x G q0 l q.
+   x IN star (regexp_lang (G.tf q0 q0)) ∧
+   gnfa_accepts G q0 l q ⇒ gnfa_accepts G q0 (x ⧺ l) q
+Proof
+ simp[star_Lpow, PULL_EXISTS] >>
+ CONV_TAC (RENAME_VARS_CONV ["s","G","q0","l","q","n"]) >>
+ Induct_on ‘n’ >> simp[Lpow_def,concat_def,PULL_EXISTS] >>
+ metis_tac[APPEND_ASSOC,gnfa_accepts_step]
+QED
 
 Theorem G_rip_equiv:
-  ∀q0 s. wfm_gnfa G ∧ q ≠ q0 ∧ q0 IN G.Q ⇒
-  (gnfa_accepts (rip G q) q0 s G.C ⇔ gnfa_accepts G q0 s G.C)
+  ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ⇒
+         (gnfa_accepts (rip G q) q0 s G.C ⇔ gnfa_accepts G q0 s G.C)
 Proof        
   simp[EQ_IMP_THM,IMP_CONJ_THM,FORALL_AND_THM] >> CONJ_TAC 
   >- (Induct_on ‘gnfa_accepts’ >>
-      rw[rip_def,gnfa_accepts_rules] (* 2 *)
-      >- (qpat_x_assum ‘_ IN regexp_lang _’ mp_tac >>
-          reverse (rw[]) (* 2 *)
-          >- cheat
-          >> cheat
-         )
-      >> cheat
-     )
-  >> cheat
+      reverse (rw[rip_def,gnfa_accepts_rules]) (* 2 *)
+      >- metis_tac[gnfa_accepts_rules]
+      >> Cases_on ‘q0 = G.C’ >> fs[] >>
+         Cases_on ‘q0' = G.q0’ >> reverse (fs[]) 
+         >- (reverse (Cases_on ‘q0' = q’) 
+            >- metis_tac[gnfa_accepts_rules]
+            >> fs[] >> 
+            )
+         >> fs[concat_def] >> REWRITE_TAC [GSYM APPEND_ASSOC] >>
+            irule gnfa_accepts_step >> qexists_tac ‘q’ >>
+            ASM_REWRITE_TAC [] >> irule gnfa_accepts_star >> simp[] >>
+            metis_tac[gnfa_accepts_step])
+  >> Induct_on ‘gnfa_accepts’ >> simp[gnfa_accepts_rules] >>
+     rw[] >> fs[] >> 
 QED
 
  
