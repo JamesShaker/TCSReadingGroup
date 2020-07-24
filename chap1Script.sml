@@ -1852,6 +1852,12 @@ Proof
   rw[dfa_to_gnfa_def]
 QED
 
+Theorem dfa_to_gnfa_Q[simp]:
+  ∀d. (dfa_to_gnfa d).Q = {0;1} ∪ {q+2 | q ∈ d.Q}
+Proof
+  rw[EXTENSION ,dfa_to_gnfa_def]
+QED
+
 Theorem dfa_to_gnfa_never_looks_back:
   ∀d s. gnfa_accepts (dfa_to_gnfa d) s cs 0 ⇒ (s = 0 ∧ cs = []) 
 Proof
@@ -1860,17 +1866,19 @@ Proof
 QED
 
 Theorem dfa_prod_gnfa_shuffle_start:
-  ∀d. ∀cs es. gnfa_accepts (dfa_to_gnfa d) (d.q0 + 2) cs es
+  ∀d cs es. gnfa_accepts (dfa_to_gnfa d) (d.q0 + 2) cs es
               ⇔ es ≠ 0 ∧ gnfa_accepts (dfa_to_gnfa d) (dfa_to_gnfa d).q0 cs es
 Proof
   rw[SimpRHS, Once gnfa_accepts_cases] >>
   simp_tac (srw_ss () ++ boolSimps.COND_elim_ss) [] >>
   rw[EQ_IMP_THM] >>
-  fs[Once gnfa_accepts_cases] >>
-  strip_tac >>
-  fs[] >>
-  drule_all_then strip_assume_tac dfa_to_gnfa_never_looks_back >>
-  fs[]
+  fs[Once gnfa_accepts_cases] 
+  >- (strip_tac >>
+      fs[] >>
+      drule_all_then strip_assume_tac dfa_to_gnfa_never_looks_back >>
+      fs[] >> rw[] >> fs[])
+  >- (rpt strip_tac >> rw[] >> fs[] >> metis_tac[dfa_to_gnfa_never_looks_back, DECIDE ``1≠0``])
+  >> rpt strip_tac >> rw[] >> fs[] >> metis_tac[dfa_to_gnfa_never_looks_back, DECIDE ``q+2≠0``]
 QED
 
 Theorem dfa_to_gnfa_c[simp]:
@@ -1889,7 +1897,8 @@ Theorem dfa_to_gnfa_final_state_no_op:
   gnfa_accepts (dfa_to_gnfa d) (s + 2) [] 1
 Proof
   rw[] >> `[] ∈ regexp_lang ((dfa_to_gnfa d).tf (s+2) 1)` by rw[dfa_to_gnfa_def] >>
-  drule_then strip_assume_tac $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> 
+  `1 ∈ (dfa_to_gnfa d).Q ∧ s+2 ∈ (dfa_to_gnfa d).Q` by simp[] >>
+  dxrule_then (drule_then (drule_then strip_assume_tac)) $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> 
   fs[] >> simp[gnfa_accepts_rules]
 QED
 
@@ -1905,24 +1914,14 @@ Theorem gnfa_error_sink:
 Proof
   ntac 2 strip_tac >>
   Induct_on ‘gnfa_accepts’ >>
+  rw[] >> fs[] 
+  >- (rw[] >> fs[dfa_to_gnfa_def] >> rfs[wfFA_def]) >> 
   rw[] >>
   pop_assum irule >>
   pop_assum kall_tac >>
-  CCONTR_TAC >>
   fs[dfa_to_gnfa_def] >>
-  ‘0 ∉ d.C’
-    by fs[wfFA_def] >>
-  fs[] >>
-  pop_assum kall_tac >>
-  rename1 ‘1 < xI’ >>
-  ‘1 < xI’
-    by (CCONTR_TAC >> fs[regexp_lang]) >>
-  fs[] >>
-  rfs[wfFA_def] >>
-  fs[] >>
-  qspec_then ‘∅’ assume_tac regexp_lang_charset_re >>
-  pop_assum mp_tac >> impl_tac >- rw[] >>
-  strip_tac >> fs[]
+  rfs[wfFA_def] >> rw[] >> CCONTR_TAC >> fs[] >>
+  fs[regexp_lang_charset_re]
 QED
 
 Theorem runMachine_append[simp]:
@@ -1962,7 +1961,7 @@ Proof
   >- (Induct_on `cs`  
       >- rw[dfa_to_gnfa_final_state_no_op]
       >> rw[] >> `h::cs = [h]++cs` by simp[] >> pop_assum SUBST_ALL_TAC >>
-      irule $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> 
+      irule $ CONJUNCT2 $ SPEC_ALL gnfa_accepts_rules >> simp[] >>
       qexists_tac `(d.tf s h)+2` >> rw[] 
       >- (rw[dfa_to_gnfa_def] >> 
          `FINITE {cs | d.tf s cs = d.tf s h}` 
@@ -1970,18 +1969,16 @@ Proof
                 >- fs[wfFA_def]
                 >> rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A]) >>
           simp[regexp_lang_charset_re])
-      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A])
-  >> Induct_on `gnfa_accepts` >> rw[] >> qpat_x_assum `c1 ∈ _` mp_tac >> 
-  rw[dfa_to_gnfa_def]
-  >- (drule gnfa_accepts_1_to_1 >> rw[]) >> rename [`1 < s2`]
-  >> fs[] >> first_x_assum irule >> Cases_on `s2 = 2` >> fs[] 
-  >- metis_tac[gnfa_accepts_2_to_1]
-  >> `FINITE {cs | d.tf s cs = s2 − 2}` 
+      >- (fs[wfFA_def] >> metis_tac[])
+      >> first_x_assum irule >> rw[] >> metis_tac[wfFA_def, runMachine_c_in_A]) >>
+  Induct_on `gnfa_accepts` >> rw[] >> qpat_x_assum `c1 ∈ _` mp_tac >> 
+  rw[dfa_to_gnfa_def] >> fs[]
+  >- (drule gnfa_accepts_1_to_1 >> rw[]) >>
+  rfs[] >> rw[] >> `runMachine d q c1 = q'` suffices_by simp[] >>
+  `FINITE {cs | d.tf q cs = q'}` 
         by (irule SUBSET_FINITE_I >> qexists_tac `d.A` >> fs[wfFA_def] >> 
-            rw[SUBSET_DEF] >> `s2 - 2 ≠ 0` suffices_by metis_tac[] >>
-            simp[]) >>
-  fs[regexp_lang_charset_re] >> rw[] >> fs[wfFA_def] >> 
-  `s2 - 2 ≠ 0` suffices_by metis_tac[] >> simp[]
+            rw[SUBSET_DEF] >> metis_tac[runMachine_c_in_A, wfFA_def]) >>
+  fs[regexp_lang_charset_re] >> rw[] >> fs[wfFA_def]
 QED
 
 Definition rip_def:
@@ -2004,6 +2001,12 @@ Proof
   rw[rip_def,wfm_gnfa_def]
 QED
 
+Theorem gnfa_accepts_q_in_Q:
+  ∀G q0 l q. gnfa_accepts G q0 l q ⇒ q0 ∈ G.Q ∧ q ∈ G.Q
+Proof
+  cheat
+QED
+
 Theorem gnfa_accepts_star:
  ∀x G q0 l q.
    x IN star (regexp_lang (G.tf q0 q0)) ∧
@@ -2011,8 +2014,9 @@ Theorem gnfa_accepts_star:
 Proof
  simp[star_Lpow, PULL_EXISTS] >>
  CONV_TAC (RENAME_VARS_CONV ["s","G","q0","l","q","n"]) >>
- Induct_on ‘n’ >> simp[Lpow_def,concat_def,PULL_EXISTS] >>
- metis_tac[APPEND_ASSOC,gnfa_accepts_step]
+ Induct_on ‘n’ >> simp[Lpow_def,concat_def,PULL_EXISTS] >> rw[] >>
+ cheat
+ (* metis_tac[APPEND_ASSOC,gnfa_accepts_step] *)
 QED
 
 Theorem G_rip_equiv:
@@ -2027,14 +2031,14 @@ Proof
          Cases_on ‘q0' = G.q0’ >> reverse (fs[]) 
          >- (reverse (Cases_on ‘q0' = q’) 
             >- metis_tac[gnfa_accepts_rules]
-            >> fs[] >> 
+            >> fs[] >> cheat
             )
          >> fs[concat_def] >> REWRITE_TAC [GSYM APPEND_ASSOC] >>
             irule gnfa_accepts_step >> qexists_tac ‘q’ >>
             ASM_REWRITE_TAC [] >> irule gnfa_accepts_star >> simp[] >>
             metis_tac[gnfa_accepts_step])
   >> Induct_on ‘gnfa_accepts’ >> simp[gnfa_accepts_rules] >>
-     rw[] >> fs[] >> 
+     rw[] >> fs[] >> cheat
 QED
 
  
