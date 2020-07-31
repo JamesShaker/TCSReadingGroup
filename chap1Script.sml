@@ -2004,7 +2004,7 @@ QED
 Theorem gnfa_accepts_q_in_Q:
   ∀G q0 l q. gnfa_accepts G q0 l q ⇒ q0 ∈ G.Q ∧ q ∈ G.Q
 Proof
-  cheat
+  gen_tac >> Induct_on ‘gnfa_accepts’ >> simp[]
 QED
 
 Theorem gnfa_accepts_star:
@@ -2015,30 +2015,62 @@ Proof
  simp[star_Lpow, PULL_EXISTS] >>
  CONV_TAC (RENAME_VARS_CONV ["s","G","q0","l","q","n"]) >>
  Induct_on ‘n’ >> simp[Lpow_def,concat_def,PULL_EXISTS] >> rw[] >>
- cheat
- (* metis_tac[APPEND_ASSOC,gnfa_accepts_step] *)
+ metis_tac[APPEND_ASSOC,gnfa_accepts_step,gnfa_accepts_q_in_Q]
+QED
+
+Theorem G_rip_Q:
+q ∈ G.Q ∧ q ≠ G.q0 ∧ q ≠ G.C ⇒ (rip G q).Q = G.Q DELETE q
+Proof
+rw[rip_def] 
+QED
+        
+
+Theorem G_rip_equiv:
+  ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ∧ q ≠ G.q0 ∧ q ≠ G.C ∧ q IN G.Q ∧
+         gnfa_accepts (rip G q) q0 s G.C ⇒ gnfa_accepts G q0 s G.C
+Proof        
+  Induct_on ‘gnfa_accepts’ >>
+  reverse (rw[rip_def,gnfa_accepts_rules])
+  >- metis_tac[gnfa_accepts_rules]
+  >> Cases_on ‘q0 = G.C’ >> fs[] >>
+  Cases_on ‘q0' = G.q0’ >> reverse (fs[]) 
+  >- (reverse (Cases_on ‘q0' = q’) 
+      >- metis_tac[gnfa_accepts_rules]
+      >> fs[])
+  >> fs[concat_def] >> REWRITE_TAC [GSYM APPEND_ASSOC] >>
+  irule gnfa_accepts_step >> simp[] >>
+  qexists_tac ‘q’ >>
+  ASM_REWRITE_TAC [GSYM APPEND_ASSOC] >> irule gnfa_accepts_star >> simp[] >>
+  metis_tac[gnfa_accepts_step,gnfa_accepts_q_in_Q]
 QED
 
 Theorem G_rip_equiv:
-  ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ⇒
-         (gnfa_accepts (rip G q) q0 s G.C ⇔ gnfa_accepts G q0 s G.C)
-Proof        
-  simp[EQ_IMP_THM,IMP_CONJ_THM,FORALL_AND_THM] >> CONJ_TAC 
-  >- (Induct_on ‘gnfa_accepts’ >>
-      reverse (rw[rip_def,gnfa_accepts_rules]) (* 2 *)
-      >- metis_tac[gnfa_accepts_rules]
-      >> Cases_on ‘q0 = G.C’ >> fs[] >>
-         Cases_on ‘q0' = G.q0’ >> reverse (fs[]) 
-         >- (reverse (Cases_on ‘q0' = q’) 
-            >- metis_tac[gnfa_accepts_rules]
-            >> fs[] >> cheat
-            )
-         >> fs[concat_def] >> REWRITE_TAC [GSYM APPEND_ASSOC] >>
-            irule gnfa_accepts_step >> qexists_tac ‘q’ >>
-            ASM_REWRITE_TAC [] >> irule gnfa_accepts_star >> simp[] >>
-            metis_tac[gnfa_accepts_step])
+  ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ∧ q ≠ G.q0 ∧ q ≠ G.C ∧ q IN G.Q ∧ gnfa_accepts G q0 s G.C
+         ⇒ gnfa_accepts (rip G q) q0 s G.C
+Proof
+
+
+           
   >> Induct_on ‘gnfa_accepts’ >> simp[gnfa_accepts_rules] >>
-     rw[] >> fs[] >> cheat
+     rw[] >> fs[] (* 2 *)
+     >- (irule (gnfa_accepts_rules |> SPEC_ALL |> CONJUNCT1) >> simp[G_rip_Q]) >>
+     reverse (Cases_on ‘q0' = q’) >-
+     (irule gnfa_accepts_step >> simp[G_rip_Q] >> qexists_tac ‘q0'’ >> simp[] >>
+     simp[rip_def] >> rw[] >> fs[wfm_gnfa_def]) >>
+     rw[] >> rpt (pop_assum mp_tac) >> 
+
+Induct_on ‘gnfa_accepts’ >> rw[] >> rfs[]
+
+
+irule gnfa_accepts_step >> simp[G_rip_Q] >> qexists_tac ‘G.C’ >>
+     
+     
+     
+
+
+
+
+>> cheat
 QED
 
  
