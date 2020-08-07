@@ -2025,7 +2025,7 @@ rw[rip_def]
 QED
         
 
-Theorem G_rip_equiv:
+Theorem G_rip_back_sim:
   ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ∧ q ≠ G.q0 ∧ q ≠ G.C ∧ q IN G.Q ∧
          gnfa_accepts (rip G q) q0 s G.C ⇒ gnfa_accepts G q0 s G.C
 Proof        
@@ -2044,33 +2044,112 @@ Proof
   metis_tac[gnfa_accepts_step,gnfa_accepts_q_in_Q]
 QED
 
-Theorem G_rip_equiv:
-  ∀q0 s. wfm_gnfa G ∧ q0 ≠ q ∧ q ≠ G.q0 ∧ q ≠ G.C ∧ q IN G.Q ∧ gnfa_accepts G q0 s G.C
-         ⇒ gnfa_accepts (rip G q) q0 s G.C
+Theorem gnfa_accepts_stream:
+  ∀G. wfm_gnfa G ⇒
+  ∀q0 q1 s. q0 ∈ G.Q ∧ q1 ∈ G.Q  ⇒
+  (gnfa_accepts G q0 s q1 ⇔
+  ∃qs ss.
+    LENGTH qs = LENGTH ss + 1 ∧
+    FLAT ss = s ∧
+    HD qs = q0 ∧
+    LAST qs = q1 ∧
+    (∀q. MEM q qs ⇒ q ∈ G.Q) ∧
+    ∀i. (i < LENGTH qs - 1) ⇒ (EL i ss) ∈ regexp_lang (G.tf (EL i qs) (EL (SUC i) qs)))
 Proof
+  ntac 2 strip_tac >> simp[IMP_CONJ_THM,EQ_IMP_THM,FORALL_AND_THM] >> conj_tac
+  >- (Induct_on ‘gnfa_accepts’ >> rw[]
+      >- (qexistsl_tac [‘[q0]’,‘[]’] >> rw[]) >>
+      fs[] >> rfs[] >> rename1 ‘str1 ∈ regexp_lang (G.tf q0 qI)’ >>
+      qexistsl_tac [‘q0::qs’,‘str1::ss’] >> rw[] >> rw[]
+      >- (Cases_on ‘qs’ >> fs[]) >>
+      Cases_on ‘i’ >> rw[]) >>
+  simp[PULL_EXISTS,GSYM RIGHT_FORALL_IMP_THM] >>
+  Induct_on ‘ss’
+  >- (rw[] >> fs[] >> Cases_on ‘qs’ >> fs[gnfa_accepts_rules]) >>
+  rw[] >>
+  irule (cj 2 gnfa_accepts_rules) >> conj_tac
+  >- (Cases_on ‘qs’ >> fs[]) >>
+  qexists_tac ‘EL 1 qs’ >> rw[]
+  >- (Cases_on ‘qs’ >> fs[] >>
+      pop_assum $ qspec_then ‘0’ assume_tac >>
+      fs[])
+  >- (‘1 < LENGTH qs’
+        suffices_by metis_tac[MEM_EL] >>
+      simp[]) >>
+  last_x_assum $ qspec_then ‘TL qs’ mp_tac >>
+  Cases_on ‘qs’ >> fs[] >> rename1 ‘LAST (h2::t)’ >>
+  Cases_on ‘t’ >> fs[] >> impl_tac
+  >- (rw[] >> rename1 ‘i < LENGTH t2’ >> first_x_assum $ qspec_then ‘SUC i’ mp_tac >>
+      simp[]) >>
+  simp[]
+QED
+
+Definition filter_stream_def:
+  (filter_stream q (q1::q2::q3::qs) (c1::c2::cs) =
+    if (q2 = q) then
+      filter_stream q (q1::q3::qs) ((c1++c2)::cs)
+    else
+      c1::(filter_stream q (q2::q3::qs) (c2::cs))) ∧
+  (filter_stream _ (q1::q2::[]) cs  = cs) ∧
+  (filter_stream _ (q1::[]) cs  = cs) ∧
+  (filter_stream _ [] cs  = cs) ∧
+  (filter_stream _ _ (c1::[])  = (c1::[])) ∧
+  (filter_stream _ _ []  = [])
+End
+
+Theorem filter_stream_flat:
+  FLAT (filter_stream q qs cs) = FLAT cs
+Proof
+  cheat
+QED
 
 
-           
-  >> Induct_on ‘gnfa_accepts’ >> simp[gnfa_accepts_rules] >>
-     rw[] >> fs[] (* 2 *)
-     >- (irule (gnfa_accepts_rules |> SPEC_ALL |> CONJUNCT1) >> simp[G_rip_Q]) >>
-     reverse (Cases_on ‘q0' = q’) >-
-     (irule gnfa_accepts_step >> simp[G_rip_Q] >> qexists_tac ‘q0'’ >> simp[] >>
-     simp[rip_def] >> rw[] >> fs[wfm_gnfa_def]) >>
-     rw[] >> rpt (pop_assum mp_tac) >> 
-
-Induct_on ‘gnfa_accepts’ >> rw[] >> rfs[]
-
-
-irule gnfa_accepts_step >> simp[G_rip_Q] >> qexists_tac ‘G.C’ >>
-     
-     
-     
-
-
-
-
->> cheat
+Theorem G_rip_forw_sim:
+  ∀q0 s q1 q. wfm_gnfa G ∧ q0 ∈ G.Q ∧ q ≠ q0 ∧ q1 ∈ G.Q ∧ q ≠ q1 ∧ q ∈ G.Q ∧
+         gnfa_accepts G q0 s q1 ⇒ gnfa_accepts (rip G q) q0 s q1
+Proof
+  rw[] >> 
+  Cases_on ‘q = G.q0 ∨ q = G.C’
+  >- rw[rip_def] >>
+  ‘q0 ∈ (rip G q).Q ∧ q1 ∈ (rip G q).Q’
+    by fs[rip_def] >>
+  qpat_x_assum ‘gnfa_accepts _ _ _ _’ mp_tac >>
+  rw [gnfa_accepts_stream,wfm_rip_wfm] >>
+  ntac 5 $ pop_assum mp_tac >>
+  qid_spec_tac ‘ss’ >>
+  reverse (Cases_on ‘MEM q qs’)
+  >- (rw[] >> qexistsl_tac [‘qs’,‘ss’] >>
+      rw[rip_def] >- metis_tac[] >>
+      strip_tac >> first_x_assum drule >>
+      fs[wfm_gnfa_def]) >>
+  rw[] >>
+  cheat
+  (*
+  qexistsl_tac [‘FILTER (λx. x ≠ q) qs’,‘filter_stream q qs ss’] >>
+  rw[] >>
+  completeInduct_on ‘LENGTH qs’ >> rw[] >>
+  qpat_x_assum ‘MEM q qs’ mp_tac >>
+  simp[Once MEM_SPLIT_APPEND_first, SimpL “$==>”] >>
+  rw[] >>
+  qabbrev_tac ‘p = LENGTH pfx’ >>
+  ‘pfx ≠ [] ∧ sfx ≠ []’
+    by (Cases_on ‘pfx’ >> Cases_on ‘sfx’ >> fs[] >>
+        fs[LAST_CONS_cond]) >>
+  ‘0 < p ∧ p < LENGTH ss’
+    by (qunabbrev_tac ‘p’ >> Cases_on ‘pfx’ >> fs[] >>
+        Cases_on ‘sfx’ >> fs[]) >>
+  qexistsl_tac [‘pfx ++ sfx’,‘TAKE (p - 1) ss ++ [EL (p - 1) ss ++ EL p ss] ++ DROP (p + 1) ss’] >>
+  rw[]
+  >- fs[]
+  >- ((*Does not work but should!
+      qspecl_then [‘p - 1’,‘ss’] (fn x => simp[Once x,SimpRHS,Excl "TAKE_DROP"]) (GSYM TAKE_DROP) *)
+      qspecl_then [‘p - 1’,‘ss’] (CONV_TAC o RAND_CONV o RAND_CONV o K) (GSYM TAKE_DROP) >>
+      simp[Excl "TAKE_DROP"] >> ntac 2 $ simp[Once DROP_EL_CONS,SimpRHS])
+  >- (Cases_on ‘pfx’ >> fs[Abbr ‘p’])
+  >- (Cases_on ‘sfx’ >> fs[LAST_APPEND,LAST_CONS_cond])
+  >- (fs[rip_def] >> metis_tac[]) >>
+  cheat
+  *)
 QED
 
  
