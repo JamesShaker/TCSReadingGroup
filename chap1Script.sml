@@ -2044,6 +2044,78 @@ Proof
   metis_tac[gnfa_accepts_step,gnfa_accepts_q_in_Q]
 QED
 
+Inductive gnfaA':
+  (∀q0. q0 ∈ G.Q ⇒ gnfaA' G q0 [] [q0] q0) ∧
+  (∀q0 q1 q2 s1 s2 states.
+     q0 ∈ G.Q ∧ q1 ∈ G.Q ∧
+     s1 ∈ regexp_lang (G.tf q0 q1) ∧
+     gnfaA' G q1 s2 states q2
+     ⇒
+     gnfaA' G q0 (s1 ++ s2) (q0::states) q2)
+End
+
+Theorem gnfaA'_states_nonempty:
+  gnfaA' G q0 str sts q ⇒ sts ≠ [] ∧ HD sts = q0
+Proof
+  Induct_on ‘gnfaA'’ >> simp[]
+QED
+
+Theorem gnfa_accepts_gnfaA':
+  gnfa_accepts G q0 str q ⇒ ∃sts. gnfaA' G q0 str sts q
+Proof
+  Induct_on ‘gnfa_accepts’ >> simp[] >> metis_tac[gnfaA'_rules]
+QED
+
+Theorem gnfaA'_gnfa_accepts:
+  gnfaA' G q0 str sts q ⇒ gnfa_accepts G q0 str q
+Proof
+  Induct_on ‘gnfaA'’ >> simp[gnfa_accepts_rules] >> metis_tac[gnfa_accepts_rules]
+QED
+
+Theorem IN_ripQ:
+  x ≠ r ∧ x IN G.Q ⇒ x IN (rip G r).Q
+Proof
+  rw[rip_def]
+QED
+
+Theorem repeated_head_elements:
+  ∀l e. ∃n sfx. l = REPLICATE n e ++ sfx ∧ (sfx ≠ [] ⇒ HD sfx ≠ e)
+Proof
+  rpt gen_tac >> Induct_on ‘l’ >> simp[] >> fs[] >> qx_gen_tac ‘h’ >> Cases_on ‘h = e’
+  >- (rw[] >> qexistsl_tac [‘SUC n’, ‘sfx’] >> simp[]) >>
+  qexistsl_tac [‘0’, ‘h::REPLICATE n e ++ sfx’] >> simp[]
+QED
+
+Theorem FILTER_REPLICATE:
+  FILTER P (REPLICATE n e) = if P e then REPLICATE n e else []
+Proof
+  Induct_on ‘n’ >> simp[]
+QED
+
+Theorem gnfaA'_APPEND_states:
+  gnfa' G q0 str (sts1 ++ sts2) q ⇒
+  ...
+Proof
+QED
+
+
+Theorem gnfaA'_rip_filter:
+  ∀sts q0 str q r.
+    gnfaA' G q0 str sts q ∧ q0 ≠ r ∧ q ≠ r ∧ r ∈ G.Q ∧ r ≠ G.q0 ∧ r ≠ G.C ⇒
+    gnfaA' (rip G r) q0 str (FILTER (λq. q ≠ r) sts) q
+Proof
+  gen_tac >>
+  completeInduct_on ‘LENGTH sts’ >> fs[PULL_FORALL] >> rpt gen_tac >>
+  strip_tac >>
+  simp[Once gnfaA'_cases, SimpL “$==>”] >> rw[]
+  >- simp[IN_ripQ, gnfaA'_rules] >>
+  simp[] >>
+  qspecl_then [‘states’, ‘r’] (qx_choosel_then [‘n’, ‘sfx’] strip_assume_tac)
+              repeated_head_elements >>
+  rw[FILTER_APPEND, FILTER_REPLICATE] >>
+  ...
+QED
+
 Theorem gnfa_accepts_stream:
   ∀G. wfm_gnfa G ⇒
   ∀q0 q1 s. q0 ∈ G.Q ∧ q1 ∈ G.Q  ⇒
@@ -2090,10 +2162,10 @@ Definition filter_stream_def:
       filter_stream q (q1::q3::qs) ((c1++c2)::cs)
     else
       c1::(filter_stream q (q2::q3::qs) (c2::cs))) ∧
-  (filter_stream _ (q1::q2::[]) cs  = cs) ∧
-  (filter_stream _ (q1::[]) cs  = cs) ∧
+  (filter_stream _ [q1; q2] cs  = cs) ∧
+  (filter_stream _ [q1] cs  = cs) ∧
   (filter_stream _ [] cs  = cs) ∧
-  (filter_stream _ _ (c1::[])  = (c1::[])) ∧
+  (filter_stream _ _ [c1]  = [c1]) ∧
   (filter_stream _ _ []  = [])
 End
 
