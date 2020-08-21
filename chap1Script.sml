@@ -2055,9 +2055,9 @@ Inductive gnfaA':
 End
 
 Theorem gnfaA'_states_nonempty:
-  gnfaA' G q0 str sts q ⇒ sts ≠ [] ∧ HD sts = q0
+  gnfaA' G q0 str sts q ⇒ sts ≠ [] ∧ HD sts = q0 ∧ LAST sts = q
 Proof
-  Induct_on ‘gnfaA'’ >> simp[]
+  Induct_on ‘gnfaA'’ >> simp[LAST_CONS_cond]
 QED
 
 Theorem gnfa_accepts_gnfaA':
@@ -2093,15 +2093,62 @@ Proof
 QED
 
 Theorem gnfaA'_APPEND_states:
-  gnfa' G q0 str (sts1 ++ sts2) q ⇒
+∀G q0 str sts1 sts2 q.  gnfaA' G q0 str (sts1 ++ sts2) q ∧ sts1 ≠ [] ∧ sts2 ≠ [] ⇒ 
+                        ∃str1 str2 q1. str = str1 ++ str2 ∧
+                                       q1 ∈ G.Q ∧
+                                       gnfaA' G q0 str1 (sts1 ++ [HD sts2]) q1 ∧
+                                       gnfaA' G q1 str2 sts2 q 
+Proof
+  Induct_on `sts1` >> rw[] >> qpat_x_assum (`gnfaA' _ _ _ _ _`) mp_tac >>
+  simp[Once gnfaA'_cases, SimpL ``$==>``] >> rw[] >> 
+  Cases_on `sts1 = []` 
+  >- (rw[] >> fs[] >> first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> 
+      simp[] >> drule gnfaA'_states_nonempty >> rw[] >> 
+      drule_at (Pos $ el 3) (cj 2 gnfaA'_rules) >> rw[] >> 
+      first_x_assum (resolve_then (Pos hd) mp_tac (cj 1 gnfaA'_rules)) >> rw[]) >>
+  first_x_assum (drule_all_then strip_assume_tac) >>  
+  first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> rw[] >> 
+  drule_at (Pos $ el 3) (cj 2 gnfaA'_rules) >> rw[]
+QED
+
+Theorem LAST_REPLICATE:
+  0 < n ⇒ LAST (REPLICATE n r) = r
+Proof
+  Induct_on `n` >> rw[LAST_CONS_cond]
+QED
+
+Theorem HD_APPEND:
+  a ≠ [] ⇒ HD (a ++ b) = HD a
+Proof
+  Cases_on `a` >> rw[]
+QED
+
+Theorem HD_REPLICATE:
+  0 < n ⇒ HD (REPLICATE n r) = r
+Proof
+  Cases_on `n` >> rw[]
+QED
+
+Theorem gnfaA'_q_to_q0:
+  wfm_gnfa G ⇒ gnfaA' G q str sts G.q0 ⇒ q = G.q0 ∧ sts = [G.q0]
+Proof
+  Induct_on `gnfaA'` >> rw[] >> Cases_on `wfm_gnfa G` >> fs[] >> rw[] >> 
+  fs[wfm_gnfa_def]
+QED
+
+Theorem gnfaA'_APPEND_states2:
   ...
 Proof
 QED
 
+Theorem gnfaA'_REPLICATE:
+  ...
+Proof
+QED
 
 Theorem gnfaA'_rip_filter:
   ∀sts q0 str q r.
-    gnfaA' G q0 str sts q ∧ q0 ≠ r ∧ q ≠ r ∧ r ∈ G.Q ∧ r ≠ G.q0 ∧ r ≠ G.C ⇒
+    wfm_gnfa G ∧ gnfaA' G q0 str sts q ∧ q0 ≠ r ∧ q ≠ r ∧ r ∈ G.Q ∧ r ≠ G.q0 ∧ r ≠ G.C ⇒
     gnfaA' (rip G r) q0 str (FILTER (λq. q ≠ r) sts) q
 Proof
   gen_tac >>
@@ -2113,7 +2160,22 @@ Proof
   qspecl_then [‘states’, ‘r’] (qx_choosel_then [‘n’, ‘sfx’] strip_assume_tac)
               repeated_head_elements >>
   rw[FILTER_APPEND, FILTER_REPLICATE] >>
-  ...
+  drule gnfaA'_APPEND_states >> simp[] >> Cases_on `sfx = []` >> rw[]
+  >- (fs[] >> drule gnfaA'_states_nonempty >> rw[] >> fs[LAST_REPLICATE]) >>
+  Cases_on `n = 0` >> fs[] >> rw[]
+  >- (irule (cj 2 gnfaA'_rules) >> rw[IN_ripQ] >> qexists_tac `q1` >> rw[]
+      >- (rw[rip_def] >> fs[wfm_gnfa_def] >> rfs[])
+      >- (drule gnfaA'_states_nonempty >> rw[] >> rw[IN_ripQ]) >>
+      first_x_assum irule >> rw[] >> drule gnfaA'_states_nonempty >> rw[]) >>
+  `q1 = r` by (rev_drule gnfaA'_states_nonempty >> rw[] >> simp[HD_APPEND, HD_REPLICATE]) >>
+  rw[] >> rename [`gnfaA' G q1 str1 (REPLICATE n q1 ⧺ [HD sfx]) q2`] >> 
+  `q2 = HD sfx` by (drule gnfaA'_states_nonempty >> rw[]) >> rw[] >> 
+  irule (cj 2 gnfaA'_rules) >> rw[IN_ripQ] >> qexists_tac `HD sfx` >> rw[]
+  >- (simp[rip_def] >> rw[]
+      >- rfs[wfm_gnfa_def] 
+      >- (fs[] >> rw[] >> drule_all gnfaA'_q_to_q0 >> rw[]) >>
+      DISJ1_TAC >> simp[Once concat_def] >> goal_assum (drule_at (Pos $ el 2)) >> 
+      simp[] >> cheat) (* gnfa (replicate n r)  - > star regexp_lang *)  >> cheat
 QED
 
 Theorem gnfa_accepts_stream:
