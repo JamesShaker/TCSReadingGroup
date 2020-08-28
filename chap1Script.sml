@@ -2136,9 +2136,29 @@ Proof
   fs[wfm_gnfa_def]
 QED
 
-Theorem gnfaA'_APPEND_states2:
-  ...
+Theorem gnfaA'_in_G:
+∀s l q0 q. gnfaA' G q0 s l q ⇒ ∀st. MEM st l ⇒ st IN G.Q
 Proof
+Induct_on ‘gnfaA'’ >> simp[DISJ_IMP_THM]
+QED
+
+Theorem gnfaA'_APPEND_states2:
+  ∀G q0 str sts1 sts2 q.
+         gnfaA' G q0 str (sts1 ⧺ sts2) q ∧ sts1 ≠ [] ∧ sts2 ≠ [] ⇒
+         ∃str1 str2 q1.
+             str = str1 ⧺ str2 ∧ q1 ∈ G.Q ∧
+             gnfaA' G q0 str1 sts1 q1 ∧ gnfaA' G q1 str2 (LAST sts1 :: sts2) q
+Proof
+ rw[] >> Cases_on ‘sts1’ >> fs[] >> rename [‘q1 :: (sts1 ++ sts2)’] >>
+ ‘q0 = q1’ by (drule gnfaA'_states_nonempty >> simp[]) >> rw[] >>
+ Cases_on ‘sts1 = []’ >> fs[] (* 2 *)
+ >- (first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> csimp[gnfaA'_rules] >>
+     metis_tac[gnfaA'_in_G,MEM]) >>
+ ‘q0::(sts1 ⧺ sts2) = FRONT (q0::sts1) ++ LAST (q0::sts1) :: sts2’
+   by (‘LAST (q0::sts1)::sts2 = [LAST (q0::sts1)] ++ sts2’ by simp[] >>
+      simp[APPEND_FRONT_LAST]) >>
+ qpat_x_assum ‘gnfaA' _ _ _ _ _’ mp_tac >> simp[] >>
+ strip_tac >> drule gnfaA'_APPEND_states >> simp[APPEND_FRONT_LAST]
 QED
 
 Theorem gnfaA'_REPLICATE:
@@ -2170,12 +2190,22 @@ Proof
   `q1 = r` by (rev_drule gnfaA'_states_nonempty >> rw[] >> simp[HD_APPEND, HD_REPLICATE]) >>
   rw[] >> rename [`gnfaA' G q1 str1 (REPLICATE n q1 ⧺ [HD sfx]) q2`] >> 
   `q2 = HD sfx` by (drule gnfaA'_states_nonempty >> rw[]) >> rw[] >> 
-  irule (cj 2 gnfaA'_rules) >> rw[IN_ripQ] >> qexists_tac `HD sfx` >> rw[]
+  irule (cj 2 gnfaA'_rules) >> rw[IN_ripQ] >> qexists_tac `HD sfx` >> rw[] (* 2 *)
   >- (simp[rip_def] >> rw[]
       >- rfs[wfm_gnfa_def] 
       >- (fs[] >> rw[] >> drule_all gnfaA'_q_to_q0 >> rw[]) >>
       DISJ1_TAC >> simp[Once concat_def] >> goal_assum (drule_at (Pos $ el 2)) >> 
-      simp[] >> cheat) (* gnfa (replicate n r)  - > star regexp_lang *)  >> cheat
+      simp[] >>
+      drule gnfaA'_APPEND_states2 >> simp[] >> strip_tac >>
+      drule gnfaA'_states_nonempty >> simp[] >> rw[] >> rfs[LAST_REPLICATE] >>
+      simp[concat_def] >> simp[] >>
+      rename [‘s1 ++ s2 = _ ++ _’] >> qexistsl_tac [‘s1’,‘s2’] >> simp[] >>
+      reverse conj_tac (* 2 *)
+      >- (pop_assum mp_tac >> simp[Ntimes gnfaA'_cases 3]) >>
+      
+      
+
+       cheat) (* gnfa (replicate n r)  - > star regexp_lang *)  >> cheat
 QED
 
 Theorem gnfa_accepts_stream:
