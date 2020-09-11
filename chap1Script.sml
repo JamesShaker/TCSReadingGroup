@@ -1777,8 +1777,7 @@ Datatype:
 End
 
 Definition wfm_gnfa_def:
-  wfm_gnfa G ⇔ G.q0 ∈ G.Q ∧
-               G.C ∈ G.Q ∧
+  wfm_gnfa G ⇔ FINITE G.Q ∧ G.q0 ∈ G.Q ∧ G.C ∈ G.Q ∧ G.q0 ≠ G.C ∧
                (∀s. G.tf s G.q0 = Empty) ∧
                (∀s. G.tf G.C  s = Empty)
 End
@@ -2093,21 +2092,21 @@ Proof
 QED
 
 Theorem gnfaA'_APPEND_states:
-∀G q0 str sts1 sts2 q.  gnfaA' G q0 str (sts1 ++ sts2) q ∧ sts1 ≠ [] ∧ sts2 ≠ [] ⇒ 
+∀G q0 str sts1 sts2 q.  gnfaA' G q0 str (sts1 ++ sts2) q ∧ sts1 ≠ [] ∧ sts2 ≠ [] ⇒
                         ∃str1 str2 q1. str = str1 ++ str2 ∧
                                        q1 ∈ G.Q ∧
                                        gnfaA' G q0 str1 (sts1 ++ [HD sts2]) q1 ∧
-                                       gnfaA' G q1 str2 sts2 q 
+                                       gnfaA' G q1 str2 sts2 q
 Proof
   Induct_on `sts1` >> rw[] >> qpat_x_assum (`gnfaA' _ _ _ _ _`) mp_tac >>
-  simp[Once gnfaA'_cases, SimpL ``$==>``] >> rw[] >> 
-  Cases_on `sts1 = []` 
-  >- (rw[] >> fs[] >> first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> 
-      simp[] >> drule gnfaA'_states_nonempty >> rw[] >> 
-      drule_at (Pos $ el 3) (cj 2 gnfaA'_rules) >> rw[] >> 
+  simp[Once gnfaA'_cases, SimpL ``$==>``] >> rw[] >>
+  Cases_on `sts1 = []`
+  >- (rw[] >> fs[] >> first_assum (goal_assum o resolve_then (Pos last) mp_tac) >>
+      simp[] >> drule gnfaA'_states_nonempty >> rw[] >>
+      drule_at (Pos $ el 3) (cj 2 gnfaA'_rules) >> rw[] >>
       first_x_assum (resolve_then (Pos hd) mp_tac (cj 1 gnfaA'_rules)) >> rw[]) >>
-  first_x_assum (drule_all_then strip_assume_tac) >>  
-  first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> rw[] >> 
+  first_x_assum (drule_all_then strip_assume_tac) >>
+  first_assum (goal_assum o resolve_then (Pos last) mp_tac) >> rw[] >>
   drule_at (Pos $ el 3) (cj 2 gnfaA'_rules) >> rw[]
 QED
 
@@ -2132,7 +2131,7 @@ QED
 Theorem gnfaA'_q_to_q0:
   wfm_gnfa G ⇒ gnfaA' G q str sts G.q0 ⇒ q = G.q0 ∧ sts = [G.q0]
 Proof
-  Induct_on `gnfaA'` >> rw[] >> Cases_on `wfm_gnfa G` >> fs[] >> rw[] >> 
+  Induct_on `gnfaA'` >> rw[] >> Cases_on `wfm_gnfa G` >> fs[] >> rw[] >>
   fs[wfm_gnfa_def]
 QED
 
@@ -2204,13 +2203,13 @@ Proof
       >- (drule gnfaA'_states_nonempty >> rw[] >> rw[IN_ripQ]) >>
       first_x_assum irule >> rw[] >> drule gnfaA'_states_nonempty >> rw[]) >>
   `q1 = r` by (rev_drule gnfaA'_states_nonempty >> rw[] >> simp[HD_APPEND, HD_REPLICATE]) >>
-  rw[] >> rename [`gnfaA' G q1 str1 (REPLICATE n q1 ⧺ [HD sfx]) q2`] >> 
-  `q2 = HD sfx` by (drule gnfaA'_states_nonempty >> rw[]) >> rw[] >> 
+  rw[] >> rename [`gnfaA' G q1 str1 (REPLICATE n q1 ⧺ [HD sfx]) q2`] >>
+  `q2 = HD sfx` by (drule gnfaA'_states_nonempty >> rw[]) >> rw[] >>
   irule (cj 2 gnfaA'_rules) >> rw[IN_ripQ] >> qexists_tac `HD sfx` >> rw[] (* 2 *)
   >- (simp[rip_def] >> rw[]
-      >- rfs[wfm_gnfa_def] 
+      >- rfs[wfm_gnfa_def]
       >- (fs[] >> rw[] >> drule_all gnfaA'_q_to_q0 >> rw[]) >>
-      DISJ1_TAC >> simp[Once concat_def] >> goal_assum (drule_at (Pos $ el 2)) >> 
+      DISJ1_TAC >> simp[Once concat_def] >> goal_assum (drule_at (Pos $ el 2)) >>
       simp[] >>
       drule gnfaA'_APPEND_states2 >> simp[] >> strip_tac >>
       drule gnfaA'_states_nonempty >> simp[] >> rw[] >> rfs[LAST_REPLICATE] >>
@@ -2255,7 +2254,7 @@ Termination
   ‘FINITE (G.Q DIFF {G.q0; G.C})’
     by simp[] >>
   drule_all (cj 1 MAX_SET_DEF) >> gvs[]
-End 
+End
 
 
 Theorem reduced_gnfa_same:
@@ -2291,10 +2290,64 @@ Proof
   drule_all (cj 1 MAX_SET_DEF) >> gvs[]
 QED
 
+Theorem reduced_gnfa_facts[simp]:
+  ∀GN. (reduced_gnfa GN).q0 = GN.q0 ∧ (reduced_gnfa GN).C = GN.C
+Proof
+  ho_match_mp_tac reduced_gnfa_ind >> simp[] >> qx_gen_tac ‘GN’ >> strip_tac>>
+  ONCE_REWRITE_TAC[reduced_gnfa_def] >>
+  Cases_on ‘FINITE GN.Q ∧ 2 < CARD GN.Q’ >> simp[] >>
+  qmatch_abbrev_tac ‘(rip GN s).q0 = GN.q0 ∧ _’ >>
+  rw[rip_def]
+QED
+
+Theorem reduced_gnfas_have_two_states:
+  ∀GN. wfm_gnfa GN ⇒
+       (reduced_gnfa GN).Q = {GN.q0 ; GN.C }
+Proof
+  ho_match_mp_tac reduced_gnfa_ind >> qx_gen_tac ‘GN’ >> rpt strip_tac >>
+  ONCE_REWRITE_TAC [reduced_gnfa_def] >> reverse (rw[])
+  >- (gvs[wfm_gnfa_def, arithmeticTheory.NOT_LESS] >>
+      simp[EXTENSION, EQ_IMP_THM, DISJ_IMP_THM] >> CCONTR_TAC >> gvs[] >>
+      rename [‘s ≠ GN.C’, ‘s ≠ GN.q0’] >>
+      ‘{s; GN.C; GN.q0} ⊆ GN.Q’ by simp[SUBSET_DEF] >>
+      ‘CARD {s;GN.C;GN.q0} ≤ CARD GN.Q’ by metis_tac[CARD_SUBSET] >>
+      gvs[]) >>
+  gvs[wfm_rip_wfm] >> rw[rip_def]
+QED
+
+Theorem wfm_gnfa_reduced:
+  ∀GN. wfm_gnfa GN ⇒ wfm_gnfa (reduced_gnfa GN)
+Proof
+  ho_match_mp_tac reduced_gnfa_ind >> rw[] >>
+  ONCE_REWRITE_TAC [reduced_gnfa_def] >> rw[] >> gvs[] >>
+  simp[wfm_rip_wfm]
+QED
+
 Theorem thm_1_54_ltr:
   ∀l. regularLanguage l ⇒ ∃r. regexp_lang r = l
 Proof
-  cheat
+  simp[regularLanguage_def, recogLangD_def, PULL_EXISTS] >>
+  simp[EXTENSION] >>
+  qx_gen_tac ‘D’ >> strip_tac >>
+  drule_then (qx_choose_then ‘GN’ strip_assume_tac) dfa_to_gnfa_correct >>
+  simp[] >>
+  drule_then strip_assume_tac reduced_gnfa_same >> simp[] >>
+  ‘wfm_gnfa (reduced_gnfa GN)’ by simp[wfm_gnfa_reduced] >>
+  ONCE_REWRITE_TAC [gnfa_accepts_cases] >>
+  ‘GN.C ≠ GN.q0’ by gvs[wfm_gnfa_def] >> simp[reduced_gnfas_have_two_states] >>
+  qexists_tac ‘(reduced_gnfa GN).tf GN.q0 GN.C’ >> qx_gen_tac ‘str’ >> eq_tac
+  >- (strip_tac >> qexistsl_tac [‘str’, ‘[]’, ‘GN.C’] >>
+      simp[Once gnfa_accepts_cases, reduced_gnfas_have_two_states]) >>
+  rw[] >- gvs[wfm_gnfa_def] >>
+  ‘c2 = []’ suffices_by simp[] >>
+  pop_assum mp_tac >> ONCE_REWRITE_TAC[gnfa_accepts_cases] >>
+  rw[] >> gvs[wfm_gnfa_def]
+QED
+
+Theorem thm_1_54:
+  regularLanguage l ⇔ ∃r. regexp_lang r = l
+Proof
+  metis_tac[thm_1_54_ltr, lemma_1_55]
 QED
 
 val _ = export_theory();
