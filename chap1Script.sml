@@ -6,7 +6,8 @@ open combinTheory
      numpairTheory
      pred_setTheory
      relationTheory
-     rich_listTheory;
+     rich_listTheory
+     arithmeticTheory;
 
 val _ = new_theory "chap1";
 
@@ -2377,6 +2378,19 @@ Proof
 QED
 
 
+Theorem runMachine_segment:
+∀i j ss s M.
+  (∀n. n < LENGTH ss − 1 ⇒ M.tf (EL n ss) (EL n s) = EL (n + 1) ss) ∧
+  i < LENGTH ss ∧ j ≤ i ∧ LENGTH ss = LENGTH s + 1 ⇒
+  runMachine M (EL j ss) (DROP j (TAKE i s)) = EL i ss
+Proof
+  Induct_on `i - j` >> rw[] >- (`i = j` by simp[] >> rw[DROP_TAKE]) >>
+  `v = i - (SUC j)` by simp[] >>
+  `DROP j (TAKE i s) = EL j s :: DROP (SUC j) (TAKE i s)`
+    by simp[DROP_CONS_EL, LENGTH_TAKE, EL_TAKE] >>
+  simp[] >> fs[ADD1]
+QED
+
 Theorem pumpingLemma:
   ∀l. regularLanguage l ⇒
       ∃p.∀s.
@@ -2393,7 +2407,7 @@ Proof
   rw[] >>
   RULE_ASSUM_TAC (REWRITE_RULE [Sipser_Accepts_def]) >>
   fs[] >>
-  ‘∃ n m. n < m ∧ EL n ss = EL m ss’
+  ‘∃ n m. n < m ∧ m < LENGTH ss ∧ EL n ss = EL m ss’
     by (‘¬INJ (λx. EL x ss) (count (LENGTH ss)) M.Q’
           suffices_by (rw[INJ_IFF]
                        >- (metis_tac[wfFA_def,wfFA_remain_Q,MEM_EL,
@@ -2406,7 +2420,20 @@ Proof
         simp[] >> fs[wfFA_def]) >>
   map_every qexists_tac [‘TAKE n s’,‘DROP n (TAKE m s)’,‘DROP m s’] >>
   simp[Sipser_Accepts_runMachine_coincide,accepts_def,runMachine_append] >>
-  cheat
+  conj_tac
+  >- simp[GSYM APPEND_ASSOC, Excl "APPEND_ASSOC", Excl "LIST_EQ_SIMP_CONV",
+          GSYM DROP_APPEND1] >> `n < LENGTH ss - 1` by fs[] >>
+  `runMachine M M.q0 (TAKE n s) = EL n ss`
+    by (drule runMachine_segment >> rw[] >>
+        first_x_assum (qspecl_then [`n`, `0`] MP_TAC) >> simp[]) >> simp[] >>
+  `∀i. runMachine M (EL m ss) (exp (DROP n (TAKE m s)) i) = EL m ss`
+    by (Induct_on `i` >> rw[] >> simp[exp_def] >>
+        `runMachine M (EL m ss) (DROP n (TAKE m s)) = EL m ss`
+          suffices_by simp[] >> drule runMachine_segment >> simp[] >>
+        disch_then $ qspecl_then [`m`, `n`] mp_tac >> rw[]) >> simp[] >>
+  drule_then (qspecl_then [`LENGTH s`, `m`] mp_tac) runMachine_segment >> rw[] >>
+  `EL (LENGTH s) ss = LAST ss` suffices_by simp[] >>
+  simp[LAST_EL, GSYM ADD1]
 QED
 
 
