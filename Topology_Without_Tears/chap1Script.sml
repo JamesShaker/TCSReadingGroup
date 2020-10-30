@@ -140,5 +140,26 @@ Proof
   simp[PULL_EXISTS]
 QED
 
+Theorem exercise_6:
+istopology ({univ (:num);∅} UNION (IMAGE (\n. {x | x ≤ n}) univ(:num)))
+Proof
+rw[istopology] >> simp[] >> TRY (metis_tac[]) (* 2 *)
+>- (disj2_tac >> qexists_tac ‘MIN n n'’ >> rw[EQ_IMP_THM,EXTENSION]) >>
+Cases_on ‘UNIV IN k’ (* 2 *)
+>- (‘BIGUNION k = UNIV’
+     by (rw[EXTENSION,EQ_IMP_THM] >> metis_tac[IN_UNIV]) >>
+   simp[]) >>
+Cases_on ‘k = {∅}’ >> simp[] >> Cases_on ‘k = {}’ >> simp[]
+Cases_on ‘FINITE k’ (* 2 *)
+>- fs[SUBSET_DEF] >> disj2_tac >>
+   qexists_tac ‘MAX_SET {n | {x | x ≤ n} ∈ k}’ >> rw[EQ_IMP_THM,EXTENSION] >>
+   rename [‘n IN i’,‘i IN k’] >>
+   ‘∃m. i = {x | x ≤ m}’ by metis_tac[NOT_IN_EMPTY] >>
+   gvs[] >> DEEP_INTRO_TAC MAX_SET_ELIM >> simp[] >> rw[] (* 3 *)
+   >- (‘INJ (\n. {x | x ≤ n}) {n | {x | x ≤ n} ∈ k} (k DELETE {})’
+         by (simp[INJ_DEF] >> cheat) 
 
-val _ = export_theory();
+
+
+        
+VAL _ = export_theory();
