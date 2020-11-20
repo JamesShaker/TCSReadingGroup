@@ -3,6 +3,7 @@ open HolKernel Parse boolLib bossLib;
 open pred_setTheory
 (* inherit from existing topology theory *)
 open topologyTheory
+open arithmeticTheory
 
 val _ = new_theory "chap1";
 
@@ -140,26 +141,68 @@ Proof
   simp[PULL_EXISTS]
 QED
 
-Theorem exercise_6:
-istopology ({univ (:num);∅} UNION (IMAGE (\n. {x | x ≤ n}) univ(:num)))
+Theorem MAX_SET_all_x_lse_n_eq_n:
+  MAX_SET {x | x ≤ n} = n
 Proof
-rw[istopology] >> simp[] >> TRY (metis_tac[]) (* 2 *)
->- (disj2_tac >> qexists_tac ‘MIN n n'’ >> rw[EQ_IMP_THM,EXTENSION]) >>
-Cases_on ‘UNIV IN k’ (* 2 *)
->- (‘BIGUNION k = UNIV’
-     by (rw[EXTENSION,EQ_IMP_THM] >> metis_tac[IN_UNIV]) >>
-   simp[]) >>
-Cases_on ‘k = {∅}’ >> simp[] >> Cases_on ‘k = {}’ >> simp[]
-Cases_on ‘FINITE k’ (* 2 *)
->- fs[SUBSET_DEF] >> disj2_tac >>
-   qexists_tac ‘MAX_SET {n | {x | x ≤ n} ∈ k}’ >> rw[EQ_IMP_THM,EXTENSION] >>
-   rename [‘n IN i’,‘i IN k’] >>
-   ‘∃m. i = {x | x ≤ m}’ by metis_tac[NOT_IN_EMPTY] >>
-   gvs[] >> DEEP_INTRO_TAC MAX_SET_ELIM >> simp[] >> rw[] (* 3 *)
-   >- (‘INJ (\n. {x | x ≤ n}) {n | {x | x ≤ n} ∈ k} (k DELETE {})’
-         by (simp[INJ_DEF] >> cheat) 
+  DEEP_INTRO_TAC MAX_SET_ELIM >> rw[]
+  >- (`{x | x ≤ n} = count (n+1)` suffices_by simp[] >> simp[EXTENSION])
+  >- (fs[EXTENSION] >> fs[NOT_LESS_EQUAL] >> `n < 0` by fs[] >>
+      `0 ≤ n` by fs[] >> fs[])
+  >> metis_tac[LESS_EQ_REFL, LESS_EQUAL_ANTISYM]
+QED
+
+Theorem exercise_6:
+  istopology ({univ (:num);∅} UNION (IMAGE (\n. {x | x ≤ n}) univ(:num)))
+Proof
+  rw[istopology] >> simp[] >> TRY (metis_tac[]) (* 2 *)
+  >- (disj2_tac >> qexists_tac ‘MIN n n'’ >> rw[EQ_IMP_THM,EXTENSION]) >>
+  Cases_on ‘UNIV IN k’ (* 2 *)
+  >- (‘BIGUNION k = UNIV’
+       by (rw[EXTENSION,EQ_IMP_THM] >> metis_tac[IN_UNIV]) >>
+     simp[]) >>
+  Cases_on ‘k = {∅}’ >> simp[] >> Cases_on ‘k = {}’ >> simp[] >>
+  Cases_on ‘FINITE k’ (* 2 *)
+  >- (fs[SUBSET_DEF] >> disj2_tac >>
+      `FINITE {n | {x | x ≤ n} ∈ k}`
+          by (‘INJ (\n. {x | x ≤ n}) {n | {x | x ≤ n} ∈ k} (k DELETE {})’
+                by (simp[INJ_DEF] >> rw[]
+                    >- (simp[EXTENSION] >> qexists_tac `0` >> simp[])
+                    >> pop_assum mp_tac >> simp[EXTENSION] >>
+                    metis_tac[LESS_EQ_REFL, LESS_EQUAL_ANTISYM]) >>
+              drule FINITE_INJ >> rw[]) >>
+      qexists_tac ‘MAX_SET {n | {x | x ≤ n} ∈ k}’ >> rw[EQ_IMP_THM,EXTENSION]
+      >- (rename [‘n IN i’,‘i IN k’] >>
+          ‘∃m. i = {x | x ≤ m}’ by metis_tac[NOT_IN_EMPTY] >>
+          gvs[] >> DEEP_INTRO_TAC MAX_SET_ELIM >> simp[] >> rw[] (* 2 *)
+          >- fs[EXTENSION]
+          >> metis_tac[LESS_EQ_TRANS])
+      >> pop_assum mp_tac >> DEEP_INTRO_TAC MAX_SET_ELIM >> rw[]
+      >- (pop_assum mp_tac >> simp[EXTENSION] >> rw[] >>
+          `∃y. {y' | y' ≤ y} ∈ k` suffices_by metis_tac[] >>
+          `∃z. z ∈ k ∧ z ≠ ∅` suffices_by metis_tac[] >>
+          CCONTR_TAC >> gs[] >> `∀z. z ∈ k ⇒ z = ∅` by metis_tac[] >>
+          qpat_x_assum `k ≠ {∅}` mp_tac >> simp[Once EXTENSION] >> rw[EQ_IMP_THM] >>
+          metis_tac[MEMBER_NOT_EMPTY])
+      >> first_x_assum $ irule_at Any >> simp[])
+  >> fs[SUBSET_DEF] >> disj1_tac >> simp[EXTENSION] >> rw[] >>
+  `∃y. {y' | y' ≤ y} ∈ k ∧ x ≤ y`
+      suffices_by (strip_tac >> first_x_assum $ irule_at Any >> simp[]) >>
+  CCONTR_TAC >> gs[] >>
+  `∀y. {y' | y' ≤ y} ∈ k ⇒ ¬(x ≤ y)` by metis_tac[] >>
+  fs[NOT_LESS_EQUAL] >>
+  qpat_x_assum `INFINITE k` mp_tac >> simp[] >>
+  `FINITE (k DELETE {})` suffices_by simp[] >>
+  `INJ (\s. MAX_SET s) (k DELETE {}) (count x)`
+                by (simp[INJ_DEF] >> rw[]
+                    >- (first_x_assum drule >> rw[] >> fs[] >>
+                        first_x_assum drule >> rw[] >> DEEP_INTRO_TAC MAX_SET_ELIM >>
+                        simp[] >> `{x | x ≤ n} = count (n+1)` suffices_by simp[] >>
+                        simp[EXTENSION])
+                    >> `∃m n. s = {x | x ≤ m} ∧ s' = {x | x ≤ n}` by metis_tac[] >>
+                    metis_tac[MAX_SET_all_x_lse_n_eq_n]) >>
+  drule FINITE_INJ >> rw[]
+QED
 
 
 
-        
 VAL _ = export_theory();
