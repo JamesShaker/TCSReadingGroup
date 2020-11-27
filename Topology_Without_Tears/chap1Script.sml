@@ -203,6 +203,85 @@ Proof
   drule FINITE_INJ >> rw[]
 QED
 
+Theorem prop122i = CONJ OPEN_IN_TOPSPACE OPEN_IN_EMPTY
+Theorem prop122ii = OPEN_IN_BIGUNION
+Theorem prop122iii = OPEN_IN_BIGINTER
+
+Theorem finite_closed_isTopology:
+  istopology (∅ INSERT { s | FINITE (COMPL s) })
+Proof
+  rw[istopology] >> simp[]
+  >- (disj2_tac >> rename [‘FINITE (COMPL (s ∩ t))’] >>
+      ‘COMPL (s ∩ t) = COMPL s ∪ COMPL t’ by simp[EXTENSION] >>
+      simp[]) >>
+  gs[SUBSET_DEF] >> rename [‘s = ∅’] >>
+  Cases_on ‘s = ∅’ >> simp[] >>
+  ‘COMPL (BIGUNION s) = BIGINTER { COMPL t | t ∈ s }’
+    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[]) >>
+  Cases_on ‘s = {∅}’ >> simp[] >>
+  ‘∃t. t ∈ s ∧ t ≠ ∅’
+    by (qpat_x_assum ‘s ≠ ∅’ mp_tac >> qpat_x_assum ‘s ≠ {∅}’ mp_tac >>
+        ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY])
+  irule FINITE_BIGINTER >> simp[PULL_EXISTS]>> metis_tac[]
+QED
+
+Theorem biginter_couterexample[local]:
+  let S_n n = 1 INSERT { m | n + 1 ≤ m } (* S_n from Example 1_2_3 *)
+  in
+    (∀n. FINITE (COMPL (S_n n))) ∧
+    BIGINTER (IMAGE S_n UNIV) = {1}
+Proof
+  simp[] >> conj_tac
+  >- (gen_tac >> irule SUBSET_FINITE >> qexists_tac ‘count (n + 1)’ >>
+      simp[SUBSET_DEF]) >>
+  simp[Once EXTENSION, PULL_EXISTS] >> gen_tac >> eq_tac >> simp[] >>
+  disch_then $ qspec_then ‘x’ mp_tac >> simp[]
+QED
+
+(* what the book calls a closed set is written closed_in, here we alias with closedSet *)
+Overload closedSets = “closed_in”
+
+Theorem prop1_2_5:
+  closed_in top ∅ ∧ closed_in top (topspace top) ∧ (* i *)
+  ((∀t. t ∈ s ⇒ closed_in top t) ∧ s ≠ ∅ ⇒ closed_in top (BIGINTER s)) ∧
+  ((∀t. t ∈ s ⇒ closed_in top t) ∧ FINITE s ⇒ closed_in top (BIGUNION s))
+Proof
+  simp[CLOSED_IN_BIGINTER, CLOSED_IN_BIGUNION, CLOSED_IN_EMPTY, CLOSED_IN_TOPSPACE]
+QED
+
+Definition clopen_def:
+  clopen top s ⇔ closed_in top s ∧ open_in top s
+End
+
+Theorem exercise1_2_2:
+  (∀s. s ⊆ topspace top ⇒ closed_in top s) ⇒
+  top = discrete_topology (topspace top)
+Proof
+  strip_tac >> irule prop1_1_9 >>
+  gs[closed_in] >> qx_gen_tac ‘e’ >> strip_tac >>
+  first_x_assum $ qspec_then ‘topspace top DIFF {e}’ mp_tac >> simp[] >>
+  simp[DIFF_DIFF_SUBSET, SUBSET_DEF]
+QED
+
+Theorem exercise1_2_3:
+  ALL_DISTINCT [a;b;c;d] ⇒
+  let t = {∅; {a;c}; {b;d}; {a;b;c;d}}
+  in
+  istopology t ∧ (∀s. open_in (topology t) s ⇒ closed_in (topology t) s)
+Proof
+  cheat (*
+  srw_tac[][]
+  >- (simp[Abbr‘t’, istopology] >> rw[] >> simp[] >>
+      simp[SING_INTER, INTER_EQ] >>
+      simp[Once EXTENSION]
+      >- metis_tac[] >- metis_tac[] >>
+      gs[SUBSET_DEF] >> Cases_on ‘k = ∅’ >> simp[] >>
+      ONCE_REWRITE_TAC [EXTENSION] >>
 
 
-VAL _ = export_theory();
+
+  csimp[topology_tybij |> cj 2 |> iffLR, closed_in,topspace]
+*)
+QED
+
+val _ = export_theory();
