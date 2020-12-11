@@ -221,7 +221,7 @@ Proof
   Cases_on ‘s = {∅}’ >> simp[] >>
   ‘∃t. t ∈ s ∧ t ≠ ∅’
     by (qpat_x_assum ‘s ≠ ∅’ mp_tac >> qpat_x_assum ‘s ≠ {∅}’ mp_tac >>
-        ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY])
+        ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
   irule FINITE_BIGINTER >> simp[PULL_EXISTS]>> metis_tac[]
 QED
 
@@ -269,7 +269,6 @@ Theorem exercise1_2_3:
   in
   istopology t ∧ (∀s. open_in (topology t) s ⇒ closed_in (topology t) s)
 Proof
-  cheat (*
   srw_tac[][]
   >- (simp[Abbr‘t’, istopology] >> rw[] >> simp[] >>
       simp[SING_INTER, INTER_EQ] >>
@@ -277,11 +276,38 @@ Proof
       >- metis_tac[] >- metis_tac[] >>
       gs[SUBSET_DEF] >> Cases_on ‘k = ∅’ >> simp[] >>
       ONCE_REWRITE_TAC [EXTENSION] >>
-
+      Cases_on ‘k = {∅}’ (* 2 *)
+      >- simp[] >>
+      disj2_tac >> Cases_on ‘{a;b;c;d} IN k’ (* 2 *)
+      >- (disj2_tac >> disj2_tac >>
+          simp[EQ_IMP_THM,PULL_EXISTS,FORALL_AND_THM,DISJ_IMP_THM] >>
+          ntac 4 (qexists_tac ‘{a;b;c;d}’) >> simp[] >>
+          rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *) >>
+          fs[]) >>
+      Cases_on ‘{a;c} IN k’ >> Cases_on ‘{b;d} IN k’ (* 4 *)
+      >- (disj2_tac >> disj2_tac >>
+         simp[EQ_IMP_THM,PULL_EXISTS,FORALL_AND_THM,DISJ_IMP_THM] >>
+         qexistsl_tac [‘{a;c}’,‘{b;d}’,‘{a;c}’,‘{b;d}’] >> simp[] >>
+         rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *) >>
+         fs[])
+      >- (disj1_tac >>
+         simp[EQ_IMP_THM,PULL_EXISTS,FORALL_AND_THM,DISJ_IMP_THM] >>
+         ntac 2 (qexists_tac ‘{a;c}’) >> simp[] >>
+         rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *) >>
+         fs[])
+      >- (disj2_tac >> disj1_tac >>
+         simp[EQ_IMP_THM,PULL_EXISTS,FORALL_AND_THM,DISJ_IMP_THM] >>
+         ntac 2 (qexists_tac ‘{b;d}’) >> simp[] >>
+         rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *) >>
+         fs[]) >>
+      ‘∀x. x ∈ k ⇒ x = ∅’ by metis_tac[] >>
+      ‘k = {∅}’ suffices_by metis_tac[] >>
+      rw[EXTENSION] >> fs[GSYM MEMBER_NOT_EMPTY] >>
+      first_x_assum drule >> rw[] >> metis_tac[UNIQUE_MEMBER_SING]) 
 
 
   csimp[topology_tybij |> cj 2 |> iffLR, closed_in,topspace]
-*)
+
 QED
 
 val _ = export_theory();
