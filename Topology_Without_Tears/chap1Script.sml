@@ -207,24 +207,6 @@ Theorem prop122i = CONJ OPEN_IN_TOPSPACE OPEN_IN_EMPTY
 Theorem prop122ii = OPEN_IN_BIGUNION
 Theorem prop122iii = OPEN_IN_BIGINTER
 
-Theorem finite_closed_isTopology:
-  istopology (∅ INSERT { s | FINITE (COMPL s) })
-Proof
-  rw[istopology] >> simp[]
-  >- (disj2_tac >> rename [‘FINITE (COMPL (s ∩ t))’] >>
-      ‘COMPL (s ∩ t) = COMPL s ∪ COMPL t’ by simp[EXTENSION] >>
-      simp[]) >>
-  gs[SUBSET_DEF] >> rename [‘s = ∅’] >>
-  Cases_on ‘s = ∅’ >> simp[] >>
-  ‘COMPL (BIGUNION s) = BIGINTER { COMPL t | t ∈ s }’
-    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[]) >>
-  Cases_on ‘s = {∅}’ >> simp[] >>
-  ‘∃t. t ∈ s ∧ t ≠ ∅’
-    by (qpat_x_assum ‘s ≠ ∅’ mp_tac >> qpat_x_assum ‘s ≠ {∅}’ mp_tac >>
-        ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
-  irule FINITE_BIGINTER >> simp[PULL_EXISTS]>> metis_tac[]
-QED
-
 Theorem biginter_couterexample[local]:
   let S_n n = 1 INSERT { m | n + 1 ≤ m } (* S_n from Example 1_2_3 *)
   in
@@ -269,8 +251,8 @@ Theorem exercise1_2_3:
   in
   istopology t ∧ (∀s. open_in (topology t) s ⇒ closed_in (topology t) s)
 Proof
-  srw_tac[][]
-  >- (simp[Abbr‘t’, istopology] >> rw[] >> simp[] >>
+  simp[] >> strip_tac >> conj_asm1_tac
+  >- (simp[istopology] >> rw[] >> simp[] >>
       simp[SING_INTER, INTER_EQ] >>
       simp[Once EXTENSION]
       >- metis_tac[] >- metis_tac[] >>
@@ -303,11 +285,41 @@ Proof
       ‘∀x. x ∈ k ⇒ x = ∅’ by metis_tac[] >>
       ‘k = {∅}’ suffices_by metis_tac[] >>
       rw[EXTENSION] >> fs[GSYM MEMBER_NOT_EMPTY] >>
-      first_x_assum drule >> rw[] >> metis_tac[UNIQUE_MEMBER_SING]) 
+      metis_tac[UNIQUE_MEMBER_SING])
+  >> `topspace (topology {∅; {a; c}; {b; d}; {a; b; c; d}}) = {a; b; c; d}`
+        by (simp[topspace, topology_tybij |> cj 2 |> iffLR] >> simp[Once EXTENSION] >> dsimp[] >>
+            metis_tac[]) >>
+  simp[topology_tybij |> cj 2 |> iffLR, closed_in] >>
+  rw[] >> simp[] >> fs[] >> rw[]
+QED
 
+Definition finite_closed_topology_def:
+  finite_closed_topology X = topology (∅ INSERT { s | FINITE (X DIFF s) ∧ s ⊆ X})
+End
 
-  csimp[topology_tybij |> cj 2 |> iffLR, closed_in,topspace]
+Theorem finite_closed_topology_istopology:
+  istopology (∅ INSERT { s | FINITE (X DIFF s) ∧ s ⊆ X})
+Proof
+  rw[istopology] >> simp[]
+  >- (disj2_tac >> conj_tac
+      >- (`X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)` by (simp[EXTENSION] >> metis_tac[]) >>
+          simp[]) >> gs[SUBSET_DEF]) >>
+  Cases_on `k = ∅` >> fs[] >> Cases_on `k = {∅}` >> fs[] >>
+  `X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }`
+    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >> conj_tac
+  >- (simp[] >> irule FINITE_BIGINTER >> simp[PULL_EXISTS] >>
+      ‘∃t. t ∈ k ∧ t ≠ ∅’
+        by (qpat_x_assum ‘k ≠ ∅’ mp_tac >> qpat_x_assum ‘k ≠ {∅}’ mp_tac >>
+            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+      qexists_tac `t` >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
+  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum `k ⊆ _` mp_tac >> simp[SimpL ``$==>``, Once SUBSET_DEF] >>
+  rw[] >> first_x_assum drule >> rw[] >> simp[]
+QED
 
+Theorem finite_closed_open_sets[simp]:
+  open_in (finite_closed_topology X) s ⇔ s = ∅ ∨ FINITE (X DIFF s) ∧ s ⊆ X
+Proof
+  simp[topology_tybij |> cj 2 |> iffLR, finite_closed_topology_def, finite_closed_topology_istopology]
 QED
 
 val _ = export_theory();
