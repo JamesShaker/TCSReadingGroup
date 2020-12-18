@@ -319,7 +319,82 @@ QED
 Theorem finite_closed_open_sets[simp]:
   open_in (finite_closed_topology X) s ⇔ s = ∅ ∨ FINITE (X DIFF s) ∧ s ⊆ X
 Proof
-  simp[topology_tybij |> cj 2 |> iffLR, finite_closed_topology_def, finite_closed_topology_istopology]
+  simp[topology_tybij |> cj 2 |> iffLR, finite_closed_topology_def,
+       finite_closed_topology_istopology]
 QED
+
+Theorem finite_closed_topspace[simp]:
+  topspace (finite_closed_topology X) = X
+Proof
+  simp[topspace, Once EXTENSION, EQ_IMP_THM] >> rw[] (* 3 *)
+  >- gvs[]
+  >- gvs[SUBSET_DEF]
+  >- (first_assum (irule_at (Pos hd)) >> simp[])
+QED
+
+Theorem finite_closed_closed_sets[simp]:
+  closed_in (finite_closed_topology X) s ⇔ s = X ∨ s ⊆ X ∧ FINITE s
+Proof
+  simp[closed_in] >> csimp[DIFF_DIFF_SUBSET, SUBSET_DIFF_EMPTY] >>
+  metis_tac[SUBSET_ANTISYM, SUBSET_REFL]
+QED
+
+val _ = export_rewrites ["topology.CLOSED_IN_EMPTY",
+                         "topology.OPEN_IN_EMPTY",
+                         "topology.OPEN_IN_TOPSPACE",
+                         "topology.CLOSED_IN_TOPSPACE"]
+
+Theorem clopen_EMPTY[simp]:
+  clopen top {}
+Proof
+  simp[clopen_def]
+QED
+
+Theorem clopen_topspace[simp]:
+  clopen top (topspace top)
+Proof
+  simp[clopen_def]
+QED
+
+Theorem example1_3_3:
+  (∃a b c. clopen (finite_closed_topology X) a ∧
+           clopen (finite_closed_topology X) b ∧
+           clopen (finite_closed_topology X) c ∧ a ≠ b ∧ b ≠ c ∧ a ≠ c) ⇒
+  FINITE X
+Proof
+  strip_tac >>
+  ‘∃d. clopen (finite_closed_topology X) d ∧ d ≠ ∅ ∧ d ≠ X’
+    by metis_tac[clopen_EMPTY, clopen_topspace, finite_closed_topspace] >>
+  qpat_x_assum ‘clopen _ _’ mp_tac >>
+  csimp[clopen_def] >> strip_tac >>
+  ‘X = d ∪ (X DIFF d)’ by simp[UNION_DIFF] >>
+  metis_tac[FINITE_UNION]
+QED
+
+(* topologies are preserved over preimages *)
+Theorem example1_3_9:
+  istopology {PREIMAGE f s | open_in (yt : 'b topology) s}
+Proof
+  simp[istopology] >> rw[] (* 3 *)
+  >- (irule_at (Pos hd) PREIMAGE_EMPTY >> simp[])
+  >- (rename [‘PREIMAGE f s1 ∩ PREIMAGE f s2’] >>
+      irule_at (Pos hd) (GSYM PREIMAGE_INTER) >>
+      simp[OPEN_IN_INTER])
+  >- (gvs[SUBSET_DEF, GSYM RIGHT_EXISTS_IMP_THM, SKOLEM_THM] >>
+      rename [‘_ = PREIMAGE f (g _) ∧ open_in yt (g _)’] >>
+      qexists_tac ‘BIGUNION (IMAGE g k)’ >> conj_tac
+      >- (simp[Once EXTENSION, PULL_EXISTS] >> qx_gen_tac ‘e’ >>
+          eq_tac >> strip_tac (* 2 *)
+          >- (first_assum (irule_at Any) >> first_x_assum drule >>
+              simp[Once EXTENSION] >> metis_tac[]) >>
+          first_x_assum drule >> simp[Once EXTENSION] >> metis_tac[]) >>
+      irule OPEN_IN_BIGUNION >> simp[PULL_EXISTS])
+QED
+
+Definition sierpinski_space_def:
+  sierpinski_space x y = topology {∅; {x}; {x; y}}
+End
+
+
 
 val _ = export_theory();
