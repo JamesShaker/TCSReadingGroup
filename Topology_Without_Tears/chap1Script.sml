@@ -55,6 +55,11 @@ Theorem pow6[local] =
          SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION])
         “POW {a;b;c;d;e;f}”
 
+Theorem pow3[local] =
+        (SIMP_CONV (srw_ss()) [POW_EQNS] THENC
+         SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION])
+        “POW {a;b;c}”        
+
 Theorem example1_1_2:
   (* does it matter if elements a..f are distinct? *)
   istopology {{a;b;c;d;e;f}; ∅; {a}; {c;d}; {a;c;d}; {b;c;d;e;f}}
@@ -105,7 +110,7 @@ Definition discrete_topology_def:
   discrete_topology X = topology (POW X)
 End
 
-Theorem openSets_discrete:
+Theorem openSets_discrete[simp]:
   open_in (discrete_topology X) s ⇔ s ⊆ X
 Proof
   ‘open_in (discrete_topology X) = POW X’ suffices_by simp[] >>
@@ -395,6 +400,81 @@ Definition sierpinski_space_def:
   sierpinski_space x y = topology {∅; {x}; {x; y}}
 End
 
+Theorem sierpinski_space_is_topology:
+  istopology ({∅; {x}; {x; y}})
+Proof
+  rw[istopology] >> simp[]
+  >- (simp[EXTENSION] >> metis_tac[])
+  >- (simp[EXTENSION] >> metis_tac[]) >>
+  ‘k ∈ POW {∅; {x}; {x; y}}’ by simp[IN_POW] >>
+  pop_assum mp_tac >> pop_assum (K ALL_TAC) >>
+  simp[pow3] >> rw[] >> ONCE_REWRITE_TAC[EXTENSION] >> dsimp[] >> metis_tac[]
+QED
+
+Theorem open_in_sierpinski_space[simp]:
+ open_in (sierpinski_space x y) s ⇔ s = {} ∨ s = {x} ∨ s = {x; y}
+Proof
+simp[sierpinski_space_def,cj 2 topology_tybij |> iffLR,sierpinski_space_is_topology]
+QED
+        
+Theorem topspace_sierpinski_space[simp]:
+ topspace (sierpinski_space x y) = {x;y}
+Proof
+simp[topspace,Once EXTENSION] >> dsimp[] >> metis_tac[]
+QED
+ 
+Definition T1_space_def:
+T1_space X ⇔ ∀x. x IN topspace X ⇒ closed_in X {x}
+End
+
+Theorem topspace_discrete_topology[simp]:
+∀X. topspace (discrete_topology X) = X
+Proof
+simp[topspace,discrete_topology_def,EXTENSION,PULL_EXISTS] >>
+metis_tac[SUBSET_DEF]
+QED
+
+             
+Theorem closed_in_discrete_topology[simp]:
+∀X s. closed_in (discrete_topology X) s ⇔ s ⊆ X
+Proof
+simp[closed_in]
+QED
+
+        
+Theorem discrete_topology_T1:
+∀X. T1_space (discrete_topology X)
+Proof
+simp[T1_space_def]
+QED
+
+Theorem finite_closed_topology_T1:
+∀X. T1_space (finite_closed_topology X)
+Proof
+simp[T1_space_def]
+QED
+
+
+Definition T0_space_def:
+T0_space X ⇔ ∀a b. a IN topspace X ∧ b IN topspace X ∧ a ≠ b ⇒
+                   ∃s. open_in X s ∧ (a IN s ∧ b NOTIN s ∨ b IN s ∧ a NOTIN s)
+End
+
+Theorem T1_is_T0:
+∀X. T1_space X ⇒ T0_space X
+Proof
+simp[T1_space_def,T0_space_def,closed_in] >> rw[] >>
+qexists_tac ‘(topspace X) DIFF {a}’ >> simp[]
+QED
+
+
+        
+Theorem sierpinski_space_T0:
+T0_space (sierpinski_space x y)
+Proof
+simp[T0_space_def] >> rw[] (* 2 *)
+>- (qexists_tac ‘{a}’ >> simp[]) >- (qexists_tac ‘{b}’ >> simp[])
+QED
 
 
 val _ = export_theory();
