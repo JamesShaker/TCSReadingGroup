@@ -58,7 +58,7 @@ Theorem pow6[local] =
 Theorem pow3[local] =
         (SIMP_CONV (srw_ss()) [POW_EQNS] THENC
          SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION])
-        “POW {a;b;c}”        
+        “POW {a;b;c}”
 
 Theorem example1_1_2:
   (* does it matter if elements a..f are distinct? *)
@@ -416,13 +416,13 @@ Theorem open_in_sierpinski_space[simp]:
 Proof
 simp[sierpinski_space_def,cj 2 topology_tybij |> iffLR,sierpinski_space_is_topology]
 QED
-        
+
 Theorem topspace_sierpinski_space[simp]:
  topspace (sierpinski_space x y) = {x;y}
 Proof
 simp[topspace,Once EXTENSION] >> dsimp[] >> metis_tac[]
 QED
- 
+
 Definition T1_space_def:
 T1_space X ⇔ ∀x. x IN topspace X ⇒ closed_in X {x}
 End
@@ -434,14 +434,14 @@ simp[topspace,discrete_topology_def,EXTENSION,PULL_EXISTS] >>
 metis_tac[SUBSET_DEF]
 QED
 
-             
+
 Theorem closed_in_discrete_topology[simp]:
 ∀X s. closed_in (discrete_topology X) s ⇔ s ⊆ X
 Proof
 simp[closed_in]
 QED
 
-        
+
 Theorem discrete_topology_T1:
 ∀X. T1_space (discrete_topology X)
 Proof
@@ -468,7 +468,7 @@ qexists_tac ‘(topspace X) DIFF {a}’ >> simp[]
 QED
 
 
-        
+
 Theorem sierpinski_space_T0:
 T0_space (sierpinski_space x y)
 Proof
@@ -476,5 +476,101 @@ simp[T0_space_def] >> rw[] (* 2 *)
 >- (qexists_tac ‘{a}’ >> simp[]) >- (qexists_tac ‘{b}’ >> simp[])
 QED
 
+Definition countable_closed_topology_def:
+  countable_closed_topology X = topology (∅ INSERT { s | countable (X DIFF s) ∧ s ⊆ X})
+End
+
+Theorem better_BIGINTER_SUBSET:
+  (∃t. t ∈ P ∧ t ⊆ s) ⇒ BIGINTER P ⊆ s
+Proof
+  simp[SUBSET_DEF] >> metis_tac[]
+QED
+
+Theorem countable_BIGINTER:
+  (∃s. s ∈ P ∧ countable s) ⇒ countable (BIGINTER P)
+Proof
+  strip_tac >> irule COUNTABLE_SUBSET >> qexists_tac `s` >> rw[] >>
+  irule better_BIGINTER_SUBSET >> metis_tac[SUBSET_REFL]
+QED
+
+Theorem countable_closed_topology_istopology:
+  istopology (∅ INSERT { s | countable (X DIFF s) ∧ s ⊆ X})
+Proof
+  rw[istopology] >> simp[]
+  >- (disj2_tac >> conj_tac
+      >- (`X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)` by (simp[EXTENSION] >> metis_tac[]) >>
+          simp[])
+      >> gs[SUBSET_DEF]) >>
+  Cases_on `k = ∅` >> fs[] >> Cases_on `k = {∅}` >> fs[] >>
+  `X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }`
+    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >> conj_tac
+  >- (simp[] >> irule countable_BIGINTER >> simp[PULL_EXISTS] >>
+      ‘∃t. t ∈ k ∧ t ≠ ∅’
+        by (qpat_x_assum ‘k ≠ ∅’ mp_tac >> qpat_x_assum ‘k ≠ {∅}’ mp_tac >>
+            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+      qexists_tac `t` >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
+  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum `k ⊆ _` mp_tac >> simp[SimpL ``$==>``, Once SUBSET_DEF] >>
+  rw[] >> first_x_assum drule >> rw[] >> simp[]
+QED
+
+Theorem countable_closed_open_sets[simp]:
+  open_in (countable_closed_topology X) s ⇔ s = ∅ ∨ countable (X DIFF s) ∧ s ⊆ X
+Proof
+  simp[topology_tybij |> cj 2 |> iffLR, countable_closed_topology_def,
+       countable_closed_topology_istopology]
+QED
+
+Theorem topspace_countable_closed[simp]:
+  topspace (countable_closed_topology X) = X
+Proof
+  simp[topspace, Once EXTENSION, EQ_IMP_THM] >> rw[] (* 3 *)
+  >- gvs[]
+  >- gvs[SUBSET_DEF]
+  >- (first_assum (irule_at (Pos hd)) >> simp[])
+QED
+
+Definition top_INTER_def:
+  top_INTER t1 t2 = topology {s | open_in t1 s ∧ open_in t2 s}
+End
+
+Theorem top_INTER_istopology:
+  istopology {s | open_in t1 s ∧ open_in t2 s}
+Proof
+  rw[istopology] >> simp[OPEN_IN_INTER] >>
+  irule OPEN_IN_BIGUNION >> rw[] >> fs[SUBSET_DEF]
+QED
+
+Theorem top_INTER_open_sets[simp]:
+  open_in (top_INTER t1 t2) s ⇔ open_in t1 s ∧ open_in t2 s
+Proof
+  simp[topology_tybij |> cj 2 |> iffLR, top_INTER_def,
+       top_INTER_istopology]
+QED
+
+(*
+Thm topspace_top_INTER_old:
+topspace (top_INTER t1 t2) = topspace t1 ∩ topspace t2
+
+topspace_top_INTER_old is false.
+Counter example:
+t1 = empty, {a;b}
+t2 = empty, {b;c}
+*)
+
+Theorem topspace_top_INTER[simp]:
+  topspace t1 = topspace t2 ⇒ topspace (top_INTER t1 t2) = topspace t2
+Proof
+  simp[topspace] >> ONCE_REWRITE_TAC [EXTENSION] >> rw[] >> eq_tac
+  >- metis_tac[]
+  >> rw[] >> qexists_tac `topspace t1` >> rw[]
+  >- (rw[topspace] >> metis_tac[])
+  >> `topspace t1 = topspace t2` suffices_by simp[] >> rw[topspace, Once EXTENSION]
+QED
+
+Theorem exercise1_3_7_iii:
+  topspace t1 = topspace t2 ∧ T1_space t1 ∧ T1_space t2 ⇒ T1_space (top_INTER t1 t2)
+Proof
+  simp[T1_space_def] >> rw[] >> fs[closed_in] >> metis_tac[]
+QED
 
 val _ = export_theory();
