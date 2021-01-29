@@ -124,7 +124,7 @@ Definition indiscrete_topology_def:
   indiscrete_topology X = topology {∅; X}
 End
 
-Theorem openSets_indiscrete:
+Theorem openSets_indiscrete[simp]:
   open_in (indiscrete_topology X) s ⇔ s = X ∨ s = ∅
 Proof
   ‘open_in (indiscrete_topology X) = {∅; X}’ suffices_by (simp[] >> metis_tac[]) >>
@@ -133,6 +133,33 @@ Proof
   ‘k ∈ POW {∅; X}’ by simp[IN_POW] >> pop_assum mp_tac >>
   simp[POW_EQNS] >> rw[] >> simp[]
 QED
+
+Theorem topspace_indiscrete[simp]:
+  topspace (indiscrete_topology X) = X
+Proof
+  simp[topspace] >> dsimp[Once EXTENSION]
+QED
+
+Theorem X_DIFF_EQ_X:
+  X DIFF Y = X ⇔ DISJOINT X Y
+Proof
+  simp[DISJOINT_DEF, EXTENSION] >> metis_tac[]
+QED
+
+Theorem DIFF_EQ_EMPTY[simp]:
+  X DIFF Y = ∅ ⇔ X ⊆ Y
+Proof
+  simp[EXTENSION, SUBSET_DEF] >> metis_tac[]
+QED
+
+Theorem closed_in_indiscrete[simp]:
+  closed_in (indiscrete_topology X) s ⇔ s = ∅ ∨ s = X
+Proof
+  simp[closed_in, EQ_IMP_THM, X_DIFF_EQ_X, DISJOINT_DEF] >> rpt strip_tac >> simp[]
+  >- (gs[EXTENSION, SUBSET_DEF] >> metis_tac[]) >>
+  metis_tac[SUBSET_ANTISYM]
+QED
+
 
 Theorem prop1_1_9:
   (∀x. x ∈ topspace t ⇒ open_in t {x}) ⇒
@@ -571,6 +598,139 @@ Theorem exercise1_3_7_iii:
   topspace t1 = topspace t2 ∧ T1_space t1 ∧ T1_space t2 ⇒ T1_space (top_INTER t1 t2)
 Proof
   simp[T1_space_def] >> rw[] >> fs[closed_in] >> metis_tac[]
+QED
+
+Definition top_BIGINTER_def:
+  top_BIGINTER X = topology (BIGINTER (IMAGE open_in X))
+End
+
+Theorem IN_open_in[simp]:
+  s ∈ open_in t ⇔ open_in t s
+Proof
+  simp[IN_DEF]
+QED
+
+Theorem exercise1_3_7_vi[simp]:
+  open_in (top_BIGINTER X) s <=> ∀t. t ∈ X ⇒ open_in t s
+Proof
+  simp[top_BIGINTER_def] >>
+  ‘istopology (BIGINTER (IMAGE open_in X))’
+    by (simp[istopology, PULL_EXISTS, OPEN_IN_INTER] >> rpt strip_tac >>
+        irule OPEN_IN_BIGUNION >> gs[SUBSET_DEF, PULL_EXISTS]) >>
+  drule (topology_tybij |> cj 2 |> iffLR) >> simp[PULL_EXISTS]
+QED
+
+Theorem topspace_top_BIGINTER:
+  Ts ≠ ∅ ∧ (∀t. t ∈ Ts ⇒ topspace t = X) ⇒ topspace (top_BIGINTER Ts) = X
+Proof
+  strip_tac >>
+  simp[topspace] >> ONCE_REWRITE_TAC[EXTENSION] >> simp[] >>
+  rpt strip_tac >> eq_tac >> rpt strip_tac
+  >- (fs[topspace,Once EXTENSION] >> metis_tac[]) >>
+  rename [‘_ IN Ts ⇒ _’, ‘Ts ≠ ∅’, ‘y IN _ ∧ _’] >>
+  qexists_tac ‘X’ >> simp[] >> rpt strip_tac >> first_x_assum drule >>
+  strip_tac >> gvs[OPEN_IN_TOPSPACE]
+QED
+
+Definition door_space_def:
+  door_space t ⇔ ∀s. s ⊆ topspace t ⇒ open_in t s ∨ closed_in t s
+End
+
+Theorem exercise1_3_9_i:
+  door_space (discrete_topology X)
+Proof
+  simp[door_space_def]
+QED
+
+Theorem exercise1_3_9_ii:
+  a ≠ b ⇒ ¬door_space (indiscrete_topology {a;b})
+Proof
+  simp[door_space_def] >> csimp[] >> strip_tac >> qexists_tac ‘{a}’ >>
+  simp[EXTENSION] >> metis_tac[]
+QED
+
+Theorem finite_open:
+  INFINITE X ⇒ ~istopology { s | FINITE s ∧ s ⊆ X }
+Proof
+  simp[infinite_num_inj, INJ_IFF] >>
+  rw[istopology] >> disj2_tac >>
+  qexists_tac ‘IMAGE (λn. {f n}) UNIV’ >> simp[] >>
+  simp[SUBSET_DEF, PULL_EXISTS]
+QED
+
+Theorem exercise1_3_9_iii:
+  INFINITE X ⇒ ¬door_space (finite_closed_topology X)
+Proof
+  simp[door_space_def] >> simp[SimpL “$==>”, infinite_num_inj, INJ_IFF] >>
+  strip_tac >> qexists_tac ‘{ f n | EVEN n}’  >>
+  simp[SUBSET_DEF, PULL_EXISTS] >> rpt strip_tac
+  >- (gs[EXTENSION] >> metis_tac[EVEN])
+  >- (drule_then (qspec_then ‘{f n | ODD n}’ mp_tac) SUBSET_FINITE >>
+      simp[SUBSET_DEF, PULL_EXISTS, ODD_EVEN] >>
+      simp[infinite_num_inj] >> qexists_tac ‘λn. f (2 * n + 1)’ >>
+      simp[INJ_IFF, EVEN_ADD, EVEN_MULT])
+  >- (pop_assum mp_tac >> simp[EXTENSION] >> qexists_tac ‘f (SUC 0)’ >> simp[]) >>
+  pop_assum mp_tac >> simp[infinite_num_inj] >> qexists_tac ‘f o $* 2’ >>
+  simp[INJ_IFF, EVEN_MULT]
+QED
+
+Definition saturated_def:
+  saturated t s ⇔ s ⊆ topspace t ∧
+                  ∃os. os ≠ ∅ ∧ s = BIGINTER os ∧ (∀x. x ∈ os ⇒ open_in t x)
+End
+
+Theorem exercise1_3_10_i:
+  open_in t s ⇒ saturated t s
+Proof
+  simp[saturated_def, OPEN_IN_SUBSET] >> strip_tac >>
+  qexists_tac ‘{s}’ >> simp[]
+QED
+
+Theorem exercise1_3_10_ii:
+  T1_space t ⇒ ∀s. s ⊆ topspace t ⇒ saturated t s
+Proof
+  simp[T1_space_def, saturated_def] >> rpt strip_tac >>
+  Cases_on ‘open_in t s’
+  >- (qexists_tac ‘{s}’ >> simp[]) >>
+  qabbrev_tac ‘sbar = topspace t DIFF s’ >>
+  ‘sbar ⊆ topspace t’ by simp[Abbr‘sbar’] >>
+  qabbrev_tac ‘OS = { topspace t DIFF {e} | e ∈ sbar }’ >>
+  ‘OS ≠ ∅’
+    by (simp[Once EXTENSION, Abbr‘OS’, Abbr‘sbar’] >>
+        ‘topspace t DIFF s ≠ ∅’ by
+          (simp[] >> strip_tac >> metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE]) >>
+        drule_then (qx_choose_then ‘ee’ mp_tac) (iffRL MEMBER_NOT_EMPTY) >>
+        simp[] >> metis_tac[]) >>
+  ‘s = BIGINTER OS’
+    by (simp[Once EXTENSION, Abbr‘sbar’, PULL_EXISTS, Abbr‘OS’] >>
+        qx_gen_tac ‘a’ >>
+        eq_tac >> rpt strip_tac
+        >- gs[SUBSET_DEF]
+        >- metis_tac[]
+        >- (‘a ∈ topspace t’ suffices_by metis_tac[] >>
+            ‘topspace t DIFF s ≠ ∅’ by
+              (simp[] >> strip_tac >> metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE]) >>
+            drule_then (qx_choose_then ‘ee’ mp_tac) (iffRL MEMBER_NOT_EMPTY) >>
+            simp[] >> metis_tac[])) >>
+  qexists_tac ‘OS’ >> simp[] >> simp[Abbr‘OS’, PULL_EXISTS, Abbr‘sbar’] >>
+  metis_tac[closed_in]
+QED
+
+Theorem exercise1_3_10_iii:
+  a ≠ b ⇒ ¬saturated (indiscrete_topology {a;b}) {a}
+Proof
+  simp[saturated_def] >> rpt strip_tac >> Cases_on ‘os = ∅’ >> gs[]>>
+  CCONTR_TAC >> gs[] >> qpat_x_assum ‘{a} = _’ mp_tac >>
+  simp[EXTENSION] >>
+  ‘∀s. s ∈ os ⇒ s = {a;b} ∨ s = ∅’ by metis_tac[] >>
+  Cases_on ‘os = {{a;b}}’
+  >- (qexists_tac ‘b’ >> simp[]) >>
+  ‘∅ ∈ os’ by (pop_assum mp_tac >> simp[Once EXTENSION, PULL_EXISTS] >>
+               qx_gen_tac‘s’ >> strip_tac >>
+               ‘s ∈ os ⇔ s ≠ {a;b}’ by metis_tac[] >>
+               Cases_on ‘s = {a;b}’ >> gs[]
+               >- metis_tac[MEMBER_NOT_EMPTY] >> metis_tac[]) >>
+  qexists_tac ‘a’ >> simp[] >> first_assum (irule_at Any) >> simp[]
 QED
 
 val _ = export_theory();
