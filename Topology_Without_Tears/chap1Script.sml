@@ -733,4 +733,26 @@ Proof
   qexists_tac ‘a’ >> simp[] >> first_assum (irule_at Any) >> simp[]
 QED
 
+Theorem exercise1_3_10_iv:
+  (∀s. s ⊆ topspace t ⇒ saturated t s) ⇒ T1_space t
+Proof
+  simp[saturated_def, T1_space_def] >> strip_tac >>
+  qx_gen_tac ‘a’ >> strip_tac >>
+  first_x_assum $ qspec_then ‘topspace t DIFF {a}’ mp_tac >> simp[] >>
+  disch_then $ qx_choose_then ‘ss’ strip_assume_tac >>
+  simp[closed_in] >> first_assum irule >>
+  ‘∀s. s ∈ ss ⇒ BIGINTER ss ⊆ s’
+    by metis_tac[BIGINTER_SUBSET, SUBSET_REFL] >>
+  ‘∀s. s ∈ ss ⇒ s ⊆ topspace t’ by metis_tac[OPEN_IN_SUBSET] >>
+  ‘∃s. s ∈ ss ∧ a ∉ s’
+    by (CCONTR_TAC >> gs[] >>
+        ‘a IN BIGINTER ss’ by (simp[] >> metis_tac[]) >>
+        qpat_x_assum ‘_ = BIGINTER ss’ (SUBST_ALL_TAC o SYM) >> gs[]) >>
+  ‘BIGINTER ss = s’ suffices_by simp[] >>
+  irule SUBSET_ANTISYM >> conj_tac >- metis_tac[] >>
+  ‘s ⊆ topspace t DIFF {a}’ suffices_by simp[] >>
+  gs[SUBSET_DEF] >> metis_tac[]
+QED
+
+
 val _ = export_theory();
