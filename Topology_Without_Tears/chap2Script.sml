@@ -120,8 +120,77 @@ QED
 
 (* next: between any two rational numbers there is an irrational number *)
 
+Definition rational_def:
+rational q ⇔ ∃a:int b:int. q = real_of_int a / real_of_int b ∧ b ≠ 0
+End
+
+Theorem real_of_int_eq_n[simp]:
+  (real_of_int i = &n ⇔ i = &n) ∧ (&n = real_of_int i ⇔ i = &n) ∧
+  (real_of_int i = -&n ⇔ i = -&n) ∧ (-&n = real_of_int i ⇔ i = -&n)
+Proof
+   Cases_on ‘i’ >> simp[]
+QED   
+  
+        
+Theorem rational_ADD_I:
+rational a ∧ rational b ⇒ rational (a + b)
+Proof
+rw[rational_def] >> simp[REAL_ADD_RAT,GSYM real_of_int_mul,Excl "real_of_int_mul",
+                        GSYM real_of_int_add,Excl "real_of_int_add"] >>
+irule_at Any EQ_REFL >> simp[]
+QED
+
+Theorem rational_neg[simp]:
+rational (- a) ⇔ rational a
+Proof
+‘∀a. rational a ⇒ rational (- a)’
+  suffices_by metis_tac[REAL_NEG_NEG] >>
+rw[rational_def] >> simp[neg_rat,GSYM real_of_int_neg,Excl "real_of_int_neg"]  >>
+metis_tac[]
+QED
+
+Theorem irrational_ADD_I:
+rational a ∧ ¬rational b ⇒ ¬rational (a + b)
+Proof
+CCONTR_TAC >> gs[] >>
+‘rational (-a)’ by simp[] >>
+‘a + b + (-a) = b’ by simp[] >> metis_tac[rational_ADD_I]
+QED
 
 
 
+Theorem rational_MULT_I:
+  rational a ∧ rational b ⇒ rational (a * b)
+Proof
+rw[rational_def] >>
+simp[mult_rat,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
+    GSYM real_of_int_mul,Excl "real_of_int_mul"] >>
+irule_at Any EQ_REFL >> simp[]
+QED
 
+
+Theorem rational_inv[simp]:
+  rational (inv a) ⇔ rational a
+Proof
+‘∀a. rational a ⇒ rational (inv a)’
+  suffices_by metis_tac[REAL_INV_INV] >>
+rw[rational_def] >>
+rename [‘real_of_int a / real_of_int b’] >> 
+Cases_on ‘a = 0’ (* 2 *)
+>- (simp[REAL_DIV_ZERO] >> metis_tac[]) >>
+simp[real_div,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
+    REAL_INV_MUL',REAL_INV_INV] >>
+metis_tac[REAL_MUL_COMM]
+QED
+        
+
+Theorem irrational_MULT_I:
+  a ≠ 0 ∧ rational a ∧ ¬rational b ⇒ ¬rational (a * b)        
+Proof
+CCONTR_TAC >> gs[] >>
+‘rational (inv a)’ by simp[] >>
+‘a * b * (inv a) = b’ by simp[] >> metis_tac[rational_MULT_I]
+QED
+ 
+        
 val _ = export_theory();
