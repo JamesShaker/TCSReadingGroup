@@ -2,6 +2,8 @@ open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory intrealTheory
 open topologyTheory chap1Theory realTheory
+open transcTheory;
+open arithmeticTheory;
 
 val _ = new_theory "chap2";
 
@@ -129,32 +131,32 @@ Theorem real_of_int_eq_n[simp]:
   (real_of_int i = -&n ⇔ i = -&n) ∧ (-&n = real_of_int i ⇔ i = -&n)
 Proof
    Cases_on ‘i’ >> simp[]
-QED   
-  
-        
+QED
+
+
 Theorem rational_ADD_I:
 rational a ∧ rational b ⇒ rational (a + b)
 Proof
-rw[rational_def] >> simp[REAL_ADD_RAT,GSYM real_of_int_mul,Excl "real_of_int_mul",
-                        GSYM real_of_int_add,Excl "real_of_int_add"] >>
-irule_at Any EQ_REFL >> simp[]
+  rw[rational_def] >> simp[REAL_ADD_RAT,GSYM real_of_int_mul,Excl "real_of_int_mul",
+                          GSYM real_of_int_add,Excl "real_of_int_add"] >>
+  irule_at Any EQ_REFL >> simp[]
 QED
 
 Theorem rational_neg[simp]:
 rational (- a) ⇔ rational a
 Proof
-‘∀a. rational a ⇒ rational (- a)’
-  suffices_by metis_tac[REAL_NEG_NEG] >>
-rw[rational_def] >> simp[neg_rat,GSYM real_of_int_neg,Excl "real_of_int_neg"]  >>
-metis_tac[]
+  ‘∀a. rational a ⇒ rational (- a)’
+    suffices_by metis_tac[REAL_NEG_NEG] >>
+  rw[rational_def] >> simp[neg_rat,GSYM real_of_int_neg,Excl "real_of_int_neg"]  >>
+  metis_tac[]
 QED
 
 Theorem irrational_ADD_I:
 rational a ∧ ¬rational b ⇒ ¬rational (a + b)
 Proof
-CCONTR_TAC >> gs[] >>
-‘rational (-a)’ by simp[] >>
-‘a + b + (-a) = b’ by simp[] >> metis_tac[rational_ADD_I]
+  CCONTR_TAC >> gs[] >>
+  ‘rational (-a)’ by simp[] >>
+  ‘a + b + (-a) = b’ by simp[] >> metis_tac[rational_ADD_I]
 QED
 
 
@@ -162,35 +164,75 @@ QED
 Theorem rational_MULT_I:
   rational a ∧ rational b ⇒ rational (a * b)
 Proof
-rw[rational_def] >>
-simp[mult_rat,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
-    GSYM real_of_int_mul,Excl "real_of_int_mul"] >>
-irule_at Any EQ_REFL >> simp[]
+  rw[rational_def] >>
+  simp[mult_rat,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
+      GSYM real_of_int_mul,Excl "real_of_int_mul"] >>
+  irule_at Any EQ_REFL >> simp[]
 QED
 
 
 Theorem rational_inv[simp]:
   rational (inv a) ⇔ rational a
 Proof
-‘∀a. rational a ⇒ rational (inv a)’
-  suffices_by metis_tac[REAL_INV_INV] >>
-rw[rational_def] >>
-rename [‘real_of_int a / real_of_int b’] >> 
-Cases_on ‘a = 0’ (* 2 *)
->- (simp[REAL_DIV_ZERO] >> metis_tac[]) >>
-simp[real_div,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
-    REAL_INV_MUL',REAL_INV_INV] >>
-metis_tac[REAL_MUL_COMM]
+  ‘∀a. rational a ⇒ rational (inv a)’
+    suffices_by metis_tac[REAL_INV_INV] >>
+  rw[rational_def] >>
+  rename [‘real_of_int a / real_of_int b’] >>
+  Cases_on ‘a = 0’ (* 2 *)
+  >- (simp[REAL_DIV_ZERO] >> metis_tac[]) >>
+  simp[real_div,Excl "REALMULCANON",Excl "RMUL_EQNORM1",Excl "RMUL_EQNORM2",
+      REAL_INV_MUL',REAL_INV_INV] >>
+  metis_tac[REAL_MUL_COMM]
 QED
-        
+t
 
 Theorem irrational_MULT_I:
-  a ≠ 0 ∧ rational a ∧ ¬rational b ⇒ ¬rational (a * b)        
+  a ≠ 0 ∧ rational a ∧ ¬rational b ⇒ ¬rational (a * b)
 Proof
-CCONTR_TAC >> gs[] >>
-‘rational (inv a)’ by simp[] >>
-‘a * b * (inv a) = b’ by simp[] >> metis_tac[rational_MULT_I]
+  CCONTR_TAC >> gs[] >>
+  ‘rational (inv a)’ by simp[] >>
+  ‘a * b * (inv a) = b’ by simp[] >> metis_tac[rational_MULT_I]
 QED
- 
-        
+
+Theorem positive_rationals_natural:
+  rational a ∧ 0 < a ⇒ ∃m n. n ≠ 0 ∧ a = &m / &n
+Proof
+  rw[rational_def] >> rename [`0 < real_of_int a / real_of_int b`] >>
+  Cases_on `a` >> Cases_on `b` >> gs[real_div]
+  >- (rename[`&a = (&_)⁻¹ * &(_ * b)`] >> qexistsl_tac [`a`, `b`] >>
+      simp[]) >>
+  rename[`-(-&a)⁻¹ * &b`] >> qexistsl_tac [`b`, `a`] >> simp[REAL_NEG_INV]
+QED
+
+Theorem sqrt_2_irrational:
+  ¬rational (sqrt 2)
+Proof
+  strip_tac >> drule positive_rationals_natural >> simp[SQRT_POS_LT] >>
+  rpt strip_tac >> CCONTR_TAC >> qabbrev_tac `k = LEAST k. ∃j. j ≠ 0 ∧ &k / &j = sqrt 2` >>
+  `∃j. j ≠ 0 ∧ &k / &j = sqrt 2`
+    by (simp[Abbr `k`] >> numLib.LEAST_ELIM_TAC >> rw[] >> metis_tac[]) >>
+  `∀a b. b ≠ 0 ∧ &a / &b = sqrt 2 ⇒ k ≤ a`
+    by (simp[Abbr `k`] >> numLib.LEAST_ELIM_TAC >> rw[] >>
+        metis_tac[DECIDE ``x:num <= y ⇔ ¬ (y < x)``]) >>
+  `(sqrt 2) pow 2 = 2` by simp[SQRT_POW2] >>
+  `0 < k`
+    by (CCONTR_TAC >> gs[] >>
+        `0r pow 2 = 0` by simp[] >> `0r = 2r` by metis_tac[] >> gs[]) >>
+  `&k = sqrt 2 * &j` by gvs[real_div] >> `&k pow 2 = (sqrt 2 * &j) pow 2` by simp[] >>
+  qpat_x_assum `&k = _` $ K all_tac >> gs[POW_MUL, REAL_OF_NUM_POW] >>
+  `EVEN (k ** 2)` by metis_tac[EVEN_EXISTS] >> gs[EVEN_EXP_IFF] >>
+  `∃k0. k = k0 * 2` by gs[EVEN_EXISTS] >> qpat_x_assum `Abbrev _` $ K all_tac >>
+  gvs[EXP_BASE_MULT] >> `2 * (k0 ** 2) = j ** 2` by simp[] >>
+  `EVEN (j ** 2)` by metis_tac[EVEN_EXISTS] >> gs[EVEN_EXP_IFF] >>
+  `∃j0. j = j0 * 2` by gs[EVEN_EXISTS] >> gvs[EXP_BASE_MULT] >>
+  `k0 ** 2 = 2 * j0 ** 2` by simp[] >>
+  `&(k0 ** 2) / &(j0 ** 2) = 2r`
+    by (simp[real_div] >> simp[MULT_DIV]) >>
+  `sqrt ( & (k0 ** 2) / & (j0 ** 2)) = sqrt 2` by simp[] >>
+  qpat_x_assum `_ = 2r` $ K all_tac >>
+  gs[GSYM REAL_OF_NUM_POW, SQRT_DIV, POW_2_SQRT] >>
+  `2 * k0 ≤ k0` by metis_tac[] >> gs[]
+QED
+
+
 val _ = export_theory();
