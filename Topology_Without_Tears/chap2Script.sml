@@ -132,13 +132,18 @@ Proof
   simp[rational_def] >> qexistsl_tac [‘&n’, ‘1’] >> simp[]
 QED
 
+Theorem rational_Ints[simp]:
+  rational (real_of_int i)
+Proof
+  simp[rational_def] >> qexistsl_tac [‘i’, ‘1’] >> simp[]
+QED
+
 Theorem real_of_int_eq_n[simp]:
   (real_of_int i = &n ⇔ i = &n) ∧ (&n = real_of_int i ⇔ i = &n) ∧
   (real_of_int i = -&n ⇔ i = -&n) ∧ (-&n = real_of_int i ⇔ i = -&n)
 Proof
    Cases_on ‘i’ >> simp[]
 QED
-
 
 Theorem rational_ADD_I:
 rational a ∧ rational b ⇒ rational (a + b)
@@ -176,7 +181,6 @@ Proof
   irule_at Any EQ_REFL >> simp[]
 QED
 
-
 Theorem rational_inv[simp]:
   rational (inv a) ⇔ rational a
 Proof
@@ -191,6 +195,13 @@ Proof
   metis_tac[REAL_MUL_COMM]
 QED
 
+Theorem rational_DIV_I:
+  rational a ∧ rational b ⇒ rational (a/b)
+Proof
+  simp[real_div, rational_MULT_I]
+QED
+
+
 
 Theorem irrational_MULT_I:
   a ≠ 0 ∧ rational a ∧ ¬rational b ⇒ ¬rational (a * b)
@@ -202,6 +213,22 @@ QED
 
 Theorem irrational_MULT_I' = ONCE_REWRITE_RULE [REAL_MUL_COMM] irrational_MULT_I
 
+Theorem irrational_DIVNUM_I:
+  ¬rational a ∧ rational b ∧ b ≠ 0 ⇒ ¬rational (a/b)
+Proof
+  rpt strip_tac >>
+  ‘rational (a/b * b)’ by simp[rational_MULT_I] >>
+  gs[]
+QED
+
+Theorem irrational_DIVDEN_I:
+  rational a ∧ ¬rational b ∧ a ≠ 0 ⇒ ¬rational (a/b)
+Proof
+  rpt strip_tac >>
+  ‘rational (inv (a/b))’ by simp[] >>
+  fs[real_div, Excl "rational_inv", REAL_INV_MUL', REAL_INV_INV] >>
+  ‘rational (a * (inv a * b))’ by simp[rational_MULT_I] >> gs[]
+QED
 
 Theorem positive_rationals_natural:
   rational a ∧ 0 < a ⇒ ∃m n. n ≠ 0 ∧ a = &m / &n
@@ -266,45 +293,66 @@ Proof
   simp[GSYM REAL_LT_SUB_LADD]
 QED
 
+Theorem density_lemma'[local]:
+  ¬rational a ∧ rational b ⇒
+  (a < b ⇒ ∃c. ¬rational c ∧ a < c ∧ c < b) ∧
+  (b < a ⇒ ∃c. ¬rational c ∧ b < c ∧ c < a)
+Proof
+  strip_tac >> wlog_tac ‘a < b’ [‘a’, ‘b’]
+  >- (gs[] >> strip_tac >>
+      first_x_assum $ qspecl_then [‘-a’, ‘-b’] mp_tac >> simp[] >>
+      disch_then $ qx_choose_then ‘c0’ strip_assume_tac >>
+      qexists_tac ‘-c0’ >> simp[]) >>
+  simp [] >> qexists_tac ‘(a + b) / 2’ >> simp[] >>
+  simp[irrational_ADD_I', irrational_DIVNUM_I]
+QED
+
+Theorem irrationals_dense:
+  ∀a b. a < b ⇒ ∃r. ¬rational r ∧ a < r ∧ r < b
+Proof
+  rpt strip_tac >>
+  map_every Cases_on [‘rational a’, ‘rational b’]
+  >- metis_tac[rationals_bracket_irrationals]
+  >- metis_tac[density_lemma']
+  >- metis_tac[density_lemma'] >>
+  qabbrev_tac ‘m = (a + b) / 2’ >>
+  ‘a < m ∧ m < b’ by simp[Abbr‘m’] >>
+  Cases_on ‘rational m’ >> simp[SF SFY_ss] >>
+  drule_all (cj 1 density_lemma') >> metis_tac[REAL_LT_TRANS]
+QED
+
 Theorem rationals_dense:
   ∀a b. a < b ⇒ ∃r. rational r ∧ a < r ∧ r < b
 Proof
   rpt strip_tac >>
-  ‘0 < b - a ’ by simp[] >>
-  dxrule_then (qspec_then ‘1’ strip_assume_tac) REAL_ARCH >>
+  ‘0 < b - a’ by simp[] >>
+  dxrule_then (qspec_then ‘1’ $ qx_choose_then ‘m’ assume_tac) REAL_ARCH >>
   gs[REAL_SUB_LDISTRIB] >>
-  ‘a * &n + 1 < b * &n’ by simp[] >>
-  (* See : https://math.stackexchange.com/questions/421580/is-there-a-rational-number-between-any-two-irrationals *)
-  (* still need, existence of an integer between two reals further than 1 apart *)
-  cheat
+  ‘a * &m + 1 < b * &m’ by simp[] >>
+  drule_then (qx_choose_then ‘d’ strip_assume_tac) ints_exist_in_gaps >>
+  ‘m ≠ 0’ by (strip_tac >> gs[]) >>
+  ‘a < real_of_int d / &m ∧ real_of_int d / &m < b’ by simp[] >>
+  ‘rational (real_of_int d / &m)’ by simp[rational_DIV_I] >>
+  metis_tac[]
 QED
-
-Theorem irrationals_bracketted:
-  ∀a b. a < b ⇒ ∃c. ¬rational c ∧ a < c ∧ c < b
-Proof
-  rw[] >> qexists_tac ‘(b - a) * sqrt 2 / 2 + a’ >> rpt conj_tac
-  >- (ONCE_REWRITE_TAC [REAL_ADD_COMM] >> irule irrational_ADD_I >>
-      simp[] >> REWRITE_TAC[real_div] >>
-      irule irrational_MULT_I' >> simp[] >>
-      irule irrational_MULT_I' >> simp[real_sub] >>
-      simp[rational_ADD_I, sqrt_2_irrational])
-  >- (simp[REAL_LT_ADDL] >> irule REAL_LT_MUL >> simp[]) >>
-  simp[GSYM REAL_LT_SUB_LADD]
-QED
-
 
 Theorem rationals_not_open_euclidean:
   ¬open_in euclidean { r | rational r }
 Proof
   simp[open_in_euclidean] >> qexists_tac ‘0’ >> simp[] >>
-  rpt gen_tac >> Cases_on ‘a < b’
-  >- (disj2_tac >> simp[SUBSET_DEF, ival_def] >>
-      reverse (Cases_on ‘rational a’)
-      >- (Cases_on ‘rational b’
-          >- (qexists_tac ‘(a + b) / 2’ >> simp[] >>
-              REWRITE_TAC[real_div] >> irule irrational_MULT_I' >>
-              simp[irrational_ADD_I']) >>
+  rpt gen_tac >> reverse (Cases_on ‘a < b’)
+  >- simp[ival_def] >>
+  disj2_tac >> simp[SUBSET_DEF, ival_def] >>
+  metis_tac[irrationals_dense]
+QED
 
-
+Theorem rationals_not_closed_euclidean:
+  ¬closed_in euclidean { r | rational r }
+Proof
+  simp[closed_in, open_in_euclidean] >> qexists_tac ‘sqrt 2’ >>
+  simp[sqrt_2_irrational] >> rpt strip_tac >>
+  Cases_on ‘a < b’ >> simp[ival_def, SUBSET_DEF] >>
+  metis_tac[rationals_dense]
+QED
 
 val _ = export_theory();
