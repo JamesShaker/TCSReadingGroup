@@ -102,6 +102,18 @@ Proof
   Cases_on ‘i’ >> simp[]
 QED
 
+Theorem real_of_int_LTN[simp]:
+  real_of_int i < &j ⇔ i < &j
+Proof
+  Cases_on ‘i’ >> simp[]
+QED
+
+Theorem real_of_int_NLT[simp]:
+  &i < real_of_int j ⇔ &i < j
+Proof
+  Cases_on ‘j’ >> simp[]
+QED
+
 Theorem integers_closed:
   closed_in euclidean { real_of_int i | T }
 Proof
@@ -354,5 +366,87 @@ Proof
   Cases_on ‘a < b’ >> simp[ival_def, SUBSET_DEF] >>
   metis_tac[rationals_dense]
 QED
+
+Theorem exercise_2_1_1:
+  a < b ⇒ ¬open_in euclidean { r | a ≤ r ∧ r < b } ∧
+          ¬closed_in euclidean {r  | a ≤ r ∧ r < b } ∧
+          ¬open_in euclidean {r | a < r ∧ r ≤ b } ∧
+          ¬closed_in euclidean { r | a < r ∧ r ≤ b}
+Proof
+  rw[open_in_euclidean, closed_in]
+  >- (qexists_tac ‘a’ >> simp[] >> qx_genl_tac [‘c’, ‘d’] >>
+      Cases_on ‘a ∈ ival c d’ >> simp[] >>
+      gs[ival_def, SUBSET_DEF] >>
+      ‘∃ac. c < ac ∧ ac < a’ by metis_tac[rationals_dense] >>
+      qexists_tac ‘ac’ >> simp[])
+  >- (simp[ival_def, SUBSET_DEF] >> qexists_tac ‘b’ >> simp[]>>
+      qx_genl_tac [‘c’, ‘d’] >>
+      map_every Cases_on [‘c < b’, ‘b < d’] >> simp[] >>
+      ‘∃cb. max a c < cb ∧ cb < b’
+        by metis_tac[rationals_dense, REAL_MAX_LT]>>
+      qexists_tac ‘cb’ >> gs[REAL_MAX_LT])
+  >- (qexists_tac ‘b’ >> simp[ival_def, SUBSET_DEF] >>
+      qx_genl_tac [‘c’, ‘d’] >>
+      map_every Cases_on [‘c < b’, ‘b < d’] >> simp[] >>
+      ‘∃bd. b < bd ∧ bd < d’ by metis_tac[rationals_dense] >>
+      qexists_tac ‘bd’ >> simp[])
+  >- (simp[ival_def, SUBSET_DEF] >> qexists_tac ‘a’ >> simp[]>>
+      qx_genl_tac [‘c’, ‘d’] >>
+      map_every Cases_on [‘c < a’, ‘a < d’] >> simp[] >>
+      ‘∃ab. a < ab ∧ ab < min b d’
+        by metis_tac[rationals_dense, REAL_LT_MIN]>>
+      qexists_tac ‘ab’ >> gs[REAL_LT_MIN])
+QED
+
+Theorem exercise_2_1_2:
+  closed_in euclidean { r | a ≤ r } ∧
+  closed_in euclidean { r | r ≤ a }
+Proof
+  simp[closed_in] >>
+  ‘UNIV DIFF {r | a ≤ r } = {r | r < a} ∧
+   UNIV DIFF {r | r ≤ a } = {r | a < r}’
+    suffices_by simp[] >>
+  simp[EXTENSION]
+QED
+
+Theorem exercise_2_1_3:
+  ∃A. (∀a. a ∈ A ⇒ closed_in euclidean a) ∧
+      INFINITE A ∧
+      ¬closed_in euclidean (BIGUNION A)
+Proof
+  qexists_tac ‘{ {r} | 0 < r ∧ r < 1 }’>>
+  simp[PULL_EXISTS, singles_closed] >>
+  simp[closed_in] >> conj_tac
+  >- (simp[infinite_num_inj] >>
+      qexists_tac ‘λn. {inv (&(n + 2))}’  >>
+      simp[INJ_IFF]) >>
+  ‘BIGUNION {{r} | 0 < r ∧ r < 1} = ival 0 1’
+    by simp[Once EXTENSION, PULL_EXISTS, ival_def] >>
+  simp[] >> simp[open_in_euclidean] >>
+  qexists_tac ‘0’ >> simp[ival_def, SUBSET_DEF] >>
+  qx_genl_tac [‘c’, ‘d’] >>
+  map_every Cases_on  [‘c < 0’, ‘0 < d’] >> simp[] >>
+  ‘∃d0. 0 < d0 ∧ d0 < min 1 d’
+    by metis_tac[rationals_dense, REAL_MIN_LT, REAL_LT_MIN,
+                 REAL_LT_01] >>
+  qexists_tac ‘d0’ >> gs[REAL_LT_MIN]
+QED
+
+Theorem exercise_2_1_4i:
+  ¬open_in euclidean { real_of_int i | T }
+Proof
+  simp[open_in_euclidean, PULL_EXISTS] >>
+  qexists_tac ‘0’ >> qx_genl_tac [‘c’, ‘d’] >>
+  Cases_on ‘real_of_int 0 ∈ ival c d’ >> simp[] >>
+  gs[ival_def, SUBSET_DEF] >>
+  Cases_on ‘1 ≤ d’
+  >- (qexists_tac ‘1 / 2’ >> simp[] >>
+      ‘0 < 1/2 ∧ 1/2 < 1’ by simp[] >>
+      rpt strip_tac >>
+      pop_assum (SUBST_ALL_TAC o SYM) >>
+      gs[] >>
+      qspecl_then [‘0’, ‘i’] mp_tac integerTheory.INT_DISCRETE >>
+      simp[])
+
 
 val _ = export_theory();
