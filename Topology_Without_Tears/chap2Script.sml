@@ -432,6 +432,19 @@ Proof
   qexists_tac ‘d0’ >> gs[REAL_LT_MIN]
 QED
 
+
+Theorem real_of_int_Nmul:
+ &n * real_of_int i = real_of_int (&n * i)
+Proof
+ Cases_on ‘i’ >> simp[]
+QED
+
+Theorem real_of_int_NLE[simp]:
+ &i ≤ real_of_int j ⇔ &i ≤ j
+Proof
+  Cases_on ‘j’ >> simp[integerTheory.INT_NOT_LE]
+QED  
+        
 Theorem exercise_2_1_4i:
   ¬open_in euclidean { real_of_int i | T }
 Proof
@@ -447,6 +460,77 @@ Proof
       gs[] >>
       qspecl_then [‘0’, ‘i’] mp_tac integerTheory.INT_DISCRETE >>
       simp[])
+  >- (qexists_tac ‘d / 2’ >> simp[] >>
+      REWRITE_TAC [real_div] >> simp[] >> rpt strip_tac >> gvs[] >>
+      gs[real_of_int_Nmul,Excl "real_of_int_mul"] >>
+      pop_assum mp_tac >> intLib.ARITH_TAC)
+QED
 
+open intrealTheory;
+
+Theorem ival_without_int:
+  ∀x. (¬∃z:int. x = real_of_int z) ⇒ ∃a b. x ∈ ival a b ∧ ∀z:int. real_of_int z ∉ ival a b
+Proof
+ simp[ival_def] >> rpt strip_tac >>
+ wlog_tac ‘0 ≤ x’ [‘x’] 
+ >- (first_x_assum $ qspec_then ‘-x’ assume_tac >> gvs[] >>
+     ‘∀z. -x ≠ real_of_int z’
+      by (rpt strip_tac >>
+          metis_tac[REAL_NEG_NEG,real_of_int_neg]) >>
+     first_x_assum drule >> strip_tac >>
+     qexistsl_tac [‘-b’,‘-a’] >> gvs[] >> strip_tac >>
+     first_x_assum $ qspec_then ‘-z’ mp_tac >> rpt strip_tac >>
+     gvs[])
+ >- (qexistsl_tac [‘&(flr x)’,‘&(clg x)’] >> rpt strip_tac (* 3 *)
+    >- (gvs[REAL_LT_LE,NUM_FLOOR_LE] >> strip_tac >>
+        metis_tac[real_of_int_num])
+    >- (gvs[REAL_LT_LE,LE_NUM_CEILING] >> metis_tac[real_of_int_num]) >>
+     CCONTR_TAC >> fs[] >> Cases_on ‘x ≤ 0 ∨ x = &flr x’ >> gvs[] (* 3 *)
+     >- (‘x = 0’ by gvs[] >> metis_tac[real_of_int_num])
+     >- metis_tac[integerTheory.INT_LT_ANTISYM] >>
+     irule integerTheory.INT_DISCRETE >>
+     ‘&(flr x + 1) = (&flr x) + 1:int’
+     by gvs[GSYM integerTheory.INT_ADD] >> metis_tac[])
+QED
+
+
+
+Theorem exercise_2_1_4ii:
+  closed_in euclidean {&(z : num) | P z}
+Proof
+  simp[closed_in,open_in_euclidean] >> rpt strip_tac >>
+  Cases_on ‘∃z:num. x = &z’
+  >- (gvs[] >> qexistsl_tac [‘&z - 1/2’,‘&z + 1/2’] >>
+      simp[ival_def,SUBSET_DEF] >> rpt strip_tac
+      >- simp[REAL_LT_SUB_RADD]
+      >> gvs[] >> ‘z = z'’ suffices_by (strip_tac >> gvs[]) >>
+      rename [‘&a - 1/2 < &b’] >>
+      ‘2 * &a - 1 < 2 * &b ∧ 2 * &b < 2 * &a + 1’
+        by
+        (strip_tac >> rev_drule REAL_LT_LMUL_IMP >> strip_tac >>
+         first_x_assum $ qspec_then ‘2’ mp_tac >> strip_tac >>
+         ‘0r < 2r’ by simp[] >> first_x_assum drule >> strip_tac 
+         >- (‘2 * (&a − 1 / 2) = 2 * &a − 1’ suffices_by metis_tac[] >>
+             simp[REAL_SUB_LDISTRIB])
+         >- (‘2 * &b < 2 * (&a + 1 / 2)’  by simp[REAL_LT_LMUL_IMP] >>
+             ‘2 * (&a + 1 / 2) = 2 * &a + 1’ suffices_by metis_tac[] >>
+             simp[REAL_ADD_LDISTRIB])) >>
+      wlog_tac ‘a < b’ [] (* 2 *)
+      >- (CCONTR_TAC >> ‘b < a’ by simp[] >>
+          irule integerTheory.INT_DISCRETE >>
+          qexistsl_tac [‘&a’,‘&b’] >> simp[REAL_LT] >> gvs[REAL_LT_SUB_RADD])
+      >> CCONTR_TAC >> irule integerTheory.INT_DISCRETE >>
+      qexistsl_tac [‘&b’,‘&a’] >> simp[REAL_LT] >> gvs[REAL_LT_SUB_RADD]) >>
+  reverse (Cases_on ‘∃z:int. x = real_of_int z’)
+  >- (drule ival_without_int >> strip_tac >>
+      qexistsl_tac [‘a’,‘b’] >> gvs[SUBSET_DEF] >>
+      rpt strip_tac >> metis_tac[real_of_int_num]) >>
+  gvs[] >>
+  ‘z < 0’
+    by (CCONTR_TAC >> ‘0 ≤ z’ by cheat >>
+        gvs[GSYM integerTheory.INT_OF_NUM]) >>
+  qexistsl_tac [‘real_of_int (z - &1)’,‘real_of_int (z + &1)’] >>
+  gvs[ival_def,SUBSET_DEF] >> rpt strip_tac >> cheat
+QED  
 
 val _ = export_theory();
