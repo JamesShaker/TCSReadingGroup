@@ -1,7 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory intrealTheory
-open topologyTheory chap1Theory realTheory
+open topologyTheory chap1Theory chap2_2Theory realTheory
 open transcTheory;
 open arithmeticTheory;
 
@@ -469,31 +469,30 @@ QED
 open intrealTheory;
 
 Theorem ival_without_int:
-  ∀x. (¬∃z:int. x = real_of_int z) ⇒ ∃a b. x ∈ ival a b ∧ ∀z:int. real_of_int z ∉ ival a b
+  ∀x. (¬∃z:int. x = real_of_int z) ⇒
+      ∃a b. x ∈ ival a b ∧ ∀z:int. real_of_int z ∉ ival a b
 Proof
- simp[ival_def] >> rpt strip_tac >>
- wlog_tac ‘0 ≤ x’ [‘x’] 
- >- (first_x_assum $ qspec_then ‘-x’ assume_tac >> gvs[] >>
-     ‘∀z. -x ≠ real_of_int z’
-      by (rpt strip_tac >>
-          metis_tac[REAL_NEG_NEG,real_of_int_neg]) >>
-     first_x_assum drule >> strip_tac >>
-     qexistsl_tac [‘-b’,‘-a’] >> gvs[] >> strip_tac >>
-     first_x_assum $ qspec_then ‘-z’ mp_tac >> rpt strip_tac >>
-     gvs[])
- >- (qexistsl_tac [‘&(flr x)’,‘&(clg x)’] >> rpt strip_tac (* 3 *)
-    >- (gvs[REAL_LT_LE,NUM_FLOOR_LE] >> strip_tac >>
-        metis_tac[real_of_int_num])
-    >- (gvs[REAL_LT_LE,LE_NUM_CEILING] >> metis_tac[real_of_int_num]) >>
-     CCONTR_TAC >> fs[] >> Cases_on ‘x ≤ 0 ∨ x = &flr x’ >> gvs[] (* 3 *)
-     >- (‘x = 0’ by gvs[] >> metis_tac[real_of_int_num])
-     >- metis_tac[integerTheory.INT_LT_ANTISYM] >>
-     irule integerTheory.INT_DISCRETE >>
-     ‘&(flr x + 1) = (&flr x) + 1:int’
-     by gvs[GSYM integerTheory.INT_ADD] >> metis_tac[])
+  simp[ival_def] >> rpt strip_tac >>
+  wlog_tac ‘0 ≤ x’ [‘x’]
+  >- (first_x_assum $ qspec_then ‘-x’ assume_tac >> gvs[] >>
+      ‘∀z. -x ≠ real_of_int z’
+        by (rpt strip_tac >>
+            metis_tac[REAL_NEG_NEG,real_of_int_neg]) >>
+      first_x_assum drule >> strip_tac >>
+      qexistsl_tac [‘-b’,‘-a’] >> gvs[] >> strip_tac >>
+      first_x_assum $ qspec_then ‘-z’ mp_tac >> rpt strip_tac >>
+      gvs[])
+  >- (qexistsl_tac [‘&(flr x)’,‘&(clg x)’] >> rpt strip_tac (* 3 *)
+      >- (gvs[REAL_LT_LE,NUM_FLOOR_LE] >> strip_tac >>
+          metis_tac[real_of_int_num])
+      >- (gvs[REAL_LT_LE,LE_NUM_CEILING] >> metis_tac[real_of_int_num]) >>
+      CCONTR_TAC >> fs[] >> Cases_on ‘x ≤ 0 ∨ x = &flr x’ >> gvs[] (* 3 *)
+      >- (‘x = 0’ by gvs[] >> metis_tac[real_of_int_num])
+      >- metis_tac[integerTheory.INT_LT_ANTISYM] >>
+      irule integerTheory.INT_DISCRETE >>
+      ‘&(flr x + 1) = (&flr x) + 1:int’
+        by gvs[GSYM integerTheory.INT_ADD] >> metis_tac[])
 QED
-
-
 
 Theorem exercise_2_1_4ii:
   closed_in euclidean {&(z : num) | P z}
@@ -526,11 +525,45 @@ Proof
       qexistsl_tac [‘a’,‘b’] >> gvs[SUBSET_DEF] >>
       rpt strip_tac >> metis_tac[real_of_int_num]) >>
   gvs[] >>
-  ‘z < 0’
-    by (CCONTR_TAC >> ‘0 ≤ z’ by cheat >>
-        gvs[GSYM integerTheory.INT_OF_NUM]) >>
-  qexistsl_tac [‘real_of_int (z - &1)’,‘real_of_int (z + &1)’] >>
-  gvs[ival_def,SUBSET_DEF] >> rpt strip_tac >> cheat
-QED  
+  ‘z < 0’ by (Cases_on ‘z’ >> gvs[]) >>
+  qexistsl_tac [‘real_of_int z - 1’,‘real_of_int z + 1’] >>
+  gvs[ival_def,SUBSET_DEF] >> rpt strip_tac >> gvs[] >>
+  rename [‘real_of_int z - 1 < &n’] >>
+  gs[real_of_int_addN, Excl "real_of_int_add"] >>
+  qpat_x_assum ‘z < 0’ mp_tac >> qpat_x_assum ‘&n < z + 1’ mp_tac >>
+  intLib.ARITH_TAC
+QED
+
+(*
+Theorem ival_11[simp]:
+  ival a b = ival c d ⇔ a = c ∧ b = d
+Proof
+  simp[EXTENSION, ival_def, Once EQ_IMP_THM] >>
+  rpt strip_tac >> cheat
+QED
+*)
+
+Theorem prop2_2_1:
+  open_in euclidean s ⇔ ∃P. s = BIGUNION { ival a b | P a b }
+Proof
+  simp[EQ_IMP_THM, PULL_EXISTS, OPEN_IN_BIGUNION] >>
+  simp[open_in_euclidean] >> strip_tac >>
+  gs[GSYM RIGHT_EXISTS_IMP_THM, SKOLEM_THM] >>
+  rename [‘ival (F1 _) (F2 _)’] >>
+  qexists_tac ‘λa b. ∃x. a = F1 x ∧ b = F2 x ∧ x ∈ s’ >>
+  simp[Once EXTENSION] >> simp[EQ_IMP_THM] >> rpt strip_tac >>
+  simp[PULL_EXISTS] >- metis_tac[] >>
+  gvs[] >> first_x_assum drule >>
+  metis_tac[SUBSET_DEF]
+QED
+
+(* example 2.2.3 *)
+Theorem ivals_basis:
+  basis { ival a b | T } euclidean
+Proof
+  simp[basis_def, PULL_EXISTS] >> rpt strip_tac >>
+  drule_then strip_assume_tac (iffLR prop2_2_1) >>
+  simp[] >> irule_at Any EQ_REFL >> simp[SUBSET_DEF, PULL_EXISTS]
+QED
 
 val _ = export_theory();
