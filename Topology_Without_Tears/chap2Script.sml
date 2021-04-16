@@ -4,6 +4,7 @@ open pred_setTheory intrealTheory
 open topologyTheory chap1Theory chap2_2Theory realTheory
 open transcTheory;
 open arithmeticTheory;
+open pairTheory;
 
 val _ = new_theory "chap2";
 
@@ -443,8 +444,8 @@ Theorem real_of_int_NLE[simp]:
  &i ≤ real_of_int j ⇔ &i ≤ j
 Proof
   Cases_on ‘j’ >> simp[integerTheory.INT_NOT_LE]
-QED  
-        
+QED
+
 Theorem exercise_2_1_4i:
   ¬open_in euclidean { real_of_int i | T }
 Proof
@@ -508,7 +509,7 @@ Proof
         by
         (strip_tac >> rev_drule REAL_LT_LMUL_IMP >> strip_tac >>
          first_x_assum $ qspec_then ‘2’ mp_tac >> strip_tac >>
-         ‘0r < 2r’ by simp[] >> first_x_assum drule >> strip_tac 
+         ‘0r < 2r’ by simp[] >> first_x_assum drule >> strip_tac
          >- (‘2 * (&a − 1 / 2) = 2 * &a − 1’ suffices_by metis_tac[] >>
              simp[REAL_SUB_LDISTRIB])
          >- (‘2 * &b < 2 * (&a + 1 / 2)’  by simp[REAL_LT_LMUL_IMP] >>
@@ -563,7 +564,51 @@ Theorem ivals_basis:
 Proof
   simp[basis_def, PULL_EXISTS] >> rpt strip_tac >>
   drule_then strip_assume_tac (iffLR prop2_2_1) >>
-  simp[] >> irule_at Any EQ_REFL >> simp[SUBSET_DEF, PULL_EXISTS]
+  simp[] >> irule_at Any EQ_REFL >> simp[SUBSET_DEF, PULL_EXISTS] >>
+  metis_tac[]
+QED
+
+Definition open_rectangle:
+  open_rectangle (a: real) b c d = {(x, y) | a < x ∧ x < b ∧ c < y ∧ y < d}
+End
+
+Definition open_rectangles:
+  open_rectangles = {open_rectangle a b c d | a < b ∧ c < d}
+End
+
+(* example 2.2.9 *)
+Theorem open_rectangle_topology_exists:
+  ∃t. topspace t = UNIV ∧ basis open_rectangles t
+Proof
+  simp[prop_2_2_8] >> rw[] (* 2 *)
+  >- (simp[Once EXTENSION, open_rectangles, PULL_EXISTS, open_rectangle, FORALL_PROD] >>
+      qx_genl_tac [`x`, `y`] >> qexistsl_tac [`x-1`, `x+1`, `y-1`, `y+1`] >>
+      simp[])
+  >> Cases_on `b1 ∩ b2 = ∅` (* 2 *)
+  >- (qexists_tac `∅` >> simp[])
+  >> gvs[open_rectangles] >>
+  rename [`open_rectangle a b c d ∩ open_rectangle h i j k ≠ ∅`] >>
+  wlog_tac `a ≤ h` [`a`, `b`, `c`, `d`, `h`, `i`, `j`, `k`] (* 2 *)
+  >- (`h ≤ a` by simp[] >> metis_tac[INTER_COMM])
+  >> `h < b`
+        by (CCONTR_TAC >> gs[REAL_NOT_LT] >> qpat_x_assum `_ ∩ _ ≠ _` mp_tac >>
+            simp[EXTENSION, open_rectangle, FORALL_PROD]) >>
+  Cases_on `c ≤ j` (* 2 *)
+  >- (`j < d`
+        by (CCONTR_TAC >> gs[REAL_NOT_LT] >> qpat_x_assum `_ ∩ _ ≠ _` mp_tac >>
+            simp[EXTENSION, open_rectangle, FORALL_PROD]) >>
+      qexists_tac `{open_rectangle h (min b i) j (min d k)}` >> simp[] >> conj_tac
+      >- (irule_at Any EQ_REFL >> simp[REAL_LT_MIN])
+      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >> qx_genl_tac [`x`, `y`] >>
+      simp[EQ_IMP_THM, REAL_LT_MIN])
+  >> gs[REAL_NOT_LE] >>
+  `c < k`
+    by (CCONTR_TAC >> gs[REAL_NOT_LT] >> qpat_x_assum `_ ∩ _ ≠ _` mp_tac >>
+            simp[EXTENSION, open_rectangle, FORALL_PROD]) >>
+  qexists_tac `{open_rectangle h (min b i) c (min d k)}` >> simp[] >> conj_tac
+      >- (irule_at Any EQ_REFL >> simp[REAL_LT_MIN])
+      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >> qx_genl_tac [`x`, `y`] >>
+      simp[EQ_IMP_THM, REAL_LT_MIN]
 QED
 
 val _ = export_theory();
