@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 
-open pred_setTheory intrealTheory
+open pred_setTheory intrealTheory 
 open topologyTheory chap1Theory chap2_2Theory realTheory
 open transcTheory;
 open arithmeticTheory;
@@ -610,5 +610,41 @@ Proof
       >> simp[open_rectangle, EXTENSION, FORALL_PROD] >> qx_genl_tac [`x`, `y`] >>
       simp[EQ_IMP_THM, REAL_LT_MIN]
 QED
+
+
+
+
+
+
+Theorem exercise_2_2_1_i:
+  ∀a b. a pow 2 + b pow 2 < 1 ⇒
+        let r = sqrt (a pow 2 + b pow 2);
+            d =  (1 - r)/8
+        in open_rectangle (a - d) (a + d) (b - d) (b + d) ⊆
+                          {(x,y) | x pow 2 + y pow 2 < 1 }
+Proof
+  SRW_TAC [] [] >> irule SUBSET_TRANS >>
+  qexists_tac ‘{(x,y)| sqrt((x-a) pow 2 + (y - b) pow 2) < 1 - r}’ >>
+  conj_tac (*2*)
+  >- (simp[SUBSET_DEF,open_rectangle,PULL_EXISTS] >>
+      qabbrev_tac ‘s = 1 - r’ >> qx_genl_tac [‘x’,‘y’] >> strip_tac >>
+      irule REAL_LET_TRANS >>
+      qexists_tac ‘sqrt (d pow 2 + d pow 2)’ >> strip_tac (* 2 *)
+      >- (simp[Abbr‘d’] >>
+          ‘s² / 64 + s² / 64 = s pow 2 / 32’
+            by
+            (simp[REAL_DIV_ADD,REAL_DOUBLE] >>
+             REWRITE_TAC [real_div] >> simp[]) >>
+          simp[SQRT_DIV] >>
+          ‘0 ≤ s’
+            by (simp[Abbr‘s’,Abbr‘r’,REAL_SUB_LE] >>
+               SUBST1_TAC (GSYM SQRT_1) >> irule SQRT_MONO_LE >>
+               simp[REAL_LE_POW2,REAL_LE_ADD]) >>
+          simp[POW_2_SQRT,REAL_LT_LDIV_EQ,SQRT_POS_LT] >> ))
+  
+                                
+
+        
+
 
 val _ = export_theory();
