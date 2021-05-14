@@ -6,6 +6,8 @@ open transcTheory;
 open arithmeticTheory;
 open pairTheory;
 
+local open realSimps in end
+
 val _ = new_theory "chap2";
 
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
@@ -578,6 +580,7 @@ End
 
 (* example 2.2.9 *)
 Theorem open_rectangle_topology_exists:
+  (* triangle inequality implies *)
   ∃t. topspace t = UNIV ∧ basis open_rectangles t
 Proof
   simp[prop_2_2_8] >> rw[] (* 2 *)
@@ -611,15 +614,16 @@ Proof
       simp[EQ_IMP_THM, REAL_LT_MIN]
 QED
 
-
-
-
-
+Theorem negx_squared[simp]:
+  (-a) pow 2 = a pow 2
+Proof
+  simp[Once REAL_NEG_MINUS1]
+QED
 
 Theorem exercise_2_2_1_i:
   ∀a b. a pow 2 + b pow 2 < 1 ⇒
         let r = sqrt (a pow 2 + b pow 2);
-            d =  (1 - r)/8
+            d = (1 - r)/8
         in open_rectangle (a - d) (a + d) (b - d) (b + d) ⊆
                           {(x,y) | x pow 2 + y pow 2 < 1 }
 Proof
@@ -640,11 +644,29 @@ Proof
             by (simp[Abbr‘s’,Abbr‘r’,REAL_SUB_LE] >>
                SUBST1_TAC (GSYM SQRT_1) >> irule SQRT_MONO_LE >>
                simp[REAL_LE_POW2,REAL_LE_ADD]) >>
-          simp[POW_2_SQRT,REAL_LT_LDIV_EQ,SQRT_POS_LT] >> ))
-  
-                                
-
-        
-
+          simp[POW_2_SQRT,REAL_LT_LDIV_EQ,SQRT_POS_LT] >>
+          ‘0 < s ∧ 1 < sqrt 32’ suffices_by simp[] >>
+          reverse conj_tac
+          >- (‘0r ≤ 1’ by simp[] >> dxrule SQRT_MONO_LT >> simp[SQRT_1])>>
+          simp[Abbr‘r’, Abbr‘s’, REAL_SUB_LT] >>
+          ONCE_REWRITE_TAC [GSYM SQRT_1] >>
+          irule SQRT_MONO_LT >> simp[REAL_LE_POW2, REAL_LE_ADD]) >>
+      irule SQRT_MONO_LE >> simp[REAL_LE_POW2, REAL_LE_ADD] >>
+      irule REAL_LE_ADD2 >> conj_tac
+      >- (Cases_on ‘a ≤ x’ >- (irule POW_LE >> simp[]) >>
+          ‘(x - a)² = (a - x)²’
+            suffices_by (simp[] >> strip_tac >>
+                         irule POW_LE >> simp[]) >>
+          ‘a - x = -(x-a)’ by simp[] >> simp[]) >>
+      Cases_on ‘b ≤ y’ >- (irule POW_LE >> simp[]) >>
+      ‘(y - b)² = (b - y)²’
+        suffices_by (simp[] >> strip_tac >>
+                     irule POW_LE >> simp[]) >>
+      ‘b - y = -(y-b)’ by simp[] >> simp[]) >>
+  simp[SUBSET_DEF, PULL_EXISTS] >>
+  qx_genl_tac [‘x’, ‘y’] >> simp[Abbr‘r’] >>
+  simp[REAL_LT_SUB_LADD] >> strip_tac >>
+  cheat (* apply triangle inequality here *)
+QED
 
 val _ = export_theory();
