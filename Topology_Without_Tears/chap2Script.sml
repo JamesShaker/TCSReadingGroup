@@ -620,14 +620,28 @@ Proof
   simp[Once REAL_NEG_MINUS1]
 QED
 
+Definition tri_ineq:
+  tri_ineq = ∀x y u v a b. sqrt ((x - a) pow 2 + (y - b) pow 2) ≤
+                           sqrt ((x - u) pow 2 + (y - v) pow 2) +
+                           sqrt ((u - a) pow 2 + (v - b) pow 2)
+End
+
+Definition D_def:
+  D = {(x,y) | x pow 2 + y pow 2 < 1 }
+End
+
+Definition R_def:
+  R a b =
+  let r = sqrt (a pow 2 + b pow 2);
+      d = (1 - r)/8
+  in open_rectangle (a - d) (a + d) (b - d) (b + d)
+End
+           
 Theorem exercise_2_2_1_i:
-  ∀a b. a pow 2 + b pow 2 < 1 ⇒
-        let r = sqrt (a pow 2 + b pow 2);
-            d = (1 - r)/8
-        in open_rectangle (a - d) (a + d) (b - d) (b + d) ⊆
-                          {(x,y) | x pow 2 + y pow 2 < 1 }
+  tri_ineq ⇒
+  ∀a b. (a,b) ∈ D ⇒ R a b ⊆ D 
 Proof
-  SRW_TAC [] [] >> irule SUBSET_TRANS >>
+  SRW_TAC [] [D_def,R_def] >> irule SUBSET_TRANS >>
   qexists_tac ‘{(x,y)| sqrt((x-a) pow 2 + (y - b) pow 2) < 1 - r}’ >>
   conj_tac (*2*)
   >- (simp[SUBSET_DEF,open_rectangle,PULL_EXISTS] >>
@@ -642,8 +656,8 @@ Proof
           simp[SQRT_DIV] >>
           ‘0 ≤ s’
             by (simp[Abbr‘s’,Abbr‘r’,REAL_SUB_LE] >>
-               SUBST1_TAC (GSYM SQRT_1) >> irule SQRT_MONO_LE >>
-               simp[REAL_LE_POW2,REAL_LE_ADD]) >>
+                SUBST1_TAC (GSYM SQRT_1) >> irule SQRT_MONO_LE >>
+                simp[REAL_LE_POW2,REAL_LE_ADD]) >>
           simp[POW_2_SQRT,REAL_LT_LDIV_EQ,SQRT_POS_LT] >>
           ‘0 < s ∧ 1 < sqrt 32’ suffices_by simp[] >>
           reverse conj_tac
@@ -666,7 +680,28 @@ Proof
   simp[SUBSET_DEF, PULL_EXISTS] >>
   qx_genl_tac [‘x’, ‘y’] >> simp[Abbr‘r’] >>
   simp[REAL_LT_SUB_LADD] >> strip_tac >>
-  cheat (* apply triangle inequality here *)
+  qsuff_tac ‘sqrt (x pow 2 + y pow 2) < sqrt (1)’
+  >- (strip_tac >>
+      drule_at Any REAL_POW_LT2 >>
+      disch_then $ qspec_then ‘2’ MP_TAC >> simp[] >>
+      simp[SQRT_POS_LE,REAL_LE_ADD,SQRT_POW_2] ) >>
+  simp[SQRT_1] >>
+  irule REAL_LET_TRANS >>
+  FIRST_ASSUM $ irule_at Any >>
+  gs[tri_ineq] >>
+  FIRST_X_ASSUM $ qspecl_then [‘x’,‘y’,‘a’,‘b’,‘0’,‘0’] mp_tac >>
+                simp[]
+QED
+
+Theorem exercise_2_2_1_ii:
+  tri_ineq ⇒
+  D = BIGUNION {R a b | (a,b) ∈ D}
+Proof
+  strip_tac >>
+  irule SUBSET_ANTISYM >>
+  reverse conj_tac
+  >- simp[BIGUNION_SUBSET,PULL_EXISTS,exercise_2_2_1_i] >>
+     
 QED
 
 val _ = export_theory();
