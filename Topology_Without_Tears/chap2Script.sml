@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 
-open pred_setTheory intrealTheory 
+open pred_setTheory intrealTheory
 open topologyTheory chap1Theory chap2_2Theory realTheory
 open transcTheory;
 open arithmeticTheory;
@@ -636,10 +636,18 @@ Definition R_def:
       d = (1 - r)/8
   in open_rectangle (a - d) (a + d) (b - d) (b + d)
 End
-           
+
+Theorem R_includes_centre:
+  ∀a b. (a, b) ∈ D ⇒ (a, b) ∈ R a b
+Proof
+  simp[R_def, open_rectangle, D_def] >> rw[] >>
+  simp[REAL_LT_SUB_RADD, REAL_SUB_LT] >> simp[Once (GSYM SQRT_1)] >>
+  irule SQRT_MONO_LT >> rw[REAL_LE_ADD]
+QED
+
 Theorem exercise_2_2_1_i:
   tri_ineq ⇒
-  ∀a b. (a,b) ∈ D ⇒ R a b ⊆ D 
+  ∀a b. (a,b) ∈ D ⇒ R a b ⊆ D
 Proof
   SRW_TAC [] [D_def,R_def] >> irule SUBSET_TRANS >>
   qexists_tac ‘{(x,y)| sqrt((x-a) pow 2 + (y - b) pow 2) < 1 - r}’ >>
@@ -701,7 +709,26 @@ Proof
   irule SUBSET_ANTISYM >>
   reverse conj_tac
   >- simp[BIGUNION_SUBSET,PULL_EXISTS,exercise_2_2_1_i] >>
-     
+  simp[SUBSET_DEF, PULL_EXISTS, FORALL_PROD] >>
+  rw[] >> rename [`(x, y) ∈ D`] >> qexistsl_tac [`x`, `y`] >>
+  simp[R_includes_centre]
+QED
+
+val euclidean_2_def =
+    new_specification ("euclidean_2_def", ["euclidean_2"], open_rectangle_topology_exists)
+
+Theorem open_rectangle_open =
+            euclidean_2_def |> cj 2 |> ONCE_REWRITE_RULE [basis_def] |> cj 1 |>
+            SIMP_RULE (srw_ss ()) [open_rectangles, PULL_EXISTS]
+
+Theorem exercise_2_2_1_iii:
+  tri_ineq ⇒
+  open_in euclidean_2 D
+Proof
+  simp[Once exercise_2_2_1_ii] >> strip_tac >>
+  irule OPEN_IN_BIGUNION >> rw[] >>
+  rw[R_def] >> irule open_rectangle_open >> rw[] >> cheat
+  (* >- (REAL_ARITH_CONV ``(0:real) < x ⇒ y - x < y + x``) *)
 QED
 
 val _ = export_theory();
