@@ -721,14 +721,53 @@ Theorem open_rectangle_open =
             euclidean_2_def |> cj 2 |> ONCE_REWRITE_RULE [basis_def] |> cj 1 |>
             SIMP_RULE (srw_ss ()) [open_rectangles, PULL_EXISTS]
 
+Theorem sqrt_lt:
+  ∀x. 0 ≤ x ⇒ (sqrt x < y ⇔ x < y pow 2 ∧ 0 < y)
+Proof
+  rw[EQ_IMP_THM] (* 3 *)
+  >- (drule_at_then (Pos last) (qspec_then ‘2’ mp_tac) REAL_POW_LT2 >>
+     simp[SQRT_POW_2,SQRT_POS_LE])
+  >- (irule REAL_LET_TRANS >> qexists_tac ‘sqrt x’ >> simp[SQRT_POS_LE])
+  >- (qspecl_then [‘x’,‘y pow 2’] mp_tac SQRT_MONO_LT >>
+      simp[POW_2_SQRT])
+QED
+
+                
+            
 Theorem exercise_2_2_1_iii:
   tri_ineq ⇒
   open_in euclidean_2 D
 Proof
   simp[Once exercise_2_2_1_ii] >> strip_tac >>
   irule OPEN_IN_BIGUNION >> rw[] >>
-  rw[R_def] >> irule open_rectangle_open >> rw[] >> cheat
-  (* >- (REAL_ARITH_CONV ``(0:real) < x ⇒ y - x < y + x``) *)
+  rw[R_def] >> irule open_rectangle_open >> rw[]
+  >> irule (realLib.REAL_ARITH ``(0:real) < x ⇒ y - x < y + x``) >>
+  gs[D_def,REAL_SUB_LT] >> simp[REAL_LE_ADD,sqrt_lt]
 QED
+
+Theorem exercise_2_2_3:
+  basis {ival a b | a < b ∧ rational a ∧ rational b} euclidean
+Proof
+  rw[basis_def] (* 2 *)
+  >- simp[ivals_open]
+  >- (fs[open_in_euclidean] >>
+      ‘∀x. x ∈ s ⇒ ∃a b. rational a ∧ rational b ∧ x ∈ ival a b ∧ ival a b ⊆ s’
+        by
+        (rw[] >> first_x_assum drule >> strip_tac >>
+         ‘a < x ∧ x < b’ by gs[ival_def] >>
+         ‘∃a' b'. a < a' ∧ a' < x ∧ x < b' ∧ b' < b ∧ rational a' ∧ rational b'’
+           by metis_tac[rationals_dense] >>
+         qexistsl_tac [‘a'’,‘b'’] >> simp[] >> gs[SUBSET_DEF,ival_def]) >>
+      gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
+      rename [‘rational (lb _)’,‘rational (ub _)’,‘ival (lb _) (ub _)’] >>
+      qexists_tac ‘{ival (lb x) (ub x)| x ∈ s}’ >> conj_tac (* 2 *)
+      >- (rw[SUBSET_DEF] >>
+          ‘∀a. a ∈ s ⇒ lb a < ub a’ suffices_by metis_tac[] >>
+          rpt strip_tac >> first_x_assum drule >> simp[ival_def])
+      >- (rw[EQ_IMP_THM,Once EXTENSION] (* 2 *)
+         >- (simp[PULL_EXISTS] >> metis_tac[SUBSET_DEF])
+         >- metis_tac[SUBSET_DEF]))
+QED
+        
 
 val _ = export_theory();
