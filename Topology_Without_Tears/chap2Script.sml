@@ -537,14 +537,26 @@ Proof
   intLib.ARITH_TAC
 QED
 
-(*
+
+
 Theorem ival_11[simp]:
-  ival a b = ival c d ⇔ a = c ∧ b = d
+  a < b ∧ c < d ⇒
+  (ival a b = ival c d ⇔ a = c ∧ b = d)
 Proof
   simp[EXTENSION, ival_def, Once EQ_IMP_THM] >>
-  rpt strip_tac >> cheat
-QED
+  strip_tac >> CCONTR_TAC >> gs[] >>
+  Cases_on `a = c` >> gs[]
+  >- (wlog_tac `b < d` [`a`, `c`, `b`, `d`] >> metis_tac[REAL_NOT_LT, REAL_LE_LT])
+  >> cheat
+(*  Cases_on `a < d`
+  >- (Cases_on `a < c`
+      >- (Cases_on `c < b` >> ))
+
+
+  >> wlog_tac `a < c` [`a`, `c`, `b`, `d`]
+     >- (`c < a` by metis_tac[REAL_NOT_LT, REAL_LE_LT] >> )
 *)
+QED
 
 Theorem prop2_2_1:
   open_in euclidean s ⇔ ∃P. s = BIGUNION { ival a b | P a b }
@@ -732,8 +744,6 @@ Proof
       simp[POW_2_SQRT])
 QED
 
-                
-            
 Theorem exercise_2_2_1_iii:
   tri_ineq ⇒
   open_in euclidean_2 D
@@ -768,6 +778,18 @@ Proof
          >- (simp[PULL_EXISTS] >> metis_tac[SUBSET_DEF])
          >- metis_tac[SUBSET_DEF]))
 QED
-        
+
+Definition second_countable_def:
+  second_countable t ⇔ ∃B. basis B t ∧ countable B
+End
+
+Theorem exercise_2_2_4_i:
+  second_countable euclidean
+Proof
+  rw[second_countable_def] >>
+  irule_at Any exercise_2_2_3 >>
+  simp[countable_def] >>
+  cheat
+QED
 
 val _ = export_theory();
