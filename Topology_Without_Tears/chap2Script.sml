@@ -1,7 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 
-open pred_setTheory intrealTheory
-open topologyTheory chap1Theory chap2_2Theory realTheory
+open pred_setTheory intrealTheory;
+open topologyTheory chap1Theory chap2_2Theory realTheory;
 open transcTheory;
 open arithmeticTheory;
 open pairTheory;
@@ -788,13 +788,62 @@ Definition second_countable_def:
   second_countable t ⇔ ∃B. basis B t ∧ countable B
 End
 
+
+Theorem countable_integer[simp]:
+  countable univ(:int)
+Proof
+  simp[countable_def] >>
+  qexists_tac ‘λi. if i < 0 then Num(-i)*2 + 1 else Num(i)*2’ >>
+  rw[INJ_DEF] >>
+  rename [‘i = j’] >>
+  Cases_on ‘i’ >> gs[] >>
+  Cases_on ‘j’ >> gs[] >>
+  metis_tac[ODD_EVEN,ODD_EXISTS,ADD1,EVEN_EXISTS]
+QED
+
+Theorem countable_rational[simp]:
+  countable rational
+Proof
+  simp[countable_def] >>
+  ‘SURJ (λ(i,j). real_of_int i / real_of_int j)
+        (univ(:int) CROSS univ(:int))
+        rational’
+    by (rw[SURJ_DEF,FORALL_PROD,EXISTS_PROD,IN_DEF,rational_def]
+        >- (Cases_on ‘p_2 = 0’ >> simp[]
+            >- (simp[real_div] >> qexistsl_tac [‘0’,‘1’] >>
+                simp[]) >>
+            metis_tac[]) >>
+        metis_tac[]) >>
+  dxrule_then strip_assume_tac SURJ_INJ_INV >>
+  pop_assum kall_tac >>
+  dxrule_then (irule_at Any) INJ_COMPOSE >>
+  simp[GSYM countable_def] >>
+  irule(cross_countable) >>
+  simp[]
+QED
+
 Theorem exercise_2_2_4_i:
   second_countable euclidean
 Proof
   rw[second_countable_def] >>
   irule_at Any exercise_2_2_3 >>
   simp[countable_def] >>
-  cheat
+  ‘INJ (λi. @(a,b). a < b ∧ i = ival a b)
+      {ival a b | a < b ∧ rational a ∧ rational b}
+      {(a,b) | rational a ∧ rational b}’
+    by (rw[INJ_DEF]
+        >- (qexistsl_tac [‘a’,‘b’] >>
+            simp[] >> SELECT_ELIM_TAC >>
+            csimp[EXISTS_PROD,FORALL_PROD]) >>
+        pop_assum mp_tac >>
+        csimp[] >> SELECT_ELIM_TAC >> simp[EXISTS_PROD,FORALL_PROD] >>
+        SELECT_ELIM_TAC >> simp[EXISTS_PROD,FORALL_PROD]) >>
+  dxrule_then (irule_at Any) INJ_COMPOSE >>
+  simp[GSYM countable_def] >>
+  ‘{(a,b) | rational a ∧ rational b} = rational × rational’
+    by rw[EXTENSION,FORALL_PROD,IN_DEF] >>
+  pop_assum SUBST1_TAC >>
+  irule(cross_countable) >> simp[]
 QED
 
 val _ = export_theory();
