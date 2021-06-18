@@ -538,25 +538,30 @@ Proof
 QED
 
 
-
 Theorem ival_11[simp]:
   a < b ∧ c < d ⇒
   (ival a b = ival c d ⇔ a = c ∧ b = d)
 Proof
   simp[EXTENSION, ival_def, Once EQ_IMP_THM] >>
-  strip_tac >> CCONTR_TAC >> gs[] >>
-  Cases_on `a = c` >> gs[]
-  >- (wlog_tac `b < d` [`a`, `c`, `b`, `d`] >> metis_tac[REAL_NOT_LT, REAL_LE_LT])
-  >> cheat
-(*  Cases_on `a < d`
-  >- (Cases_on `a < c`
-      >- (Cases_on `c < b` >> ))
-
-
-  >> wlog_tac `a < c` [`a`, `c`, `b`, `d`]
-     >- (`c < a` by metis_tac[REAL_NOT_LT, REAL_LE_LT] >> )
-*)
-QED
+  wlog_tac `a <= c` [`a`, `c`, `b`, `d`] (* 2 *)
+  >- (‘c ≤ a’ by fs[] >> metis_tac[]) >>
+  Cases_on ‘a = c’ (* 2 *)
+  >-  (rw[] >> CCONTR_TAC >> 
+       Cases_on ‘b < d’
+       >- (‘∃z. b < z ∧ z < d’ by metis_tac[REAL_MEAN] >>
+           first_x_assum (qspec_then ‘z’ assume_tac) >> fs[]) >>
+       ‘d < b’ by fs[] >>
+       ‘∃z. d < z ∧ z < b’ by metis_tac[REAL_MEAN] >>
+       first_x_assum (qspec_then ‘z’ assume_tac) >> fs[]) >>
+  (‘a < c’ by fs[] >> rw[] >>
+   ‘a < min b c’ by simp[REAL_LT_MIN] >>
+   ‘∃z. a < z ∧ z < min b c’ by metis_tac[REAL_MEAN] >>
+   qexists_tac ‘z’ >> rw[] >>
+   Cases_on ‘z < b’ >> rw[] (* 2, have the option of avoid cases here*)
+   >- (‘z < c’ suffices_by fs[] >> metis_tac[REAL_LT_MIN]) >>
+   metis_tac[REAL_LT_MIN] >>
+   metis_tac[REAL_LT_MIN,REAL_LT_TRANS]) 
+QED 
 
 Theorem prop2_2_1:
   open_in euclidean s ⇔ ∃P. s = BIGUNION { ival a b | P a b }
