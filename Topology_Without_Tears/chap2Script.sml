@@ -846,4 +846,76 @@ Proof
   irule(cross_countable) >> simp[]
 QED
 
+Theorem SUBSET_TWO_ELEMENT_SET:
+  x ⊆ {a;b} ⇔ x = ∅ ∨ x = {a} ∨ x = {b} ∨ x = {a;b}
+Proof
+  eq_tac >> simp[DISJ_IMP_THM] >>
+  simp[SUBSET_DEF] >>
+  simp[EXTENSION] >> metis_tac[]
+QED
+
+Theorem BIGUNION_EQ_SING:
+  BIGUNION X = {x} ⇔ X = {{x}} ∨ X = {{x}; ∅}
+Proof
+  reverse eq_tac >- (strip_tac >> simp[]) >>
+  CONV_TAC CONTRAPOS_CONV >> simp[] >> strip_tac >>
+  Cases_on ‘X = ∅’ >> simp[] >>
+  Cases_on ‘X = {∅}’ >> simp[] >>
+  ‘∃s e. s ∈ X ∧ e ∈ s ∧ e ≠ x’
+    suffices_by (strip_tac >> simp[EXTENSION] >> metis_tac[]) >>
+  CCONTR_TAC >> gvs[] >>
+  ‘X ⊆ {{x}; ∅}’
+    by (simp[SUBSET_DEF] >> qx_gen_tac ‘s’ >> strip_tac >>
+        ‘∀e. e ∉ s ∨ e = x’ by metis_tac[] >>
+        Cases_on ‘s = ∅’ >> simp[] >>
+        ‘∀d. d ∈ s ⇒ d = x’ by metis_tac[] >>
+        simp[EXTENSION] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+  metis_tac[SUBSET_TWO_ELEMENT_SET]
+QED
+
+Theorem exercise_2_2_4_ii:
+  ¬countable X ⇒ ¬second_countable (discrete_topology X)
+Proof
+  simp[second_countable_def] >> rpt strip_tac >>
+  Cases_on ‘basis B (discrete_topology X)’ >> simp[] >>
+  ‘∀x. x ∈ X ⇒ {x} ∈ B’
+    by (rpt strip_tac >>
+        ‘open_in (discrete_topology X) {x}’
+          by simp[openSets_discrete] >>
+        drule_then (drule_then strip_assume_tac o cj 2) $
+          iffLR basis_def >>
+        gs[BIGUNION_EQ_SING]) >>
+  ‘INJ (λx. {x}) X B’ by simp[INJ_DEF] >>
+  metis_tac[inj_countable]
+QED
+
+open cardinalTheory
+
+
+Theorem open_sets_form_basis:
+  basis { s | open_in t s } t
+Proof
+  simp[basis_def] >> rpt strip_tac >>
+  qexists_tac ‘{s}’ >> simp[]
+QED
+
+Theorem exercise_2_2_4_iv:
+  second_countable (finite_closed_topology 𝕌(:int))
+Proof
+  simp[second_countable_def] >>
+  irule_at (Pos hd) open_sets_form_basis >>
+  simp[finite_closed_open_sets] >> simp[GSPEC_OR] >>
+  ‘{s | FINITE (𝕌(:int) DIFF s) } ≈
+    { s:int set | FINITE s ∧ s ⊆ UNIV}’
+    by (simp[cardeq_def] >> qexists_tac ‘COMPL’ >>
+        simp[BIJ_DEF, INJ_DEF, SURJ_DEF, COMPL_DEF] >>
+        rpt strip_tac >- gs[EXTENSION] >>
+        qexists_tac ‘UNIV DIFF x’ >> simp[GSYM COMPL_DEF]) >>
+  drule_then irule (iffRL countable_cardeq) >>
+  resolve_then Any irule
+               finite_subsets_bijection
+               (iffLR countable_cardeq) >>
+  simp[]
+QED
+
 val _ = export_theory();
