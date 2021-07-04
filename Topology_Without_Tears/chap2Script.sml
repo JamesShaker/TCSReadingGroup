@@ -918,4 +918,25 @@ Proof
   simp[]
 QED
 
+Theorem bigunion_cross:
+  BIGUNION as CROSS BIGUNION bs = BIGUNION {a CROSS b | a ∈ as ∧ b ∈ bs}
+Proof
+  simp[Once EXTENSION, FORALL_PROD, PULL_EXISTS] >> metis_tac[]
+QED
+
+Theorem exercise_2_2_6:
+  basis B1 t1 ∧ basis B2 t2 ⇒
+  ∃t. topspace t = topspace t1 CROSS topspace t2 ∧
+      basis {b1 CROSS b2 | b1 ∈ B1 ∧ b2 ∈ B2} t
+Proof
+  strip_tac >> simp[prop_2_2_8] >> rpt strip_tac
+  >- (simp[Once EXTENSION, FORALL_PROD, PULL_EXISTS] >> metis_tac[IN_BIGUNION, prop_2_2_8])
+  >- (rw[] >> simp[INTER_CROSS] >> rename[‘a1 ∩ a2 CROSS (b1 ∩ b2)’, ‘a1 ∈ A’, ‘b1 ∈ B’]
+      >> ‘∃as. as ⊆ A ∧ a1 ∩ a2 = BIGUNION as’ by metis_tac [prop_2_2_8]
+      >> ‘∃bs. bs ⊆ B ∧ b1 ∩ b2 = BIGUNION bs’ by metis_tac [prop_2_2_8]
+      >> simp[bigunion_cross] >> irule_at Any EQ_REFL >> rw[SUBSET_DEF] >> metis_tac[SUBSET_DEF])
+QED
+        
+        
+
 val _ = export_theory();
