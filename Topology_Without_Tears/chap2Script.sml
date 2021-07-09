@@ -936,7 +936,34 @@ Proof
       >> ‘∃bs. bs ⊆ B ∧ b1 ∩ b2 = BIGUNION bs’ by metis_tac [prop_2_2_8]
       >> simp[bigunion_cross] >> irule_at Any EQ_REFL >> rw[SUBSET_DEF] >> metis_tac[SUBSET_DEF])
 QED
+
+
+(*
+Let B be the collection of all half-open intervals of the form (a, b], a < b, where (a, b] = {x : x ∈ R, a < x 􏰄 b}. Then B is a basis for a topology on R, since R is the union of all members of B and the intersection of any two half-open intervals is a half-open interval.
+*)
         
-        
+Definition lhalf_open_ival:
+lhalf_open_ival a b = {x| a < x ∧ x ≤ b}
+End
+
+Theorem example_2_3_1:
+  ∃t. topspace t = UNIV ∧ basis {lhalf_open_ival a b | a < b} t ∧ t ≠ euclidean
+Proof
+  ‘∃t. topspace t = UNIV ∧ basis {lhalf_open_ival a b | a < b} t’
+    by
+    (simp[prop_2_2_8] >> rpt strip_tac (* 2 *)
+     >- (rw[Once EXTENSION,PULL_EXISTS] >> qexistsl_tac [‘x - 1’,‘x’] >> simp[lhalf_open_ival]) >>
+     rw[SUBSET_DEF] >> rename[‘lhalf_open_ival a b ∩ lhalf_open_ival c d’] >>
+     wlog_tac ‘a ≤ c’ [‘a’,‘b’,‘c’,‘d’] (* 2 *)
+     >- metis_tac[INTER_COMM,RealArith.REAL_ARITH “¬(a:real ≤ c) ⇒ c ≤ a”] >>
+     Cases_on ‘b ≤ c’ (* 2 *)
+     >- (qexists_tac ‘{}’ >> rw[] >> simp[EXTENSION,lhalf_open_ival]) >>
+     qexists_tac ‘{lhalf_open_ival c (min b d)}’ >> simp[] >> strip_tac (* 2 *)
+     >- (qexistsl_tac [‘c’,‘min b d’] >> rw[min_def]) >>
+     rw[min_def,lhalf_open_ival,EXTENSION]) >>
+  qexists_tac ‘t’ >> simp[TOPOLOGY_EQ] >> qexists_tac ‘lhalf_open_ival 0 1’ >>
+  gs[basis_def,PULL_EXISTS] >> simp[lhalf_open_ival,exercise_2_1_1]
+QED
+          
 
 val _ = export_theory();

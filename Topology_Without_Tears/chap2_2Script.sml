@@ -11,6 +11,24 @@ Definition basis_def:
     (∀s. open_in t s ⇒ ∃u. u ⊆ B ∧ s = BIGUNION u)
 End
 
+Theorem basis_def':
+  ∀B t.
+    basis B t ⇔
+      (∀s. s ∈ B ⇒ open_in t s) ∧
+      ∀s. open_in t s ⇔ ∃u. u ⊆ B ∧ s = BIGUNION u
+Proof       
+  rw[basis_def] >> eq_tac  (* 2 *)
+  >- (simp[] >> rpt strip_tac >> eq_tac >> simp[] >> metis_tac[SUBSET_DEF,OPEN_IN_BIGUNION])
+  >> metis_tac[]
+QED
+            
+Theorem basis_topology_unique:
+  ∀B t1 t2. basis B t1 ∧ basis B t2 ⇒ t1 = t2
+Proof
+  rw[basis_def',TOPOLOGY_EQ]
+QED
+
+
 Theorem example2_2_4:
   basis { {x} | x ∈ X } (discrete_topology X)
 Proof
