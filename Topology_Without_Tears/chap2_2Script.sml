@@ -96,5 +96,92 @@ Proof
   >> qexists_tac `{s}`  >> simp[]
 QED
 
+Theorem prop_2_3_2:
+  basis B t ⇔
+    (∀b. b ∈ B ⇒ open_in t b) ∧
+    ∀x U. open_in t U ∧ x ∈ U ⇒ ∃b. b ∈ B ∧ b ⊆ U ∧ x ∈ b
+Proof
+  eq_tac >> rpt strip_tac
+  >- gs[basis_def]
+  >- (gs[basis_def] >>
+      first_x_assum $ drule_then strip_assume_tac >> gvs[] >>
+      rename [‘open_in t (BIGUNION Us)’, ‘b ∈ Us’] >>
+      first_assum $ irule_at Any >> simp[SUBSET_BIGUNION_I] >>
+      gs[SUBSET_DEF]) >>
+  rw[basis_def] >>
+  first_x_assum $ drule_then assume_tac >>
+  qexists_tac ‘{ b | b ⊆ s ∧ b ∈ B }’ >> conj_tac
+  >- simp[SUBSET_DEF] >>
+  simp[Once EXTENSION] >> qx_gen_tac ‘a’ >> eq_tac
+  >- (strip_tac >> first_x_assum drule>> metis_tac[SUBSET_DEF]) >>
+  metis_tac[SUBSET_DEF]
+QED
+
+Theorem prop_2_3_3:
+  basis B t ⇒
+  ∀U. open_in t U ⇔
+        U ⊆ topspace t ∧ ∀x. x ∈ U ⇒ ∃b. x ∈ b ∧ b ∈ B ∧ b ⊆ U
+Proof
+  rw[EQ_IMP_THM]
+  >- simp[OPEN_IN_SUBSET]
+  >- metis_tac[prop_2_3_2] >>
+  ‘U = BIGUNION { b | b ⊆ U ∧ b ∈ B }’ suffices_by
+    (disch_then SUBST1_TAC >> irule OPEN_IN_BIGUNION >> simp[] >>
+     gs[basis_def]) >>
+  simp[Once EXTENSION] >> qx_gen_tac ‘a’ >> rw[EQ_IMP_THM] >>
+  metis_tac[SUBSET_DEF]
+QED
+
+Theorem EMPTY_is_topology:
+  istopology {∅}
+Proof
+  simp[istopology] >> simp[SUBSET_DEF] >> cheat
+QED
+
+(* WARNING: understand difference between prop_2_2_8 and prop_2_3_2 *)
+(* Theorem basis_empty:
+  basis B (mktopology {∅}) ⇔ B = ∅ ∨ B = {∅}
+Proof
+  simp[prop_2_3_2]
+*)
+
+(* improve TWT, by removing need to be non-empty and over same space, as
+   latter is implied by two conditions *)
+Theorem prop_2_3_4:
+  basis B1 t1 ∧ basis B2 t2 ⇒
+  (t1 = t2 ⇔
+     (∀b x. x ∈ b ∧ b ∈ B1 ⇒ ∃b'. x ∈ b' ∧ b' ⊆ b ∧ b' ∈ B2) ∧
+     (∀b x. x ∈ b ∧ b ∈ B2 ⇒ ∃b'. x ∈ b' ∧ b' ⊆ b ∧ b' ∈ B1))
+Proof
+  strip_tac >> simp[TOPOLOGY_EQ] >> eq_tac >> rpt strip_tac
+  >- metis_tac[basis_def, prop_2_3_2]
+  >- metis_tac[basis_def, prop_2_3_2] >>
+  eq_tac >> strip_tac
+  >- (‘∃bs1. bs1 ⊆ B1 ∧ BIGUNION bs1 = s’ by metis_tac[basis_def] >>
+      ‘s = BIGUNION { b2 | b2 ∈ B2 ∧ b2 ⊆ s}’
+        by (simp[Once EXTENSION] >> qx_gen_tac ‘a’ >> eq_tac
+            >- (gvs[] >> strip_tac >>
+                rename [‘a ∈ s’, ‘s ∈ bs1’, ‘bs1 ⊆ B1’] >>
+                ‘s ∈ B1’ by gs[SUBSET_DEF] >>
+                ‘∃b'. a ∈ b' ∧ b' ∈ B2 ∧ b' ⊆ s’ by metis_tac[] >>
+                qexists_tac ‘b'’ >> simp[] >>
+                metis_tac[SUBSET_BIGUNION_SUBSET_I]) >>
+            metis_tac[SUBSET_DEF]) >>
+      pop_assum SUBST1_TAC >>
+      irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[basis_def]) >>
+  ‘∃bs2. bs2 ⊆ B2 ∧ BIGUNION bs2 = s’ by metis_tac[basis_def] >>
+  ‘s = BIGUNION { b1 | b1 ∈ B1 ∧ b1 ⊆ s}’
+    by (simp[Once EXTENSION] >> qx_gen_tac ‘a’ >> eq_tac
+        >- (gvs[] >> strip_tac >>
+            rename [‘a ∈ s’, ‘s ∈ bs2’, ‘bs2 ⊆ B2’] >>
+            ‘s ∈ B2’ by gs[SUBSET_DEF] >>
+            ‘∃b'. a ∈ b' ∧ b' ∈ B1 ∧ b' ⊆ s’ by metis_tac[] >>
+            qexists_tac ‘b'’ >> simp[] >>
+            metis_tac[SUBSET_BIGUNION_SUBSET_I]) >>
+        metis_tac[SUBSET_DEF]) >>
+  pop_assum SUBST1_TAC >>
+  irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[basis_def]
+QED
+
 
 val _ = export_theory();
