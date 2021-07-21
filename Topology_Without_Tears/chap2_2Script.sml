@@ -132,12 +132,6 @@ Proof
   metis_tac[SUBSET_DEF]
 QED
 
-Theorem EMPTY_is_topology:
-  istopology {∅}
-Proof
-  simp[istopology] >> simp[SUBSET_DEF] >> cheat
-QED
-
 (* WARNING: understand difference between prop_2_2_8 and prop_2_3_2 *)
 (* Theorem basis_empty:
   basis B (mktopology {∅}) ⇔ B = ∅ ∨ B = {∅}

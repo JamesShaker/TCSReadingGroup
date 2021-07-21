@@ -106,6 +106,12 @@ Proof
   drule INFINITE_INJ >> simp[]
 QED
 
+Theorem EMPTY_is_topology:
+  istopology {∅}
+Proof
+  simp[istopology, SUBSET_SING]
+QED
+
 Definition discrete_topology_def:
   discrete_topology X = topology (POW X)
 End
