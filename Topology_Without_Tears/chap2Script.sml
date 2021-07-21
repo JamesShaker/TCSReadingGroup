@@ -249,10 +249,11 @@ Theorem positive_rationals_natural:
   rational a ∧ 0 < a ⇒ ∃m n. n ≠ 0 ∧ a = &m / &n
 Proof
   rw[rational_def] >> rename [`0 < real_of_int a / real_of_int b`] >>
-  Cases_on `a` >> Cases_on `b` >> gs[real_div]
+  Cases_on `a` >> Cases_on `b` >> REWRITE_TAC [real_div] >>
+  RULE_ASSUM_TAC (REWRITE_RULE [real_div]) >> gs[]
   >- (rename[`&a = (&_)⁻¹ * &(_ * b)`] >> qexistsl_tac [`a`, `b`] >>
       simp[]) >>
-  rename[`-(-&a)⁻¹ * &b`] >> qexistsl_tac [`b`, `a`] >> simp[REAL_NEG_INV]
+  rename[`-&a = _ * &(_ * b)`] >> qexistsl_tac [`a`, `b`] >> simp[REAL_NEG_INV]
 QED
 
 Theorem sqrt_2_irrational:
