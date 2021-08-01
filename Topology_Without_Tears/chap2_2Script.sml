@@ -177,5 +177,37 @@ Proof
   irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[basis_def]
 QED
 
+Theorem exercise2_3_2_i:
+  basis B t ∧ B ⊆ B_1 ∧ B_1 ⊆ {s | open_in t s} ⇒ basis B_1 t
+Proof
+  rpt strip_tac >> fs[basis_def] >> strip_tac
+  >- fs[SUBSET_DEF]
+  >- metis_tac[SUBSET_TRANS]
+QED
+        
+Definition subbasis_def:
+  subbasis sb t ⇔
+    (∀s. s ∈ sb ⇒ open_in t s) ∧ sb ≠ {} ∧
+    basis {BIGINTER ss | ss ⊆ sb ∧ FINITE ss ∧ ss ≠ {}} t 
+End
 
+Theorem exercise2_3_6:
+  x ∈ X ∧ X ≠ {x} ⇒
+    subbasis {X DELETE e | e | e ∈ X} (finite_closed_topology X) 
+Proof
+  simp[subbasis_def, PULL_EXISTS] >> rw[]
+  >- (‘X DIFF (X DELETE e) = {e}’ suffices_by simp[] >>
+      simp[EXTENSION] >> metis_tac[])
+  >- (simp[Once EXTENSION] >> metis_tac[])
+  >- (simp[basis_def, PULL_EXISTS] >> rpt strip_tac
+      >- (‘FINITE (X DIFF BIGINTER ss) ∧ BIGINTER ss ⊆ X’ suffices_by simp[] >>
+          ‘BIGINTER ss ⊆ X’ by (irule BIGINTER_SUBSET >> gs[GSYM MEMBER_NOT_EMPTY] >>
+                                gs[SUBSET_DEF] >> metis_tac[IN_DELETE])
+          >> simp[] >> cheat
+         )
+      >- cheat
+      >- cheat
+     )
+QED
+        
 val _ = export_theory();
