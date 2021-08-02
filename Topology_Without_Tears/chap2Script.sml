@@ -10,6 +10,8 @@ local open realSimps in end
 
 val _ = new_theory "chap2";
 
+val _ = intLib.deprecate_int();
+    
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
 
 Definition ival_def:
@@ -252,8 +254,8 @@ Proof
   Cases_on `a` >> Cases_on `b` >> REWRITE_TAC [real_div] >>
   RULE_ASSUM_TAC (REWRITE_RULE [real_div]) >> gs[]
   >- (rename[`&a = (&_)⁻¹ * &(_ * b)`] >> qexistsl_tac [`a`, `b`] >>
-      simp[]) >>
-  rename[`-&a = _ * &(_ * b)`] >> qexistsl_tac [`a`, `b`] >> simp[REAL_NEG_INV]
+      simp[]) >> rename[‘&a = inv _ * &( _ * b) ’] >>
+  qexistsl_tac [`a`, `b`] >> simp[REAL_NEG_INV]
 QED
 
 Theorem sqrt_2_irrational:
@@ -469,8 +471,6 @@ Proof
       gs[real_of_int_Nmul,Excl "real_of_int_mul"] >>
       pop_assum mp_tac >> intLib.ARITH_TAC)
 QED
-
-open intrealTheory;
 
 Theorem ival_without_int:
   ∀x. (¬∃z:int. x = real_of_int z) ⇒
