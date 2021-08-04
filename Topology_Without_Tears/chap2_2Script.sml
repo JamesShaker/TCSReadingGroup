@@ -191,23 +191,68 @@ Definition subbasis_def:
     basis {BIGINTER ss | ss ⊆ sb ∧ FINITE ss ∧ ss ≠ {}} t
 End
 
+Theorem COMPL_BIGINTER:
+  COMPL (BIGINTER ss) = BIGUNION { COMPL s | s ∈ ss }
+Proof
+  simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[]
+QED
+
+Theorem COMPL_DELETE:
+  COMPL (s DELETE e) = COMPL s ∪ {e}
+Proof
+  simp[EXTENSION]
+QED
+
 Theorem exercise2_3_6:
   x ∈ X ∧ X ≠ {x} ⇒
-    subbasis {X DELETE e | e | e ∈ X} (finite_closed_topology X)
+  subbasis {X DELETE e | e | e ∈ X} (finite_closed_topology X)
 Proof
   simp[subbasis_def, PULL_EXISTS] >> rw[]
   >- (‘X DIFF (X DELETE e) = {e}’ suffices_by simp[] >>
       simp[EXTENSION] >> metis_tac[])
   >- (simp[Once EXTENSION] >> metis_tac[])
   >- (simp[basis_def, PULL_EXISTS] >> rpt strip_tac
-      >- (‘FINITE (X DIFF BIGINTER ss) ∧ BIGINTER ss ⊆ X’ suffices_by simp[] >>
-          ‘BIGINTER ss ⊆ X’ by (irule BIGINTER_SUBSET >> gs[GSYM MEMBER_NOT_EMPTY] >>
-                                gs[SUBSET_DEF] >> metis_tac[IN_DELETE])
-          >> simp[] >> cheat
-         )
-      >- cheat
-      >- cheat
-     )
+      >- (‘BIGINTER ss ⊆ X’ by (irule BIGINTER_SUBSET >>
+                                gs[GSYM MEMBER_NOT_EMPTY] >>
+                                gs[SUBSET_DEF] >> metis_tac[IN_DELETE]) >>
+          simp[] >> Cases_on ‘BIGINTER ss = ∅’ >>
+          simp[DIFF_INTER_COMPL, COMPL_BIGINTER, INTER_BIGUNION, PULL_EXISTS] >>
+          conj_tac
+          >- (qmatch_abbrev_tac ‘FINITE sss’ >>
+              ‘sss = IMAGE (λs. X ∩ COMPL s) ss’ suffices_by simp[] >>
+              simp[Once EXTENSION, Abbr‘sss’, PULL_EXISTS]) >>
+          qx_gen_tac ‘s’ >> strip_tac >>
+          ‘s ∈ {X DELETE e | e | e ∈ X}’ by gs[SUBSET_DEF] >>
+          gs[COMPL_DELETE, UNION_OVER_INTER, FINITE_INTER])
+      >- (qexists_tac ‘{}’ >> simp[]) >>
+      Cases_on‘s = ∅’
+      >- (qexists_tac ‘{}’ >> simp[]) >>
+      Cases_on ‘s = X’
+      >- (gvs[] >>
+          ‘∃y. y ∈ X ∧ y ≠ x’
+            by (CCONTR_TAC >> gvs[] >> qpat_x_assum ‘X ≠ {x}’ mp_tac >>
+                simp[] >> simp[EXTENSION] >> metis_tac[]) >>
+          qexists_tac ‘{X DELETE x; X DELETE y}’ >> simp[] >> rpt conj_tac
+          >- (qexists_tac ‘{X DELETE x}’ >> simp[] >> metis_tac[])
+          >- (qexists_tac ‘{X DELETE y}’ >> simp[] >> metis_tac[]) >>
+          simp[EXTENSION] >> metis_tac[]) >>
+      qexists_tac ‘{s}’ >> simp[] >>
+      qexists_tac ‘{X DELETE e | e | e ∈ X ∧ e ∉ s}’ >> simp[PULL_EXISTS] >>
+      rpt conj_tac
+      >- (simp[Once EXTENSION, PULL_EXISTS] >> qx_gen_tac ‘a’ >>
+          eq_tac >- metis_tac[SUBSET_DEF] >>
+          simp[IMP_CONJ_THM, FORALL_AND_THM] >>
+          rpt strip_tac>>
+          CCONTR_TAC >> first_x_assum $ drule_at Concl >> simp[] >>
+          ‘X DIFF s ≠ {}’ suffices_by simp[EXTENSION, SUBSET_DEF] >>
+          simp[SUBSET_DIFF_EMPTY] >> metis_tac[SUBSET_ANTISYM])
+      >- (simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[])
+      >- (qmatch_abbrev_tac ‘FINITE sss’ >>
+          ‘sss = IMAGE (λe. X DELETE e) (X DIFF s)’ suffices_by simp[] >>
+          simp[Abbr‘sss’, Once EXTENSION]) >>
+      simp[Once EXTENSION] >>
+      ‘X DIFF s ≠ {}’ suffices_by simp[EXTENSION, SUBSET_DEF] >>
+      simp[SUBSET_DIFF_EMPTY] >> metis_tac[SUBSET_ANTISYM])
 QED
 
 val _ = export_theory();
