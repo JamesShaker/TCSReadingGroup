@@ -1,4 +1,5 @@
 open HolKernel Parse boolLib bossLib;
+open topologyTheory pred_setTheory
 open chap2_2Theory;
 
 val _ = new_theory "chap3";
@@ -45,9 +46,20 @@ Proof
 	>- (CCONTR_TAC >>
 		first_x_assum drule >> rw[] >>
 		metis_tac[])
-	>> cheat
-	(* >> `∀z. z ∈ (topspace t DIFF A) ⇒ ∃Uz. z ∈ Uz `
-	OPEN_IN_BIGUNION*)
+	>> `∀x.
+			x ∉ A ∧ x ∈ topspace t ⇒
+			∃U. open_in t U ∧ x ∈ U ∧ (∀y. y ∈ U ∧ y ≠ x ⇒ y ∉ A)`
+				by metis_tac[] >>
+	gs[SKOLEM_THM, GSYM RIGHT_EXISTS_IMP_THM] >>
+	`topspace t DIFF A = BIGUNION {f x | x ∉ A ∧ x ∈ topspace t}`
+		by (rw[Once EXTENSION, PULL_EXISTS] >> EQ_TAC
+			>- metis_tac[]
+			>> rw[]
+			>- (first_x_assum drule_all >> rw[] >>
+				metis_tac[OPEN_IN_SUBSET, SUBSET_DEF])
+			>> metis_tac[]) >>
+	simp[] >> irule OPEN_IN_BIGUNION >>
+	rw[] >> metis_tac[]
 QED
 
 val _ = export_theory();
