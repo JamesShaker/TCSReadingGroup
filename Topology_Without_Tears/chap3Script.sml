@@ -62,4 +62,38 @@ Proof
   rw[] >> metis_tac[]
 QED
 
+Theorem not_limpt_inter:
+  ¬limpt t x A ⇔ x ∉ topspace t ∨ ∃U. open_in t U ∧ (U ∩ A = {x} ∨ U ∩ A = {}) ∧ x ∈ U  
+Proof
+  simp [limpt_thm, EXTENSION] >> metis_tac[]
+QED
+        
+Theorem prop_3_1_8:
+  A ⊆ topspace t ⇒ closed_in t (A ∪ {a | limpt t a A})
+Proof
+  rpt strip_tac >> irule (iffRL prop_3_1_6) >> reverse CONJ_TAC
+  >- gs[SUBSET_DEF, limpt_thm] >> 
+  CCONTR_TAC >> gs[] >> ‘x ∈ topspace t’ by metis_tac[limpt_thm] >> 
+  gs[not_limpt_inter]
+  >- (gs [EXTENSION] >> metis_tac[]) >>
+  qabbrev_tac ‘A' = {a | limpt t a A}’ >> 
+  ‘U ∩ A' = {}’ by
+    (simp[EXTENSION, Abbr ‘A'’] >> simp[not_limpt_inter] >> 
+         metis_tac[]) >>
+  ‘U ∩ (A ∪ A') = {}’ by simp[UNION_OVER_INTER] >>
+  metis_tac[not_limpt_inter]                
+QED
+
+Definition closure_def:
+  closure t A = A ∪ {a | limpt t a A}
+End
+
+Theorem remark_3_1_10_i:
+  A ⊆ topspace t ⇒ closed_in t $ closure t A 
+Proof
+  simp[closure_def, prop_3_1_8]
+QED
+
+        
+        
 val _ = export_theory();
