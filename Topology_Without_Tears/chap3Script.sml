@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 open topologyTheory pred_setTheory
-open chap2_2Theory;
+open chap1Theory chap2_2Theory;
 
 val _ = new_theory "chap3";
 
@@ -41,7 +41,7 @@ Proof
 QED
 
 Theorem prop_3_1_6:
-  A ⊆ topspace t ⇒ (closed_in t A ⇔ ∀x. limpt t x A ⇒ x ∈ A)
+ closed_in t A ⇔ A ⊆ topspace t ∧ ∀x. limpt t x A ⇒ x ∈ A
 Proof
   rw[closed_in, limpt_thm] >> EQ_TAC >> rw[]
   >- (CCONTR_TAC >>
@@ -94,6 +94,33 @@ Proof
   simp[closure_def, prop_3_1_8]
 QED
 
-        
-        
+Definition dense_def:
+ dense t A ⇔ closure t A = topspace t
+End
+
+Theorem excercise_3_1_5i:
+ s ⊆ t ∧ t ⊆ topspace τ ∧ limpt τ p s ⇒ limpt τ p t
+Proof
+ simp[limpt_thm] >> metis_tac[SUBSET_DEF]
+QED
+
+Theorem closure_of_closed:
+ closed_in τ A ⇒ closure τ A = A
+Proof
+ simp[prop_3_1_6,closure_def] >> rpt strip_tac >>
+ simp[EXTENSION,EQ_IMP_THM,DISJ_IMP_THM]
+QED
+
+Theorem example_3_1_14:
+  dense (discrete_topology X) A ⇔ A = X
+Proof  
+ simp[dense_def] >> eq_tac (* 2 *) >-
+ (strip_tac >> Cases_on ‘A ⊆ X’ (* 2 *)
+  >- (‘closed_in (discrete_topology X) A’
+        by simp[] >>
+      metis_tac[closure_of_closed]) >>
+  gs[closure_def,SUBSET_DEF,EXTENSION] >> metis_tac[]) >>
+ simp[closure_of_closed]
+QED
+                  
 val _ = export_theory();
