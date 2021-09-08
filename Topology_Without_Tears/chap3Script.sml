@@ -98,7 +98,7 @@ Definition dense_def:
  dense t A ⇔ closure t A = topspace t
 End
 
-Theorem excercise_3_1_5i:
+Theorem exercise_3_1_5i:
  s ⊆ t ∧ t ⊆ topspace τ ∧ limpt τ p s ⇒ limpt τ p t
 Proof
  simp[limpt_thm] >> metis_tac[SUBSET_DEF]
@@ -122,5 +122,36 @@ Proof
   gs[closure_def,SUBSET_DEF,EXTENSION] >> metis_tac[]) >>
  simp[closure_of_closed]
 QED
+
+Theorem closure_topspace[simp]:
+  closure t (topspace t) = topspace t
+Proof
+  simp [closure_def, EXTENSION, limpt_thm, DISJ_IMP_THM, EQ_IMP_THM]
+QED
+        
+
+Theorem prop_3_1_15:
+  A ⊆ topspace t ⇒ (dense t A ⇔ ∀ U. open_in t U ∧ U ≠ {} ⇒ U ∩ A ≠ {})
+Proof
+  rpt strip_tac >> EQ_TAC >> rpt strip_tac
+  >- (‘∃x. x ∈ U’ by simp[MEMBER_NOT_EMPTY] >>
+      ‘x ∉ A’ by (gs[EXTENSION] >> metis_tac[]) >>
+      ‘¬ limpt t x A’ by metis_tac[not_limpt_inter] >>
+      gs[dense_def, closure_def] >>
+      ‘x ∈ topspace t’ by metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]>>
+      gs[EXTENSION] >> metis_tac[]
+     )
+  >- (Cases_on ‘A = topspace t’
+      >- simp[dense_def]
+      >- (‘∀x. x ∉ A ∧ x ∈ topspace t ⇒ limpt t x A’ by (
+           rpt strip_tac >>
+           ‘∀U. x ∈ U ∧ open_in t U ⇒ U ∩ A ≠ {}’ by metis_tac[MEMBER_NOT_EMPTY] >>
+           simp[limpt_thm] >> gs[EXTENSION] >> metis_tac[]) >>
+          simp [dense_def, closure_def, EXTENSION] >> 
+          metis_tac[SUBSET_DEF, limpt_thm]
+         )
+     )
+QED
+
                   
 val _ = export_theory();
