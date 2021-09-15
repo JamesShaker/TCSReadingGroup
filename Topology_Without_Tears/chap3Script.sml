@@ -4,6 +4,10 @@ open chap1Theory chap2_2Theory;
 
 val _ = new_theory "chap3";
 
+(* ===============================
+     3.1 Limit Points and Closure
+   =============================== *)
+
 (* 3.1.1 Definition *)
 Theorem limpt_thm:
   ∀t x A.
@@ -63,25 +67,25 @@ Proof
 QED
 
 Theorem not_limpt_inter:
-  ¬limpt t x A ⇔ x ∉ topspace t ∨ ∃U. open_in t U ∧ (U ∩ A = {x} ∨ U ∩ A = {}) ∧ x ∈ U  
+  ¬limpt t x A ⇔ x ∉ topspace t ∨ ∃U. open_in t U ∧ (U ∩ A = {x} ∨ U ∩ A = {}) ∧ x ∈ U
 Proof
   simp [limpt_thm, EXTENSION] >> metis_tac[]
 QED
-        
+
 Theorem prop_3_1_8:
   A ⊆ topspace t ⇒ closed_in t (A ∪ {a | limpt t a A})
 Proof
   rpt strip_tac >> irule (iffRL prop_3_1_6) >> reverse CONJ_TAC
-  >- gs[SUBSET_DEF, limpt_thm] >> 
-  CCONTR_TAC >> gs[] >> ‘x ∈ topspace t’ by metis_tac[limpt_thm] >> 
+  >- gs[SUBSET_DEF, limpt_thm] >>
+  CCONTR_TAC >> gs[] >> ‘x ∈ topspace t’ by metis_tac[limpt_thm] >>
   gs[not_limpt_inter]
   >- (gs [EXTENSION] >> metis_tac[]) >>
-  qabbrev_tac ‘A' = {a | limpt t a A}’ >> 
+  qabbrev_tac ‘A' = {a | limpt t a A}’ >>
   ‘U ∩ A' = {}’ by
-    (simp[EXTENSION, Abbr ‘A'’] >> simp[not_limpt_inter] >> 
+    (simp[EXTENSION, Abbr ‘A'’] >> simp[not_limpt_inter] >>
          metis_tac[]) >>
   ‘U ∩ (A ∪ A') = {}’ by simp[UNION_OVER_INTER] >>
-  metis_tac[not_limpt_inter]                
+  metis_tac[not_limpt_inter]
 QED
 
 Definition closure_def:
@@ -89,7 +93,7 @@ Definition closure_def:
 End
 
 Theorem remark_3_1_10_i:
-  A ⊆ topspace t ⇒ closed_in t $ closure t A 
+  A ⊆ topspace t ⇒ closed_in t $ closure t A
 Proof
   simp[closure_def, prop_3_1_8]
 QED
@@ -113,7 +117,7 @@ QED
 
 Theorem example_3_1_14:
   dense (discrete_topology X) A ⇔ A = X
-Proof  
+Proof
  simp[dense_def] >> eq_tac (* 2 *) >-
  (strip_tac >> Cases_on ‘A ⊆ X’ (* 2 *)
   >- (‘closed_in (discrete_topology X) A’
@@ -128,7 +132,6 @@ Theorem closure_topspace[simp]:
 Proof
   simp [closure_def, EXTENSION, limpt_thm, DISJ_IMP_THM, EQ_IMP_THM]
 QED
-        
 
 Theorem prop_3_1_15:
   A ⊆ topspace t ⇒ (dense t A ⇔ ∀ U. open_in t U ∧ U ≠ {} ⇒ U ∩ A ≠ {})
@@ -139,19 +142,78 @@ Proof
       ‘¬ limpt t x A’ by metis_tac[not_limpt_inter] >>
       gs[dense_def, closure_def] >>
       ‘x ∈ topspace t’ by metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]>>
-      gs[EXTENSION] >> metis_tac[]
-     )
+      gs[EXTENSION] >> metis_tac[])
   >- (Cases_on ‘A = topspace t’
       >- simp[dense_def]
       >- (‘∀x. x ∉ A ∧ x ∈ topspace t ⇒ limpt t x A’ by (
            rpt strip_tac >>
            ‘∀U. x ∈ U ∧ open_in t U ⇒ U ∩ A ≠ {}’ by metis_tac[MEMBER_NOT_EMPTY] >>
            simp[limpt_thm] >> gs[EXTENSION] >> metis_tac[]) >>
-          simp [dense_def, closure_def, EXTENSION] >> 
-          metis_tac[SUBSET_DEF, limpt_thm]
-         )
-     )
+          simp [dense_def, closure_def, EXTENSION] >>
+          metis_tac[SUBSET_DEF, limpt_thm]))
 QED
 
-                  
+Theorem exercise_3_1_5ii:
+  s ⊆ t ∧ t ⊆ topspace τ ⇒ closure τ s ⊆ closure τ t
+Proof
+  simp[closure_def] >> rw[]
+  >- gs[SUBSET_DEF]
+  >> rw[SUBSET_DEF] >> metis_tac[exercise_3_1_5i]
+QED
+
+Theorem closure_subset_topspace:
+  a ⊆ topspace t ⇒ closure t a ⊆ topspace t
+Proof
+  rw[closure_def] >> rw[SUBSET_DEF, limpt_thm]
+QED
+
+Theorem exercise_3_1_5iii:
+  s ⊆ t ∧ t ⊆ topspace τ ∧ dense τ s ⇒ dense τ t
+Proof
+  rw[dense_def] >>
+  drule_all exercise_3_1_5ii >> rw[] >>
+  metis_tac[closure_subset_topspace, SUBSET_ANTISYM]
+QED
+
+Theorem remark_3_1_10_ii:
+  closed_in t B ∧ A ⊆ B ⇒ closure t A ⊆ B
+Proof
+  rw[prop_3_1_6] >> rw[closure_def, SUBSET_DEF]
+  >- gs[SUBSET_DEF]
+  >> metis_tac[exercise_3_1_5i]
+QED
+
+Theorem remark_3_1_10_iii:
+  A ⊆ topspace t ⇒ closure t A = BIGINTER {B | closed_in t B ∧ A ⊆ B}
+Proof
+  rw[EXTENSION] >> EQ_TAC >> rw[]
+  >- (drule_all remark_3_1_10_ii >> rw[] >> gs[SUBSET_DEF])
+  >> first_x_assum irule  >> rw[]
+  >- rw[closure_def]
+  >> metis_tac[remark_3_1_10_i]
+QED
+
+(* ====================
+    3.2 Neighbourhoods
+   ==================== *)
+
+(* TODO: fix "neigh" in HOL *)
+
+Theorem prop_3_2_6 = limpt
+
+Theorem corollary_3_2_7:
+  A ⊆ topspace t ⇒
+  (closedSets t A ⇔
+   ∀x. x ∈ topspace t ∧ x ∉ A ⇒
+       ∃N. neigh t (N,x) ∧ N ⊆ topspace t DIFF A)
+Proof
+  rw[] >> EQ_TAC >> rw[]
+  >- (fs[prop_3_1_6, limpt] >> first_x_assum drule >> rw[] >>
+      qexists_tac `N` >> simp[SUBSET_DEF] >> rw[]
+      >- cheat
+      >> cheat)
+  >> cheat
+QED
+
+
 val _ = export_theory();
