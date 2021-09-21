@@ -17,7 +17,7 @@ Theorem limpt_thm:
 Proof
   rw[limpt, neigh, PULL_EXISTS] >> EQ_TAC >>
   rw[] >> fs[IN_DEF]
-  >- metis_tac[SUBSET_REFL]
+  >- metis_tac[SUBSET_REFL, OPEN_IN_SUBSET]
   >> metis_tac[SUBSET_DEF, IN_DEF]
 QED
 
@@ -66,8 +66,11 @@ Proof
   rw[] >> metis_tac[]
 QED
 
+Theorem closed_include_all_limits = prop_3_1_6
+
 Theorem not_limpt_inter:
-  ¬limpt t x A ⇔ x ∉ topspace t ∨ ∃U. open_in t U ∧ (U ∩ A = {x} ∨ U ∩ A = {}) ∧ x ∈ U
+  ¬limpt t x A ⇔
+    x ∉ topspace t ∨ ∃U. x ∈ U ∧ open_in t U ∧ (U ∩ A = {x} ∨ U ∩ A = {})
 Proof
   simp [limpt_thm, EXTENSION] >> metis_tac[]
 QED
@@ -153,6 +156,8 @@ Proof
           metis_tac[SUBSET_DEF, limpt_thm]))
 QED
 
+Theorem dense_nontrivial_inters = prop_3_1_15
+
 Theorem exercise_3_1_5ii:
   s ⊆ t ∧ t ⊆ topspace τ ⇒ closure τ s ⊆ closure τ t
 Proof
@@ -160,6 +165,8 @@ Proof
   >- gs[SUBSET_DEF]
   >> rw[SUBSET_DEF] >> metis_tac[exercise_3_1_5i]
 QED
+
+Theorem closure_monotone = exercise_3_1_5ii
 
 Theorem closure_subset_topspace:
   a ⊆ topspace t ⇒ closure t a ⊆ topspace t
@@ -197,23 +204,25 @@ QED
     3.2 Neighbourhoods
    ==================== *)
 
-(* TODO: fix "neigh" in HOL *)
-
 Theorem prop_3_2_6 = limpt
 
 Theorem corollary_3_2_7:
   A ⊆ topspace t ⇒
   (closedSets t A ⇔
-   ∀x. x ∈ topspace t ∧ x ∉ A ⇒
-       ∃N. neigh t (N,x) ∧ N ⊆ topspace t DIFF A)
+     ∀x. x ∈ topspace t ∧ x ∉ A ⇒
+         ∃N. neigh t (N,x) ∧ N ⊆ topspace t DIFF A)
 Proof
   rw[] >> EQ_TAC >> rw[]
   >- (fs[prop_3_1_6, limpt] >> first_x_assum drule >> rw[] >>
       qexists_tac `N` >> simp[SUBSET_DEF] >> rw[]
-      >- cheat
-      >> cheat)
-  >> cheat
+      >- gs[neigh, SUBSET_DEF] >>
+      gs[IN_DEF] >> metis_tac[]) >>
+  simp[prop_3_1_6, limpt] >> rpt strip_tac >>
+  rename [‘a ∈ topspace τ’, ‘A ⊆ topspace τ’] >>
+  CCONTR_TAC >> first_x_assum $ drule_all_then strip_assume_tac >>
+  first_x_assum $ drule_all_then strip_assume_tac >>
+  qpat_x_assum ‘N ⊆ topspace τ DIFF A’ mp_tac >>
+  simp[SUBSET_DEF, IN_DEF] >> metis_tac[]
 QED
-
 
 val _ = export_theory();
