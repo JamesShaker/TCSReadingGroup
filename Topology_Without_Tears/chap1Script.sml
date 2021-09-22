@@ -11,7 +11,7 @@ val _ = new_theory "chap1";
 
         open_in : 'a topology -> 'a set set
         topology : 'a set set -> 'a topology
-        topspace : 'a toplogoy -> 'a set
+        topspace : 'a topology -> 'a set
 
 
 Not every set of sets corresponds to a topology, but the topology
@@ -24,9 +24,7 @@ a topology, it's behaviour is unspecified.
 
 “s ∈ open_in t”
 
-     or
-
-Will maybe
+     or maybe
 
 “s ∈ openSets t”
 
@@ -50,26 +48,36 @@ Proof
   simp[Once EXTENSION, POW_INSERT] >> metis_tac[]
 QED
 
+Theorem SUBSET_INSERT':
+  A ⊆ e INSERT B ⇔ ∃D. D ⊆ B ∧ (A = D ∨ A = e INSERT D)
+Proof
+  dsimp[SUBSET_DEF] >> simp[EXTENSION] >> eq_tac >> rw[]
+  >- (Cases_on ‘e ∈ A’
+      >- (disj2_tac >> qexists_tac ‘A DELETE e’ >> simp[] >> metis_tac[]) >>
+      metis_tac[])
+  >- metis_tac[]
+  >- metis_tac[]
+QED
+
 Theorem pow6[local] =
         (SIMP_CONV (srw_ss()) [POW_EQNS] THENC
-         SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION])
+         SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION,
+                               INSERT_UNION_EQ])
         “POW {a;b;c;d;e;f}”
 
 Theorem pow3[local] =
         (SIMP_CONV (srw_ss()) [POW_EQNS] THENC
-         SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION])
+         SIMP_CONV (srw_ss()) [LET_THM, GSYM INSERT_SING_UNION,
+                               INSERT_UNION_EQ])
         “POW {a;b;c}”
 
 Theorem example1_1_2:
-  (* does it matter if elements a..f are distinct? *)
+  (* does it matter if elements a..f are distinct? Turns out: no *)
   istopology {{a;b;c;d;e;f}; ∅; {a}; {c;d}; {a;c;d}; {b;c;d;e;f}}
 Proof
-  simp[istopology] >> reverse (rw[])
-  >- (‘k ∈ POW {{a;b;c;d;e;f}; ∅; {a}; {c;d}; {a;c;d}; {b;c;d;e;f}}’
-        by simp[IN_POW] >>
-      pop_assum mp_tac >> pop_assum (K ALL_TAC) >>
-      simp[pow6] >> rw[] >> ONCE_REWRITE_TAC[EXTENSION] >> dsimp[] >> metis_tac[]) >>
-  simp[SING_INTER, INTER_EQ] >>
+  simp[istopology] >> reverse (rw[]) >> simp[SING_INTER, INTER_EQ]
+  >- (gvs[SUBSET_INSERT'] >> ONCE_REWRITE_TAC [EXTENSION] >> simp[] >>
+      metis_tac[]) >>
   simp[EXTENSION] >> metis_tac[]
 QED
 
@@ -133,7 +141,8 @@ End
 Theorem openSets_indiscrete[simp]:
   open_in (indiscrete_topology X) s ⇔ s = X ∨ s = ∅
 Proof
-  ‘open_in (indiscrete_topology X) = {∅; X}’ suffices_by (simp[] >> metis_tac[]) >>
+  ‘open_in (indiscrete_topology X) = {∅; X}’
+    suffices_by (simp[] >> metis_tac[]) >>
   simp[indiscrete_topology_def] >> simp[GSYM (cj 2 topology_tybij)] >>
   simp[istopology] >> rw[] >> simp[] >>
   ‘k ∈ POW {∅; X}’ by simp[IN_POW] >> pop_assum mp_tac >>
@@ -161,11 +170,10 @@ QED
 Theorem closed_in_indiscrete[simp]:
   closed_in (indiscrete_topology X) s ⇔ s = ∅ ∨ s = X
 Proof
-  simp[closed_in, EQ_IMP_THM, X_DIFF_EQ_X, DISJOINT_DEF] >> rpt strip_tac >> simp[]
-  >- (gs[EXTENSION, SUBSET_DEF] >> metis_tac[]) >>
+  simp[closed_in, EQ_IMP_THM, X_DIFF_EQ_X, DISJOINT_DEF] >> rpt strip_tac >>
+  simp[] >- (gs[EXTENSION, SUBSET_DEF] >> metis_tac[]) >>
   metis_tac[SUBSET_ANTISYM]
 QED
-
 
 Theorem prop1_1_9:
   (∀x. x ∈ topspace t ⇒ open_in t {x}) ⇒
@@ -189,25 +197,25 @@ Proof
   >> metis_tac[LESS_EQ_REFL, LESS_EQUAL_ANTISYM]
 QED
 
-Theorem exercise_6:
+Theorem exercise1_1_6i:
   istopology ({univ (:num);∅} UNION (IMAGE (\n. {x | x ≤ n}) univ(:num)))
 Proof
   rw[istopology] >> simp[] >> TRY (metis_tac[]) (* 2 *)
   >- (disj2_tac >> qexists_tac ‘MIN n n'’ >> rw[EQ_IMP_THM,EXTENSION]) >>
   Cases_on ‘UNIV IN k’ (* 2 *)
   >- (‘BIGUNION k = UNIV’
-       by (rw[EXTENSION,EQ_IMP_THM] >> metis_tac[IN_UNIV]) >>
-     simp[]) >>
+        by (rw[EXTENSION,EQ_IMP_THM] >> metis_tac[IN_UNIV]) >>
+      simp[]) >>
   Cases_on ‘k = {∅}’ >> simp[] >> Cases_on ‘k = {}’ >> simp[] >>
   Cases_on ‘FINITE k’ (* 2 *)
   >- (fs[SUBSET_DEF] >> disj2_tac >>
-      `FINITE {n | {x | x ≤ n} ∈ k}`
-          by (‘INJ (\n. {x | x ≤ n}) {n | {x | x ≤ n} ∈ k} (k DELETE {})’
-                by (simp[INJ_DEF] >> rw[]
-                    >- (simp[EXTENSION] >> qexists_tac `0` >> simp[])
-                    >> pop_assum mp_tac >> simp[EXTENSION] >>
-                    metis_tac[LESS_EQ_REFL, LESS_EQUAL_ANTISYM]) >>
-              drule FINITE_INJ >> rw[]) >>
+      ‘FINITE {n | {x | x ≤ n} ∈ k}’
+        by (‘INJ (\n. {x | x ≤ n}) {n | {x | x ≤ n} ∈ k} (k DELETE {})’
+              by (simp[INJ_DEF] >> rw[]
+                  >- (simp[EXTENSION] >> qexists_tac ‘0’ >> simp[])
+                  >> pop_assum mp_tac >> simp[EXTENSION] >>
+                  metis_tac[LESS_EQ_REFL, LESS_EQUAL_ANTISYM]) >>
+            drule FINITE_INJ >> rw[]) >>
       qexists_tac ‘MAX_SET {n | {x | x ≤ n} ∈ k}’ >> rw[EQ_IMP_THM,EXTENSION]
       >- (rename [‘n IN i’,‘i IN k’] >>
           ‘∃m. i = {x | x ≤ m}’ by metis_tac[NOT_IN_EMPTY] >>
@@ -216,36 +224,73 @@ Proof
           >> metis_tac[LESS_EQ_TRANS])
       >> pop_assum mp_tac >> DEEP_INTRO_TAC MAX_SET_ELIM >> rw[]
       >- (pop_assum mp_tac >> simp[EXTENSION] >> rw[] >>
-          `∃y. {y' | y' ≤ y} ∈ k` suffices_by metis_tac[] >>
-          `∃z. z ∈ k ∧ z ≠ ∅` suffices_by metis_tac[] >>
-          CCONTR_TAC >> gs[] >> `∀z. z ∈ k ⇒ z = ∅` by metis_tac[] >>
-          qpat_x_assum `k ≠ {∅}` mp_tac >> simp[Once EXTENSION] >> rw[EQ_IMP_THM] >>
-          metis_tac[MEMBER_NOT_EMPTY])
+          ‘∃y. {y' | y' ≤ y} ∈ k’ suffices_by metis_tac[] >>
+          ‘∃z. z ∈ k ∧ z ≠ ∅’ suffices_by metis_tac[] >>
+          CCONTR_TAC >> gs[] >> ‘∀z. z ∈ k ⇒ z = ∅’ by metis_tac[] >>
+          qpat_x_assum ‘k ≠ {∅}’ mp_tac >> simp[Once EXTENSION] >>
+          rw[EQ_IMP_THM] >> metis_tac[MEMBER_NOT_EMPTY])
       >> first_x_assum $ irule_at Any >> simp[])
   >> fs[SUBSET_DEF] >> disj1_tac >> simp[EXTENSION] >> rw[] >>
-  `∃y. {y' | y' ≤ y} ∈ k ∧ x ≤ y`
-      suffices_by (strip_tac >> first_x_assum $ irule_at Any >> simp[]) >>
+  ‘∃y. {y' | y' ≤ y} ∈ k ∧ x ≤ y’
+    suffices_by (strip_tac >> first_x_assum $ irule_at Any >> simp[]) >>
   CCONTR_TAC >> gs[] >>
-  `∀y. {y' | y' ≤ y} ∈ k ⇒ ¬(x ≤ y)` by metis_tac[] >>
+  ‘∀y. {y' | y' ≤ y} ∈ k ⇒ ¬(x ≤ y)’ by metis_tac[] >>
   fs[NOT_LESS_EQUAL] >>
-  qpat_x_assum `INFINITE k` mp_tac >> simp[] >>
-  `FINITE (k DELETE {})` suffices_by simp[] >>
-  `INJ (\s. MAX_SET s) (k DELETE {}) (count x)`
-                by (simp[INJ_DEF] >> rw[]
-                    >- (first_x_assum drule >> rw[] >> fs[] >>
-                        first_x_assum drule >> rw[] >> DEEP_INTRO_TAC MAX_SET_ELIM >>
-                        simp[] >> `{x | x ≤ n} = count (n+1)` suffices_by simp[] >>
-                        simp[EXTENSION])
-                    >> `∃m n. s = {x | x ≤ m} ∧ s' = {x | x ≤ n}` by metis_tac[] >>
-                    metis_tac[MAX_SET_all_x_lse_n_eq_n]) >>
+  qpat_x_assum ‘INFINITE k’ mp_tac >> simp[] >>
+  ‘FINITE (k DELETE {})’ suffices_by simp[] >>
+  ‘INJ (\s. MAX_SET s) (k DELETE {}) (count x)’
+    by (simp[INJ_DEF] >> rw[]
+        >- (first_x_assum drule >> rw[] >> fs[] >>
+            first_x_assum drule >> rw[] >> DEEP_INTRO_TAC MAX_SET_ELIM >>
+            simp[] >> ‘{x | x ≤ n} = count (n+1)’ suffices_by simp[] >>
+            simp[EXTENSION])
+        >> ‘∃m n. s = {x | x ≤ m} ∧ s' = {x | x ≤ n}’ by metis_tac[] >>
+        metis_tac[MAX_SET_all_x_lse_n_eq_n]) >>
   drule FINITE_INJ >> rw[]
 QED
+
+Definition final_segment_topology_def:
+  final_segment_topology =
+  topology ({∅; 𝕌(:num)} ∪ IMAGE (λn. { m | n ≤ m }) UNIV)
+End
+
+Theorem exercise1_1_6ii:
+  istopology ({∅; 𝕌(:num)} ∪ IMAGE (λn. { m | n ≤ m }) UNIV)
+Proof
+  rw[istopology] >> simp[]
+  >- metis_tac[]
+  >- metis_tac[]
+  >- (rename [‘{ m | a ≤ m } ∩ { m | b ≤ m }’] >> rpt disj2_tac >>
+      qexists_tac ‘MAX a b’ >> simp[EXTENSION])
+  >- (gvs[SUBSET_INSERT', INSERT_UNION_EQ] >>
+      rename [‘ss ⊆ IMAGE _ UNIV’] >>
+      Cases_on ‘BIGUNION ss = ∅’ >> gvs[BIGUNION_EQ_EMPTY] >>
+      ‘BIGUNION ss = { m | MIN_SET (BIGUNION ss) ≤ m }’
+        suffices_by metis_tac[] >>
+      DEEP_INTRO_TAC MIN_SET_ELIM >> simp[PULL_EXISTS] >> rw[] >>
+      simp[Once EXTENSION] >> gen_tac >>
+      (rename [‘m ∈ s’, ‘s ∈ ss’, ‘m ≤ n’] >> eq_tac >- metis_tac[] >>
+       strip_tac >> qexists_tac ‘s’ >> simp[] >> gs[SUBSET_DEF] >>
+       last_x_assum drule >> simp[EXTENSION, PULL_EXISTS] >> rw[] >>
+       metis_tac[LESS_EQ_TRANS]))
+QED
+
+Theorem open_in_finalsegment[simp]:
+  open_in final_segment_topology s ⇔ s = ∅ ∨ ∃n. s = { m | n ≤ m }
+Proof
+  simp[topology_tybij |> cj 2 |> iffLR, final_segment_topology_def,
+       exercise1_1_6ii] >> Cases_on ‘s = ∅’ >> simp[] >>
+  eq_tac >> simp[] >> strip_tac
+  >- (qexists_tac ‘0’ >> simp[]) >>
+  metis_tac[]
+QED
+
 
 Theorem prop122i = CONJ OPEN_IN_TOPSPACE OPEN_IN_EMPTY
 Theorem prop122ii = OPEN_IN_BIGUNION
 Theorem prop122iii = OPEN_IN_BIGINTER
 
-Theorem biginter_couterexample[local]:
+Theorem biginter_counterexample[local]:
   let S_n n = 1 INSERT { m | n + 1 ≤ m } (* S_n from Example 1_2_3 *)
   in
     (∀n. FINITE (COMPL (S_n n))) ∧
@@ -258,7 +303,8 @@ Proof
   disch_then $ qspec_then ‘x’ mp_tac >> simp[]
 QED
 
-(* what the book calls a closed set is written closed_in, here we alias with closedSet *)
+(* what the book calls a closed set is written closed_in, here we alias with
+   closedSet *)
 Overload closedSets = “closed_in”
 
 Theorem prop1_2_5:
@@ -266,7 +312,8 @@ Theorem prop1_2_5:
   ((∀t. t ∈ s ⇒ closed_in top t) ∧ s ≠ ∅ ⇒ closed_in top (BIGINTER s)) ∧
   ((∀t. t ∈ s ⇒ closed_in top t) ∧ FINITE s ⇒ closed_in top (BIGUNION s))
 Proof
-  simp[CLOSED_IN_BIGINTER, CLOSED_IN_BIGUNION, CLOSED_IN_EMPTY, CLOSED_IN_TOPSPACE]
+  simp[CLOSED_IN_BIGINTER, CLOSED_IN_BIGUNION, CLOSED_IN_EMPTY,
+       CLOSED_IN_TOPSPACE]
 QED
 
 Definition clopen_def:
@@ -302,7 +349,7 @@ Proof
       >- (disj2_tac >> disj2_tac >>
           simp[EQ_IMP_THM,PULL_EXISTS,FORALL_AND_THM,DISJ_IMP_THM] >>
           ntac 4 (qexists_tac ‘{a;b;c;d}’) >> simp[] >>
-          rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *) >>
+          rpt strip_tac >> first_x_assum (drule_then strip_assume_tac) (* 4 *)>>
           fs[]) >>
       Cases_on ‘{a;c} IN k’ >> Cases_on ‘{b;d} IN k’ (* 4 *)
       >- (disj2_tac >> disj2_tac >>
@@ -325,14 +372,15 @@ Proof
       rw[EXTENSION] >> fs[GSYM MEMBER_NOT_EMPTY] >>
       metis_tac[UNIQUE_MEMBER_SING])
   >> `topspace (topology {∅; {a; c}; {b; d}; {a; b; c; d}}) = {a; b; c; d}`
-        by (simp[topspace, topology_tybij |> cj 2 |> iffLR] >> simp[Once EXTENSION] >> dsimp[] >>
-            metis_tac[]) >>
+        by (simp[topspace, topology_tybij |> cj 2 |> iffLR] >>
+            simp[Once EXTENSION] >> dsimp[] >> metis_tac[]) >>
   simp[topology_tybij |> cj 2 |> iffLR, closed_in] >>
   rw[] >> simp[] >> fs[] >> rw[]
 QED
 
 Definition finite_closed_topology_def:
-  finite_closed_topology X = topology (∅ INSERT { s | FINITE (X DIFF s) ∧ s ⊆ X})
+  finite_closed_topology X =
+  topology (∅ INSERT { s | FINITE (X DIFF s) ∧ s ⊆ X})
 End
 
 Theorem finite_closed_topology_istopology:
@@ -340,17 +388,21 @@ Theorem finite_closed_topology_istopology:
 Proof
   rw[istopology] >> simp[]
   >- (disj2_tac >> conj_tac
-      >- (`X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)` by (simp[EXTENSION] >> metis_tac[]) >>
+      >- (‘X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)’
+            by (simp[EXTENSION] >> metis_tac[]) >>
           simp[]) >> gs[SUBSET_DEF]) >>
-  Cases_on `k = ∅` >> fs[] >> Cases_on `k = {∅}` >> fs[] >>
-  `X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }`
-    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >> conj_tac
+  Cases_on ‘k = ∅’ >> fs[] >> Cases_on ‘k = {∅}’ >> fs[] >>
+  ‘X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }’
+    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+  conj_tac
   >- (simp[] >> irule FINITE_BIGINTER >> simp[PULL_EXISTS] >>
       ‘∃t. t ∈ k ∧ t ≠ ∅’
         by (qpat_x_assum ‘k ≠ ∅’ mp_tac >> qpat_x_assum ‘k ≠ {∅}’ mp_tac >>
-            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
-      qexists_tac `t` >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
-  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum `k ⊆ _` mp_tac >> simp[SimpL ``$==>``, Once SUBSET_DEF] >>
+            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >>
+            metis_tac[MEMBER_NOT_EMPTY]) >>
+      qexists_tac ‘t’ >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
+  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum ‘k ⊆ _’ mp_tac >>
+  simp[SimpL “$==>”, Once SUBSET_DEF] >>
   rw[] >> first_x_assum drule >> rw[] >> simp[]
 QED
 
@@ -447,7 +499,8 @@ QED
 Theorem open_in_sierpinski_space[simp]:
  open_in (sierpinski_space x y) s ⇔ s = {} ∨ s = {x} ∨ s = {x; y}
 Proof
-simp[sierpinski_space_def,cj 2 topology_tybij |> iffLR,sierpinski_space_is_topology]
+simp[sierpinski_space_def,cj 2 topology_tybij |> iffLR,
+     sierpinski_space_is_topology]
 QED
 
 Theorem topspace_sierpinski_space[simp]:
@@ -457,7 +510,7 @@ simp[topspace,Once EXTENSION] >> dsimp[] >> metis_tac[]
 QED
 
 Definition T1_space_def:
-T1_space X ⇔ ∀x. x IN topspace X ⇒ closed_in X {x}
+  T1_space X ⇔ ∀x. x IN topspace X ⇒ closed_in X {x}
 End
 
 Theorem topspace_discrete_topology[simp]:
@@ -489,41 +542,34 @@ QED
 
 
 Definition T0_space_def:
-T0_space X ⇔ ∀a b. a IN topspace X ∧ b IN topspace X ∧ a ≠ b ⇒
-                   ∃s. open_in X s ∧ (a IN s ∧ b NOTIN s ∨ b IN s ∧ a NOTIN s)
+  T0_space X ⇔ ∀a b. a IN topspace X ∧ b IN topspace X ∧ a ≠ b ⇒
+                     ∃s. open_in X s ∧ (a IN s ∧ b NOTIN s ∨ b IN s ∧ a NOTIN s)
 End
 
 Theorem T1_is_T0:
-∀X. T1_space X ⇒ T0_space X
+  ∀X. T1_space X ⇒ T0_space X
 Proof
-simp[T1_space_def,T0_space_def,closed_in] >> rw[] >>
-qexists_tac ‘(topspace X) DIFF {a}’ >> simp[]
+  simp[T1_space_def,T0_space_def,closed_in] >> rw[] >>
+  qexists_tac ‘(topspace X) DIFF {a}’ >> simp[]
 QED
 
-
-
 Theorem sierpinski_space_T0:
-T0_space (sierpinski_space x y)
+  T0_space (sierpinski_space x y)
 Proof
-simp[T0_space_def] >> rw[] (* 2 *)
->- (qexists_tac ‘{a}’ >> simp[]) >- (qexists_tac ‘{b}’ >> simp[])
+  simp[T0_space_def] >> rw[] (* 2 *)
+  >- (qexists_tac ‘{a}’ >> simp[]) >- (qexists_tac ‘{b}’ >> simp[])
 QED
 
 Definition countable_closed_topology_def:
-  countable_closed_topology X = topology (∅ INSERT { s | countable (X DIFF s) ∧ s ⊆ X})
+  countable_closed_topology X =
+  topology (∅ INSERT { s | countable (X DIFF s) ∧ s ⊆ X})
 End
-
-Theorem better_BIGINTER_SUBSET:
-  (∃t. t ∈ P ∧ t ⊆ s) ⇒ BIGINTER P ⊆ s
-Proof
-  simp[SUBSET_DEF] >> metis_tac[]
-QED
 
 Theorem countable_BIGINTER:
   (∃s. s ∈ P ∧ countable s) ⇒ countable (BIGINTER P)
 Proof
   strip_tac >> irule COUNTABLE_SUBSET >> qexists_tac `s` >> rw[] >>
-  irule better_BIGINTER_SUBSET >> metis_tac[SUBSET_REFL]
+  irule BIGINTER_SUBSET >> metis_tac[SUBSET_REFL]
 QED
 
 Theorem countable_closed_topology_istopology:
@@ -531,18 +577,22 @@ Theorem countable_closed_topology_istopology:
 Proof
   rw[istopology] >> simp[]
   >- (disj2_tac >> conj_tac
-      >- (`X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)` by (simp[EXTENSION] >> metis_tac[]) >>
+      >- (‘X DIFF s ∩ t = (X DIFF s) ∪ (X DIFF t)’
+            by (simp[EXTENSION] >> metis_tac[]) >>
           simp[])
       >> gs[SUBSET_DEF]) >>
-  Cases_on `k = ∅` >> fs[] >> Cases_on `k = {∅}` >> fs[] >>
-  `X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }`
-    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >> conj_tac
+  Cases_on ‘k = ∅’ >> fs[] >> Cases_on ‘k = {∅}’ >> fs[] >>
+  ‘X DIFF (BIGUNION k) = BIGINTER { X DIFF t | t ∈ k }’
+    by (simp[Once EXTENSION, PULL_EXISTS] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+  conj_tac
   >- (simp[] >> irule countable_BIGINTER >> simp[PULL_EXISTS] >>
       ‘∃t. t ∈ k ∧ t ≠ ∅’
         by (qpat_x_assum ‘k ≠ ∅’ mp_tac >> qpat_x_assum ‘k ≠ {∅}’ mp_tac >>
-            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >> metis_tac[MEMBER_NOT_EMPTY]) >>
-      qexists_tac `t` >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
-  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum `k ⊆ _` mp_tac >> simp[SimpL ``$==>``, Once SUBSET_DEF] >>
+            ONCE_REWRITE_TAC[EXTENSION] >> simp[] >>
+            metis_tac[MEMBER_NOT_EMPTY]) >>
+      qexists_tac ‘t’ >> rw[] >> gvs[SUBSET_DEF] >> metis_tac[]) >>
+  simp[BIGUNION_SUBSET] >> rw[] >> qpat_x_assum ‘k ⊆ _’ mp_tac >>
+  simp[SimpL “$==>”, Once SUBSET_DEF] >>
   rw[] >> first_x_assum drule >> rw[] >> simp[]
 QED
 
@@ -601,7 +651,8 @@ Proof
 QED
 
 Theorem exercise1_3_7_iii:
-  topspace t1 = topspace t2 ∧ T1_space t1 ∧ T1_space t2 ⇒ T1_space (top_INTER t1 t2)
+  topspace t1 = topspace t2 ∧ T1_space t1 ∧ T1_space t2 ⇒
+  T1_space (top_INTER t1 t2)
 Proof
   simp[T1_space_def] >> rw[] >> fs[closed_in] >> metis_tac[]
 QED
