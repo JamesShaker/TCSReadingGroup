@@ -24,5 +24,42 @@ Proof
  gs[Abbr‘Qbar’,closure_def]
 QED
 
+Theorem exercise_3_2_2ii:
+  let A = { x | 0 ≤ x ∧ x < 1 } ;
+      B = { x | 1 < x ∧ x ≤ 2 }
+  in
+    A ⊆ topspace euclidean ∧
+    B ⊆ topspace euclidean ∧
+    closure euclidean (A ∩ B) ≠ closure euclidean A ∩ closure euclidean B
+Proof
+  srw_tac[][] >>
+  ‘A ∩ B = ∅’ by simp[Abbr‘A’, Abbr‘B’, EXTENSION] >>
+  simp[] >>
+  ‘1 ∈ closure euclidean A ∧ 1 ∈ closure euclidean B’
+    suffices_by (simp[EXTENSION] >> metis_tac[]) >>
+  ‘1 ∉ A ∧ 1 ∉ B’ by simp[Abbr‘A’, Abbr‘B’] >>
+  simp[closure_def, limpt_thm, open_in_euclidean] >> conj_tac
+  >- (qx_gen_tac ‘U’ >> simp[ival_def] >> strip_tac >>
+      first_x_assum $ dxrule_then strip_assume_tac >>
+      ‘0 ≤ max 0 a ∧ max 0 a < 1’ by (simp[realTheory.max_def] >> rw[]) >>
+      dxrule_then strip_assume_tac rationals_dense >>
+      rename [‘rational r’] >>
+      ‘r ∈ A’  by simp[Abbr‘A’] >>
+      ‘r ∈ U’ by (gs[SUBSET_DEF] >> first_x_assum irule >> simp[] >>
+                  gs[realTheory.REAL_MAX_LT]) >>
+      qexists_tac ‘r’ >> simp[])
+  >- (qx_gen_tac ‘U’ >> simp[ival_def] >> strip_tac >>
+      first_x_assum $ dxrule_then strip_assume_tac >>
+      ‘1 < min 2 b ∧ min 2 b ≤ 2’ by (simp[realTheory.min_def] >> rw[]) >>
+      dxrule_then strip_assume_tac rationals_dense >>
+      rename [‘rational r’] >>
+      ‘r ∈ B’  by simp[Abbr‘B’] >>
+      ‘r ∈ U’ by (gs[SUBSET_DEF] >> first_x_assum irule >> simp[] >>
+                  gs[realTheory.REAL_LT_MIN]) >>
+      qexists_tac ‘r’ >> simp[])
+QED
+
+
+
 val _ = export_theory();
 

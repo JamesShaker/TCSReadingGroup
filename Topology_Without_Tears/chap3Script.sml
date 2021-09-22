@@ -95,6 +95,20 @@ Definition closure_def:
   closure t A = A ∪ {a | limpt t a A}
 End
 
+Theorem closure_EMPTY[simp]:
+  closure τ ∅ = ∅
+Proof
+  simp[closure_def, EXTENSION, limpt_thm] >>
+  qx_gen_tac ‘a’ >> Cases_on ‘a ∈ topspace τ’ >> simp[] >>
+  first_x_assum $ irule_at Any >> simp[OPEN_IN_TOPSPACE]
+QED
+
+Theorem closure_EQ_EMPTY[simp]:
+  (closure τ A = ∅ ⇔ A = ∅) ∧ (∅ = closure τ A ⇔ A = ∅)
+Proof
+  simp[EQ_IMP_THM] >> simp[closure_def]
+QED
+
 Theorem remark_3_1_10_i:
   A ⊆ topspace t ⇒ closed_in t $ closure t A
 Proof
@@ -224,5 +238,57 @@ Proof
   qpat_x_assum ‘N ⊆ topspace τ DIFF A’ mp_tac >>
   simp[SUBSET_DEF, IN_DEF] >> metis_tac[]
 QED
+
+Theorem corollary_3_2_8:
+  U ⊆ topspace τ ⇒
+  (open_in τ U ⇔ ∀x. x ∈ U ⇒ ∃N. neigh τ (N,x) ∧ N ⊆ U)
+Proof
+  strip_tac >>
+  ‘topspace τ DIFF U ⊆ topspace τ’
+    by gs[SUBSET_DEF] >>
+  drule corollary_3_2_7 >>
+  simp[closed_in, DIFF_DIFF_SUBSET] >> strip_tac >>
+  simp[SF CONJ_ss] >> gs[SUBSET_DEF] >> simp[SF CONJ_ss]
+QED
+
+Theorem corollary_3_2_9:
+  U ⊆ topspace τ ⇒
+  (open_in τ U ⇔ ∀x. x ∈ U ⇒ ∃V. open_in τ V ∧ x ∈ V ∧ V ⊆ U)
+Proof
+  strip_tac >> simp[corollary_3_2_8, neigh] >>
+  simp[PULL_EXISTS] >> drule_at_then (Pos last) assume_tac SUBSET_TRANS >>
+  simp[SF CONJ_ss] >> simp[IN_DEF] >> metis_tac[SUBSET_REFL, SUBSET_TRANS]
+QED
+
+Theorem exercise_3_2_2i:
+  A ⊆ topspace τ ∧ B ⊆ topspace τ ⇒
+  closure τ (A ∩ B) ⊆ closure τ A ∩ closure τ B
+Proof
+  strip_tac >>
+  simp[closure_def, SUBSET_DEF] >> rw[] >> simp[] >> (* 2 *)
+  metis_tac[INTER_SUBSET, exercise_3_1_5i]
+QED
+
+Theorem exercise_3_2_2ii:
+  let τ = indiscrete_topology {T;F};
+      A = {T} ;
+      B = {F}
+  in
+    A ⊆ topspace τ ∧ B ⊆ topspace τ ∧
+    closure τ (A ∩ B) ≠ closure τ A ∩ closure τ B
+Proof
+  srw_tac[][]
+  >- simp[Abbr‘A’, Abbr‘B’, Abbr‘τ’]
+  >- simp[Abbr‘A’, Abbr‘B’, Abbr‘τ’] >>
+  ‘A ∩ B = ∅’ by simp[Abbr‘B’, Abbr‘A’, EXTENSION] >>
+  ‘closure τ A = {T;F} ∧ closure τ B = {T;F}’
+    suffices_by simp[] >>
+  ‘A ⊆ topspace τ ∧ B ⊆ topspace τ’ by simp[Abbr‘τ’, Abbr‘A’, Abbr‘B’] >>
+  ‘closed_in τ (closure τ A) ∧ closed_in τ (closure τ B)’
+    by metis_tac[remark_3_1_10_i] >>
+  gs[Abbr‘τ’] >> gs[Abbr‘A’, Abbr‘B’]
+QED
+
+
 
 val _ = export_theory();
