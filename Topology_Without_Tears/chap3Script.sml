@@ -23,9 +23,10 @@ QED
 
 Theorem example_3_1_3:
   ∀A X.
-    A ⊆ X ⇒ ∀x. x ∈ X ⇒ ¬limpt (discrete_topology X) x A
+    A ⊆ X ⇒ ∀x. ¬limpt (discrete_topology X) x A
 Proof
-  rw[limpt_thm] >> qexists_tac `{x}` >> rw[]
+  rw[limpt_thm] >> Cases_on ‘x ∈ X’ >> simp[] >>
+  qexists_tac `{x}` >> rw[]
 QED
 
 (* skipped example 3.1.4: it talks about real numbers *)
@@ -289,6 +290,47 @@ Proof
   gs[Abbr‘τ’] >> gs[Abbr‘A’, Abbr‘B’]
 QED
 
+Definition separable_def:
+  separable τ ⇔ (∃A. A ⊆ topspace τ ∧ dense τ A ∧ countable A)
+End
 
+Theorem exercise_3_2_4_ii:
+  countable X ⇒ separable (discrete_topology X)
+Proof
+  rw[separable_def] >>
+  qexists_tac ‘X’ >>
+  rw[dense_def] >>
+  ‘X = topspace (discrete_topology X)’
+    suffices_by metis_tac[closure_topspace] >>
+  rw[]
+QED
+
+Theorem exercise_3_2_4_iii:
+  countable X ⇒ separable (finite_closed_topology X)
+Proof
+  rw[separable_def] >>
+  qexists_tac ‘X’ >>
+  rw[dense_def] >>
+  ‘X = topspace (finite_closed_topology X)’
+    suffices_by metis_tac[closure_topspace] >>
+  rw[]
+QED
+
+Theorem exercise_3_2_4_iv:
+  FINITE (topspace τ) ⇒ separable τ
+Proof
+  rw[separable_def] >>
+  qexists_tac ‘topspace τ’ >>
+  rw[finite_countable,dense_def]
+QED
+
+Theorem exercise_3_2_4_vi:
+  ¬countable X ⇒ ¬separable (discrete_topology X)
+Proof
+  rw[separable_def] >>
+  CCONTR_TAC >> gs[] >>
+  ‘A = X’ suffices_by (disch_tac >> gs[]) >>
+  metis_tac[example_3_1_14]
+QED
 
 val _ = export_theory();
