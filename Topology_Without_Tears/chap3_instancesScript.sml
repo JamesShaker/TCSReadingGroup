@@ -60,6 +60,23 @@ Proof
 QED
 
 
+Theorem lemma_3_3_2:
+  ∀A. A ≠ ∅ ∧ (∃b. ∀r. r ∈ A ⇒ r < b) ∧ closed_in euclidean A ==> sup A ∈ A
+Proof
+  CCONTR_TAC >> gs[closed_in,open_in_euclidean] >>
+  last_x_assum (drule_then strip_assume_tac) >>
+  gs[SUBSET_DEF] >> rename1 ‘ival u v’ >>
+  ‘u < sup A’ by gs[ival_def] >>
+  gs[GSYM MEMBER_NOT_EMPTY,IN_DEF] >>
+  drule_at (Pos last) (iffRL realTheory.REAL_SUP) >>
+  impl_tac >- metis_tac[] >>
+  strip_tac >>
+  rename[‘A w’, ‘u < sup A’, ‘u < w’, ‘ival u v (sup A)’] >>
+  gs[ival_def] >>
+  ‘w < v’ suffices_by (strip_tac >> gs[]) >>
+  irule realTheory.REAL_LET_TRANS >> qexists_tac ‘sup A’ >> rw[] >>
+  irule realTheory.REAL_SUP_UBOUND >> metis_tac[]
+QED
 
 val _ = export_theory();
 
