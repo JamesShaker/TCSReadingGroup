@@ -333,4 +333,9 @@ Proof
   metis_tac[example_3_1_14]
 QED
 
+
+Definition connected_def:
+  connected top ⇔ (∀s. clopen top s ⇔ s = topspace top ∨ s = {})
+End
+                   
 val _ = export_theory();

@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 open pred_setTheory topologyTheory;
-open chap3Theory chap2Theory;
+open realTheory chap1Theory chap3Theory chap2Theory;
 
      
      
@@ -77,6 +77,73 @@ Proof
   irule realTheory.REAL_LET_TRANS >> qexists_tac ‘sup A’ >> rw[] >>
   irule realTheory.REAL_SUP_UBOUND >> metis_tac[]
 QED
-
+        
+Theorem open_in_euclidean_UNIV[simp]:
+        open_in euclidean UNIV
+Proof
+rw[open_in_euclidean] >>
+qexistsl_tac [‘x - 1’,‘x + 1’] >> simp[ival_def]
+QED
+        
+Theorem prop_3_3_3:
+  ∀t. clopen euclidean t ⇔ t = {} ∨ t = UNIV
+Proof
+  simp[clopen_def,EQ_IMP_THM,OPEN_IN_EMPTY,CLOSED_IN_EMPTY,
+       closed_in,DISJ_IMP_THM] >> 
+  rpt strip_tac >> CCONTR_TAC >> gs[] >>
+  fs[GSYM MEMBER_NOT_EMPTY] >>
+  ‘∃z. z IN (UNIV DIFF t)’
+    by simp[MEMBER_NOT_EMPTY] >>
+  wlog_tac ‘x < z’ [‘x’,‘z’,‘t’] (* 2 *) >-
+   (gs[REAL_NOT_LT,REAL_LE_LT] >>
+    first_x_assum (qspecl_then [‘z’,‘x’,‘UNIV DIFF t’] mp_tac)>>
+    simp[X_DIFF_EQ_X,DIFF_DIFF_SUBSET,DISJOINT_DEF] >>
+    strip_tac >> gs[]) >>
+  qabbrev_tac ‘s = t INTER {a | x ≤ a ∧ a ≤ z}’ >>
+  ‘closed_in euclidean s’
+    by (simp[Abbr‘s’] >> irule CLOSED_IN_INTER >>
+        simp[closed_is_closed] >> simp[closed_in]) >>
+  ‘∀r. r ∈ s ⇒ r < z + 1’
+    by simp[Abbr‘s’] >>
+  ‘s ≠ {}’ by (simp[GSYM MEMBER_NOT_EMPTY,Abbr‘s’] >>
+               qexists_tac ‘x’ >> simp[]) >>
+  ‘sup s ∈ s’  
+    by metis_tac[lemma_3_3_2] >>
+  ‘∀r. r ∈ s ⇒ r ≤ z’
+    by simp[Abbr‘s’] >>
+  ‘sup s < z’
+    by (first_x_assum drule >>
+        simp[REAL_LE_LT,DISJ_IMP_THM] >>
+        strip_tac >> gs[Abbr‘s’]) >>
+  ‘sup s ∈ t’ by gs[Abbr‘s’] >>
+  ‘∃a b. sup s ∈ ival a b ∧ ival a b ⊆ t’
+    by metis_tac[open_in_euclidean] >>
+  ‘∃t0. sup s < t0 ∧ t0 < min b z’
+    by (irule REAL_MEAN >> simp[REAL_LT_MIN] >>
+        gs[ival_def]) >>
+  ‘t0 ∈ t’
+    by (gs[SUBSET_DEF] >> first_x_assum irule >>
+        gs[ival_def,REAL_LT_MIN]) >>
+  ‘t0 ∈ {c | sup s ≤ c ∧ c ≤ z}’
+    by gs[REAL_LT_MIN] >>
+  ‘x ≤ t0 ∧ t0 ≤ z’
+    by (gs[] >> irule REAL_LE_TRANS >>
+        qexists_tac ‘sup s’ >> simp[] >>
+        irule REAL_SUP_UBOUND >>
+        reverse $ rpt conj_tac (* 3 *) >-
+        (gs[IN_DEF] >> metis_tac[]) >>
+        simp[Abbr‘s’] >> qexists_tac ‘x’ >> simp[])  >>
+  ‘t0 ∈ s’
+  by simp[Abbr‘s’] >>
+  ‘t0 ≤ sup s’
+  by (irule REAL_SUP_UBOUND >>
+      reverse $ rpt conj_tac (* 3 *) >-
+       (gs[IN_DEF] >> metis_tac[]) >-
+       (simp[Abbr‘s’] >> qexists_tac ‘x’ >> simp[]) >>
+      gs[IN_DEF]) >>
+  gs[]
+QED
+      
+ 
 val _ = export_theory();
 
