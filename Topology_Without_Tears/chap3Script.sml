@@ -337,5 +337,54 @@ QED
 Definition connected_def:
   connected top ⇔ (∀s. clopen top s ⇔ s = topspace top ∨ s = {})
 End
-                   
+
+
+        
+Theorem example_3_3_6:
+  connected (discrete_topology X) ⇔ X = {} ∨ ∃x. X = {x}
+Proof
+  EQ_TAC >> strip_tac >> gs[connected_def, clopen_def]
+  >- (Cases_on ‘X = {}’ >> simp[] >> gs[GSYM MEMBER_NOT_EMPTY] >>
+      qexists_tac ‘x’ >> simp[EXTENSION] >> qx_gen_tac ‘y’ >>
+      EQ_TAC >> simp[] >> CCONTR_TAC >> gs[] >>
+      last_x_assum $ qspec_then ‘{x}’ mp_tac >> simp[EXTENSION] >>
+      metis_tac[])
+  >- metis_tac[SUBSET_SING]
+QED
+
+Theorem example_3_3_7:
+  connected (indiscrete_topology X)
+Proof
+  simp[connected_def, clopen_def] >> metis_tac[]
+QED
+
+Theorem remark_3_3_9:
+  ¬connected τ ⇔
+    ∃A B. A ∩ B = {} ∧ A ∪ B = topspace τ ∧ A ≠ {} ∧ B ≠ {}
+          ∧ open_in τ A ∧ open_in τ B
+Proof
+  simp[connected_def, clopen_def, closed_in] >> EQ_TAC >> rpt strip_tac
+  >- (qexistsl_tac [‘s’, ‘topspace τ DIFF s’] >> simp[] >> rpt strip_tac
+      >- (simp[EXTENSION] >> metis_tac[])
+      >- (Cases_on ‘s = topspace τ’ >> simp[] >> Cases_on ‘s = {}’ >> gs[] >>
+          metis_tac [SUBSET_UNION_ABSORPTION]                                                       
+         )
+      >- gs[]
+      >- (Cases_on ‘s = {}’ >> gs[] >> Cases_on ‘s = topspace τ’ >> gs[] >>
+          metis_tac [SUBSET_ANTISYM]
+         )
+      >- (Cases_on ‘s = {}’ >> gs[] >> Cases_on ‘s = topspace τ’ >> gs[])
+      >- (Cases_on ‘s = {}’ >> gs[] >> Cases_on ‘s = topspace τ’ >> gs[])
+     )
+  >- (qexists_tac ‘A’ >> simp[] >>
+      ‘A ≠ topspace τ’ by (
+        strip_tac >> gvs[] >> ‘B ⊆ topspace τ’ by metis_tac [OPEN_IN_SUBSET] >>
+        metis_tac[MEMBER_NOT_EMPTY, SUBSET_DEF, IN_INTER, NOT_IN_EMPTY]
+        ) >> simp[OPEN_IN_SUBSET] >>
+      ‘topspace τ DIFF A = B’ suffices_by simp[] >> 
+      simp[EXTENSION] >> metis_tac[IN_INTER, IN_UNION, NOT_IN_EMPTY, EXTENSION]
+     )
+QED
+
+                
 val _ = export_theory();
