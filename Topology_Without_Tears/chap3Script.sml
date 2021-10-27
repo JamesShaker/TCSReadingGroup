@@ -339,7 +339,7 @@ Definition connected_def:
 End
 
 
-        
+
 Theorem example_3_3_6:
   connected (discrete_topology X) ⇔ X = {} ∨ ∃x. X = {x}
 Proof
@@ -367,7 +367,7 @@ Proof
   >- (qexistsl_tac [‘s’, ‘topspace τ DIFF s’] >> simp[] >> rpt strip_tac
       >- (simp[EXTENSION] >> metis_tac[])
       >- (Cases_on ‘s = topspace τ’ >> simp[] >> Cases_on ‘s = {}’ >> gs[] >>
-          metis_tac [SUBSET_UNION_ABSORPTION]                                                       
+          metis_tac [SUBSET_UNION_ABSORPTION]
          )
       >- gs[]
       >- (Cases_on ‘s = {}’ >> gs[] >> Cases_on ‘s = topspace τ’ >> gs[] >>
@@ -381,10 +381,44 @@ Proof
         strip_tac >> gvs[] >> ‘B ⊆ topspace τ’ by metis_tac [OPEN_IN_SUBSET] >>
         metis_tac[MEMBER_NOT_EMPTY, SUBSET_DEF, IN_INTER, NOT_IN_EMPTY]
         ) >> simp[OPEN_IN_SUBSET] >>
-      ‘topspace τ DIFF A = B’ suffices_by simp[] >> 
+      ‘topspace τ DIFF A = B’ suffices_by simp[] >>
       simp[EXTENSION] >> metis_tac[IN_INTER, IN_UNION, NOT_IN_EMPTY, EXTENSION]
      )
 QED
 
-                
+Theorem exercise_3_3_5:
+  INFINITE X ⇒ connected (finite_closed_topology X)
+Proof
+  rw[connected_def, clopen_def] >> EQ_TAC >> rw[]
+  >- metis_tac[FINITE_DIFF_down]
+  >- simp[]
+  >> simp[]
+QED
+
+Theorem exercise_3_3_6:
+  connected (countable_closed_topology X) ⇔
+  ¬countable X ∨
+  X = ∅ ∨
+  (∃a. X = {a})
+Proof
+  rw[connected_def, clopen_def, closed_in] >>
+  EQ_TAC >> rw[]
+  >- (gs[DIFF_DIFF_SUBSET, SF CONJ_ss] >>
+      CCONTR_TAC >> fs[] >>
+      gs[GSYM MEMBER_NOT_EMPTY] >>
+      rename [`u ∈ X`] >>
+      first_x_assum (qspecl_then [`{u}`] mp_tac) >>
+      simp[] >> irule subset_countable >>
+      qexists_tac `X` >> rw[SUBSET_DEF])
+  >- (gs[DIFF_DIFF_SUBSET, SF CONJ_ss] >>
+      EQ_TAC >> rw[] >> simp[]
+      >- rw[SUBSET_ANTISYM]
+      >> metis_tac[union_countable, UNION_DIFF])
+  >- rw[DIFF_DIFF_SUBSET, SF CONJ_ss]
+  >> rw[DIFF_DIFF_SUBSET, SF CONJ_ss]
+  >- gs[]
+  >- (EQ_TAC >> rw[] >> fs[])
+  >> metis_tac[SUBSET_SING]
+QED
+
 val _ = export_theory();
