@@ -498,46 +498,55 @@ Proof
         by gvs[GSYM integerTheory.INT_ADD] >> metis_tac[])
 QED
 
+Theorem real_of_int_subN:
+  real_of_int i - &n = real_of_int (i - &n)
+Proof
+  Cases_on ‘i’ >> simp[]
+QED
+
 Theorem exercise_2_1_4ii:
-  closed_in euclidean {&(z : num) | P z}
+  closed_in euclidean {real_of_int i | P i}
 Proof
   simp[closed_in,open_in_euclidean] >> rpt strip_tac >>
-  Cases_on ‘∃z:num. x = &z’
-  >- (gvs[] >> qexistsl_tac [‘&z - 1/2’,‘&z + 1/2’] >>
+  Cases_on ‘∃z:int. x = real_of_int z’
+  >- (gvs[] >> qexistsl_tac [‘real_of_int z - 1/2’,‘real_of_int z + 1/2’] >>
       simp[ival_def,SUBSET_DEF] >> rpt strip_tac
       >- simp[REAL_LT_SUB_RADD]
-      >> gvs[] >> ‘z = z'’ suffices_by (strip_tac >> gvs[]) >>
-      rename [‘&a - 1/2 < &b’] >>
-      ‘2 * &a - 1 < 2 * &b ∧ 2 * &b < 2 * &a + 1’
+      >> gvs[] >>
+      rename [‘real_of_int a - 1 / 2 < real_of_int b’] >>
+      ‘a = b’ suffices_by (strip_tac >> gvs[]) >>
+      ‘2 * real_of_int a - 1 < 2 * real_of_int b ∧ 2 * real_of_int b < 2 * real_of_int a + 1’
         by
         (strip_tac >> rev_drule REAL_LT_LMUL_IMP >> strip_tac >>
          first_x_assum $ qspec_then ‘2’ mp_tac >> strip_tac >>
          ‘0r < 2r’ by simp[] >> first_x_assum drule >> strip_tac
-         >- (‘2 * (&a − 1 / 2) = 2 * &a − 1’ suffices_by metis_tac[] >>
+         >- (‘2 * (real_of_int a − 1 / 2) = 2 * real_of_int a − 1’ suffices_by metis_tac[] >>
              simp[REAL_SUB_LDISTRIB])
-         >- (‘2 * &b < 2 * (&a + 1 / 2)’  by simp[REAL_LT_LMUL_IMP] >>
-             ‘2 * (&a + 1 / 2) = 2 * &a + 1’ suffices_by metis_tac[] >>
+         >- (‘2 * real_of_int b < 2 * (real_of_int a + 1 / 2)’  by simp[REAL_LT_LMUL_IMP] >>
+             ‘2 * (real_of_int a + 1 / 2) = 2 * real_of_int a + 1’ suffices_by metis_tac[] >>
              simp[REAL_ADD_LDISTRIB])) >>
-      wlog_tac ‘a < b’ [] (* 2 *)
-      >- (CCONTR_TAC >> ‘b < a’ by simp[] >>
-          irule integerTheory.INT_DISCRETE >>
-          qexistsl_tac [‘&a’,‘&b’] >> simp[REAL_LT] >> gvs[REAL_LT_SUB_RADD])
-      >> CCONTR_TAC >> irule integerTheory.INT_DISCRETE >>
-      qexistsl_tac [‘&b’,‘&a’] >> simp[REAL_LT] >> gvs[REAL_LT_SUB_RADD]) >>
-  reverse (Cases_on ‘∃z:int. x = real_of_int z’)
-  >- (drule ival_without_int >> strip_tac >>
-      qexistsl_tac [‘a’,‘b’] >> gvs[SUBSET_DEF] >>
-      rpt strip_tac >> metis_tac[real_of_int_num]) >>
-  gvs[] >>
-  ‘z < 0’ by (Cases_on ‘z’ >> gvs[]) >>
-  qexistsl_tac [‘real_of_int z - 1’,‘real_of_int z + 1’] >>
-  gvs[ival_def,SUBSET_DEF] >> rpt strip_tac >> gvs[] >>
-  rename [‘real_of_int z - 1 < &n’] >>
-  gs[real_of_int_addN, Excl "real_of_int_add"] >>
-  qpat_x_assum ‘z < 0’ mp_tac >> qpat_x_assum ‘&n < z + 1’ mp_tac >>
-  intLib.ARITH_TAC
+      gs[real_of_int_Nmul, Excl "real_of_int_mul", real_of_int_addN, Excl "real_of_int_add",
+         real_of_int_subN, Excl "real_of_int_sub"]>>
+      intLib.ARITH_TAC) >>
+  drule ival_without_int >> strip_tac >>
+  qexistsl_tac [‘a’,‘b’] >> gvs[SUBSET_DEF] >>
+  rpt strip_tac >> metis_tac[]
 QED
 
+Theorem exercise_2_1_4iiN:
+  closed_in euclidean {&(n:num) | P n}
+Proof
+  assume_tac (exercise_2_1_4ii |> Q.INST [‘P’ |-> ‘λi. 0 ≤ i ∧ Q (Num i)’]
+                               |> Q.GEN ‘Q’) >>
+  pop_assum $ qspec_then ‘P’ mp_tac >>
+  simp[] >> qmatch_abbrev_tac ‘closed_in euclidean S1 ⇒ closed_in _ S2’ >>
+  ‘S1 = S2’ suffices_by simp[] >>
+  simp[Abbr‘S1’, Abbr‘S2’, EXTENSION] >>
+  rw[EQ_IMP_THM] >~
+  [‘P (Num i)’] >- (Cases_on ‘i’ >> gs[]) >~
+  [‘&n = real_of_int _’] >>
+  qexists_tac ‘&n’ >> simp[]
+QED
 
 Theorem ival_11[simp]:
   a < b ∧ c < d ⇒
