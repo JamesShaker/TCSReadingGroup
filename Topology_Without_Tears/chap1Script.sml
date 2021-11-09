@@ -187,6 +187,13 @@ Proof
   simp[PULL_EXISTS]
 QED
 
+Theorem prop1_1_9':
+  X = topspace t ∧ (∀x. x ∈ topspace t ⇒ open_in t {x}) ⇒
+  t = discrete_topology X
+Proof
+  metis_tac[prop1_1_9]
+QED
+
 Theorem MAX_SET_all_x_lse_n_eq_n:
   MAX_SET {x | x ≤ n} = n
 Proof

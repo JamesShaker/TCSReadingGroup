@@ -143,7 +143,12 @@ Proof
       gs[IN_DEF]) >>
   gs[]
 QED
-      
+
+Theorem connected_euclidean[simp]:
+  connected euclidean
+Proof
+  metis_tac[connected_def, prop_3_3_3, topspace_euclidean]
+QED
  
 val _ = export_theory();
 
