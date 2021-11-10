@@ -64,4 +64,33 @@ Proof
   gvs[] >> simp[SF DNF_ss]
 QED
 
+(*hint: Y is open in subtopology τ Y*)        
+Theorem exercise_4_1_10:
+  Y ⊆ topspace τ ⇒
+  ({s | open_in (subtopology τ Y) s} ⊆ {s | open_in τ s} ⇔ open_in τ Y)
+Proof
+  strip_tac >>
+  rw[SUBSET_DEF,OPEN_IN_SUBTOPOLOGY,PULL_EXISTS,EQ_IMP_THM,OPEN_IN_INTER] >>
+  first_x_assum $ qspec_then ‘topspace τ’ assume_tac >>
+  gs[SUBSET_INTER2]
+QED
+
+Theorem exercise_4_1_11:
+  A ⊆ topspace τ ∧ B ⊆ topspace τ ∧ connected (subtopology τ A) ∧
+  connected (subtopology τ B) ∧ A ∩ B ≠ ∅ ⇒ connected (subtopology τ (A ∪ B))
+Proof
+  rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
+     CLOSED_IN_SUBTOPOLOGY] >> eq_tac >> strip_tac (* 3 *)
+  >- (gvs[] >> rename [‘open_in τ X’,‘closedSets τ Y’] >>
+      ‘X ∩ A = Y ∩ A ∧ X ∩ B = Y ∩ B’ by
+        (pop_assum mp_tac >> simp[EXTENSION] >> metis_tac[]) >>
+      ‘(X ∩ A = topspace τ ∩ A ∨ X ∩ A = {}) ∧
+       (X ∩ B = topspace τ ∩ B ∨ X ∩ B = {})’
+        by metis_tac[] >>
+      gs[SUBSET_DEF,EXTENSION] >> metis_tac[])
+  >- metis_tac[CLOSED_IN_TOPSPACE,OPEN_IN_TOPSPACE] >>
+  metis_tac[OPEN_IN_EMPTY,CLOSED_IN_EMPTY,INTER_EMPTY]
+QED  
+
 val _ = export_theory();
+
