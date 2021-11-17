@@ -92,5 +92,61 @@ Proof
   metis_tac[OPEN_IN_EMPTY,CLOSED_IN_EMPTY,INTER_EMPTY]
 QED  
 
+
+Theorem excercise_4_1_12:
+  T1_space τ ⇒ T1_space (subtopology τ Y)
+Proof
+  fs[T1_space_def,CLOSED_IN_SUBTOPOLOGY,TOPSPACE_SUBTOPOLOGY] >>
+  rw[] >> ntac 2 (first_assum (irule_at Any)) >>
+  simp[EXTENSION] >> metis_tac[]
+QED
+
+
+Definition T2_space_def:
+  T2_space τ ⇔ ∀a b. a ∈ topspace τ ∧ b ∈ topspace τ ∧ a ≠ b ⇒
+               ∃A B. open_in τ A ∧ open_in τ B ∧ a ∈ A ∧ b ∈ B ∧ A ∩ B = ∅
+End
+
+Overload Hausdorff[inferior] = “T2_space”
+
+Theorem excercise_4_1_13_ii:
+  T2_space (discrete_topology X)
+Proof
+  rw[T2_space_def] >>
+  rename1 ‘a ≠ b’ >>
+  qexistsl_tac [‘{a}’,‘{b}’] >>
+  rw[EXTENSION]
+QED
+
+Theorem excercise_4_1_13_iii:
+  T2_space τ ⇒ T1_space τ
+Proof
+  rw[T2_space_def,T1_space_def,closed_in] >>
+  ‘∃AS. topspace τ DIFF {x} = BIGUNION AS ∧ ∀A. A ∈ AS ⇒ open_in τ A’
+    suffices_by simp[PULL_EXISTS,OPEN_IN_BIGUNION] >>
+  ‘∀y. y ≠ x ∧ y ∈ topspace τ ⇒ ∃A. y ∈ A ∧ x ∉ A ∧ open_in τ A’
+    suffices_by
+      (rw[] >>
+       pop_assum (strip_assume_tac o
+                  SIMP_RULE bool_ss [GSYM RIGHT_EXISTS_IMP_THM,SKOLEM_THM]) >>
+       qexists_tac ‘{f y | y ∈ topspace τ ∧ y ≠ x}’ >> simp[Once EXTENSION] >>
+       rpt strip_tac >> rw[PULL_EXISTS,EQ_IMP_THM] >>
+       metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]) >>
+  rw[] >> first_x_assum drule_all >> rw[] >> gs[EXTENSION] >>
+  metis_tac[]
+QED
+
+Theorem excercise_4_1_13_iv_a:
+  T1_space (finite_closed_topology 𝕌(:num))
+Proof
+  cheat
+QED
+
+Theorem excercise_4_1_13_iv_b:
+  ¬T2_space (finite_closed_topology 𝕌(:num))
+Proof
+  cheat
+QED
+
 val _ = export_theory();
 
