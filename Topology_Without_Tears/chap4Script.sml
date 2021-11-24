@@ -139,14 +139,44 @@ QED
 Theorem excercise_4_1_13_iv_a:
   T1_space (finite_closed_topology 𝕌(:num))
 Proof
-  cheat
+  simp[T1_space_def]
 QED
 
 Theorem excercise_4_1_13_iv_b:
   ¬T2_space (finite_closed_topology 𝕌(:num))
 Proof
-  cheat
+  simp[T2_space_def] >> qexistsl_tac [‘1’, ‘2’] >> simp[] >> 
+  rpt strip_tac >> Cases_on ‘1 ∈ A’ >> simp[] >>
+  Cases_on ‘2 ∈ B’ >> simp[] >>
+  simp[GSYM MEMBER_NOT_EMPTY, SF SFY_ss] >> CCONTR_TAC >> 
+  gs[] >> qabbrev_tac ‘A' = UNIV DIFF A’ >>
+  qabbrev_tac ‘B' = UNIV DIFF B’ >>
+  ‘FINITE (A' UNION B')’ by simp[] >>
+  ‘A' ∪ B' = UNIV’ by
+    (simp[EXTENSION, Abbr ‘A'’, Abbr ‘B'’] >>
+     gs[EXTENSION]) >>
+  pop_assum SUBST_ALL_TAC >>  gs[]
 QED
 
+Theorem exercise_4_1_13_v:
+  T2_space τ ⇒ T2_space (subtopology τ X)
+Proof
+  simp[T2_space_def, TOPSPACE_SUBTOPOLOGY, OPEN_IN_SUBTOPOLOGY] >>
+  rpt strip_tac >> simp[PULL_EXISTS] >>
+  first_x_assum (drule_all_then strip_assume_tac) >>
+  first_assum $ irule_at (Pat ‘_ ∈ _’) >>
+  first_assum $ irule_at (Pat ‘_ ∈ _’) >> simp[] >>
+  gs[EXTENSION] >> metis_tac[]
+QED
+
+Theorem exercise_4_1_13_vi:
+  T2_space τ ∧ door_space τ ⇒
+  (limpt τ x (topspace τ) ∧ limpt τ y (topspace τ) ⇒ x = y) ∧
+  (z ∈ topspace τ ∧ ¬limpt τ z (topspace τ) ⇒ open_in τ {z})
+Proof
+  rw[T2_space_def, door_space_def, limpt_thm]
+  >> cheat 
+QED
+        
 val _ = export_theory();
 
