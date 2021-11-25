@@ -83,7 +83,8 @@ Proof
      CLOSED_IN_SUBTOPOLOGY] >> eq_tac >> strip_tac (* 3 *)
   >- (gvs[] >> rename [‘open_in τ X’,‘closedSets τ Y’] >>
       ‘X ∩ A = Y ∩ A ∧ X ∩ B = Y ∩ B’ by
-        (pop_assum mp_tac >> simp[EXTENSION] >> metis_tac[]) >>
+        (qpat_x_assum ‘X ∩ (A ∪ B) = Y ∩ (A ∪ B)’ mp_tac >> simp[EXTENSION] >>
+         metis_tac[]) >>
       ‘(X ∩ A = topspace τ ∩ A ∨ X ∩ A = {}) ∧
        (X ∩ B = topspace τ ∩ B ∨ X ∩ B = {})’
         by metis_tac[] >>

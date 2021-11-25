@@ -262,7 +262,8 @@ Theorem sqrt_2_irrational:
   ¬rational (sqrt 2)
 Proof
   strip_tac >> drule positive_rationals_natural >> simp[SQRT_POS_LT] >>
-  rpt strip_tac >> CCONTR_TAC >> qabbrev_tac `k = LEAST k. ∃j. j ≠ 0 ∧ &k / &j = sqrt 2` >>
+  rpt strip_tac >> CCONTR_TAC >>
+  qabbrev_tac `k = LEAST k. ∃j. j ≠ 0 ∧ &k / &j = sqrt 2` >>
   `∃j. j ≠ 0 ∧ &k / &j = sqrt 2`
     by (simp[Abbr `k`] >> numLib.LEAST_ELIM_TAC >> rw[] >> metis_tac[]) >>
   `∀a b. b ≠ 0 ∧ &a / &b = sqrt 2 ⇒ k ≤ a`
@@ -270,9 +271,9 @@ Proof
         metis_tac[DECIDE ``x:num <= y ⇔ ¬ (y < x)``]) >>
   `(sqrt 2) pow 2 = 2` by simp[SQRT_POW2] >>
   `0 < k`
-    by (CCONTR_TAC >> gs[] >>
-        `0r pow 2 = 0` by simp[] >> `0r = 2r` by metis_tac[] >> gs[]) >>
-  `&k = sqrt 2 * &j` by gvs[real_div] >> `&k pow 2 = (sqrt 2 * &j) pow 2` by simp[] >>
+    by (CCONTR_TAC >> gs[transcTheory.SQRT_POS_NE]) >>
+  `&k = sqrt 2 * &j` by gvs[real_div] >>
+  `&k pow 2 = (sqrt 2 * &j) pow 2` by simp[] >>
   qpat_x_assum `&k = _` $ K all_tac >> gs[POW_MUL, REAL_OF_NUM_POW] >>
   `EVEN (k ** 2)` by metis_tac[EVEN_EXISTS] >> gs[EVEN_EXP_IFF] >>
   `∃k0. k = k0 * 2` by gs[EVEN_EXISTS] >> qpat_x_assum `Abbrev _` $ K all_tac >>

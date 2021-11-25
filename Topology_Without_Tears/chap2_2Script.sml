@@ -76,8 +76,10 @@ Proof
             `∀e. e ∈ a ⇒ ∃as. as ⊆ B ∧ e = BIGUNION as`
               by (simp[Abbr `a`, PULL_EXISTS] >> metis_tac[SUBSET_DEF]) >>
             gs[SKOLEM_THM, GSYM RIGHT_EXISTS_IMP_THM] >>
+            rename [‘f _ ⊆ B ∧ _ = BIGUNION (f _)’] >>
             qexists_tac `BIGUNION (IMAGE f a)` >> rw[Abbr `a`]
-            >- (simp[SUBSET_DEF, PULL_EXISTS] >> gs[PULL_EXISTS] >> metis_tac[SUBSET_DEF])
+            >- (simp[SUBSET_DEF, PULL_EXISTS] >> gs[PULL_EXISTS] >>
+                metis_tac[SUBSET_DEF])
             >> simp[Once EXTENSION, PULL_EXISTS] >> gs[PULL_EXISTS] >>
             rw[EQ_IMP_THM]
             >- (first_x_assum drule_all >> rw[] >>
@@ -85,6 +87,7 @@ Proof
             >> first_x_assum drule_all >> simp[EXTENSION] >> metis_tac[])
         >> pop_assum mp_tac >> simp[Once SUBSET_DEF] >> strip_tac >>
         gs[SKOLEM_THM, GSYM RIGHT_EXISTS_IMP_THM] >>
+        rename [‘f _ ⊆ B ∧ _ = BIGUNION (f _)’] >>
         qexists_tac `BIGUNION (IMAGE f k)` >> conj_tac
         >- (simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[SUBSET_DEF])
         >> simp[Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >> rw[]
