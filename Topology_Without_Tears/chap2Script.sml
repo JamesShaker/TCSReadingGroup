@@ -11,7 +11,7 @@ local open realSimps in end
 val _ = new_theory "chap2";
 
 val _ = intLib.deprecate_int();
-    
+
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
 
 Definition ival_def:
@@ -556,7 +556,7 @@ Proof
   wlog_tac `a <= c` [`a`, `c`, `b`, `d`] (* 2 *)
   >- (‘c ≤ a’ by fs[] >> metis_tac[]) >>
   Cases_on ‘a = c’ (* 2 *)
-  >-  (rw[] >> CCONTR_TAC >> 
+  >-  (rw[] >> CCONTR_TAC >>
        Cases_on ‘b < d’
        >- (‘∃z. b < z ∧ z < d’ by metis_tac[REAL_MEAN] >>
            first_x_assum (qspec_then ‘z’ assume_tac) >> fs[]) >>
@@ -570,8 +570,8 @@ Proof
    Cases_on ‘z < b’ >> rw[] (* 2, have the option of avoid cases here*)
    >- (‘z < c’ suffices_by fs[] >> metis_tac[REAL_LT_MIN]) >>
    metis_tac[REAL_LT_MIN] >>
-   metis_tac[REAL_LT_MIN,REAL_LT_TRANS]) 
-QED 
+   metis_tac[REAL_LT_MIN,REAL_LT_TRANS])
+QED
 
 Theorem prop2_2_1:
   open_in euclidean s ⇔ ∃P. s = BIGUNION { ival a b | P a b }
@@ -954,7 +954,7 @@ QED
 (*
 Let B be the collection of all half-open intervals of the form (a, b], a < b, where (a, b] = {x : x ∈ R, a < x 􏰄 b}. Then B is a basis for a topology on R, since R is the union of all members of B and the intersection of any two half-open intervals is a half-open interval.
 *)
-        
+
 Definition lhalf_open_ival:
 lhalf_open_ival a b = {x| a < x ∧ x ≤ b}
 End
@@ -977,6 +977,6 @@ Proof
   qexists_tac ‘t’ >> simp[TOPOLOGY_EQ] >> qexists_tac ‘lhalf_open_ival 0 1’ >>
   gs[basis_def,PULL_EXISTS] >> simp[lhalf_open_ival,exercise_2_1_1]
 QED
-          
+
 
 val _ = export_theory();
