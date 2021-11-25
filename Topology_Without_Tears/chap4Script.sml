@@ -64,7 +64,7 @@ Proof
   gvs[] >> simp[SF DNF_ss]
 QED
 
-(*hint: Y is open in subtopology τ Y*)        
+(*hint: Y is open in subtopology τ Y*)
 Theorem exercise_4_1_10:
   Y ⊆ topspace τ ⇒
   ({s | open_in (subtopology τ Y) s} ⊆ {s | open_in τ s} ⇔ open_in τ Y)
@@ -91,7 +91,7 @@ Proof
       gs[SUBSET_DEF,EXTENSION] >> metis_tac[])
   >- metis_tac[CLOSED_IN_TOPSPACE,OPEN_IN_TOPSPACE] >>
   metis_tac[OPEN_IN_EMPTY,CLOSED_IN_EMPTY,INTER_EMPTY]
-QED  
+QED
 
 
 Theorem excercise_4_1_12:
@@ -146,10 +146,10 @@ QED
 Theorem excercise_4_1_13_iv_b:
   ¬T2_space (finite_closed_topology 𝕌(:num))
 Proof
-  simp[T2_space_def] >> qexistsl_tac [‘1’, ‘2’] >> simp[] >> 
+  simp[T2_space_def] >> qexistsl_tac [‘1’, ‘2’] >> simp[] >>
   rpt strip_tac >> Cases_on ‘1 ∈ A’ >> simp[] >>
   Cases_on ‘2 ∈ B’ >> simp[] >>
-  simp[GSYM MEMBER_NOT_EMPTY, SF SFY_ss] >> CCONTR_TAC >> 
+  simp[GSYM MEMBER_NOT_EMPTY, SF SFY_ss] >> CCONTR_TAC >>
   gs[] >> qabbrev_tac ‘A' = UNIV DIFF A’ >>
   qabbrev_tac ‘B' = UNIV DIFF B’ >>
   ‘FINITE (A' UNION B')’ by simp[] >>
@@ -176,8 +176,8 @@ Theorem exercise_4_1_13_vi:
   (z ∈ topspace τ ∧ ¬limpt τ z (topspace τ) ⇒ open_in τ {z})
 Proof
   rw[T2_space_def, door_space_def, limpt_thm]
-  >> cheat 
+  >> cheat
 QED
-        
+
 val _ = export_theory();
 
