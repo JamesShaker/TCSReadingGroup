@@ -172,60 +172,108 @@ QED
 
 Theorem exercise_4_1_13_vi:
   T2_space τ ∧ door_space τ ⇒
-  (limpt τ x (topspace τ) ∧ limpt τ y (topspace τ) ⇒ x = y) ∧
+  (∀x y. limpt τ x (topspace τ) ∧ limpt τ y (topspace τ) ⇒ x = y) ∧
   (∀z. z ∈ topspace τ ∧ ¬limpt τ z (topspace τ) ⇒ open_in τ {z})
 Proof
   simp[T2_space_def, door_space_def] >> strip_tac >>
-  reverse conj_asm2_tac
+  reverse conj_tac
   >- (simp[not_limpt_inter, SF CONJ_ss, PULL_EXISTS] >> rpt strip_tac
       >- (‘{z} = U’ suffices_by simp[] >>
           qpat_x_assum ‘_ ∩ _ = _’ mp_tac >>
           simp[EXTENSION] >> metis_tac[OPEN_IN_SUBSET, SUBSET_DEF]) >>
       gs[EXTENSION] >> metis_tac[]) >>
-  CCONTR_TAC >> gs[] >>
-  rename [‘l1 ≠ l2’] >>
-  ‘l1 ∈ topspace τ ∧ l2 ∈ topspace τ’
-    by metis_tac[limpt_thm] >>
+  CCONTR_TAC >> gs[] >> rename [‘l1 ≠ l2’] >>
+  ‘l1 ∈ topspace τ ∧ l2 ∈ topspace τ’ by metis_tac[limpt_thm] >>
   first_assum $ drule_all_then $
     qx_choosel_then [‘O1’, ‘O2’] strip_assume_tac >>
   ‘¬open_in τ {l1} ∧ ¬open_in τ {l2}’
-    by (gs[limpt_thm] >>
-        qpat_x_assum ‘∀U. open_in τ U ∧ l1 ∈ U ⇒ _’ $
-                     qspec_then ‘{l1}’ mp_tac >>
-        qpat_x_assum ‘∀U. open_in τ U ∧ l2 ∈ U ⇒ _’ $
-                     qspec_then ‘{l2}’ mp_tac >>
-        simp[]) >>
+    by (gs[limpt_thm] >> metis_tac[IN_INSERT, NOT_IN_EMPTY]) >>
   ‘∃R1. R1 ≠ ∅ ∧ l1 ∉ R1 ∧ O1 = l1 INSERT R1’
     by (qexists_tac ‘O1 DELETE l1’ >> simp[] >> metis_tac[]) >>
   ‘∃R2. R2 ≠ ∅ ∧ l2 ∉ R2 ∧ O2 = l2 INSERT R2’
     by (qexists_tac ‘O2 DELETE l2’ >> simp[] >> metis_tac[]) >>
-  ‘{l1} ⊆ topspace τ ∧ {l2} ⊆ topspace τ’ by simp[SUBSET_DEF] >>
-  ‘closed_in τ {l1}’ by metis_tac[] >>
-  ‘open_in τ (topspace τ DIFF {l1})’
-    by metis_tac[closed_in, DIFF_SUBSET] >>
-  ‘∃c1. c1 ∈ R1’ by metis_tac[MEMBER_NOT_EMPTY] >>
-  ‘l1 ≠ c1’ by metis_tac[] >>
-  ‘c1 ∈ topspace τ’
-    by metis_tac[IN_INSERT, SUBSET_DEF, OPEN_IN_SUBSET] >>
-  ‘∃P1 P2. open_in τ P1 ∧ open_in τ P2 ∧ P1 ∩ P2 = ∅ ∧ c1 ∈ P1 ∧
-           l1 ∈ P2’ by metis_tac[] >>
-  cheat
-
-(*  hmmm!
-
-    |...    open.......|     |  .... open ... |
-    {...R1 ..., c1} {l1} ... {l2} {... R2 ....}
-
-
-    if R1 U {l2} is open, then (R1 ∪ {l2}) ∩ (R2 ∪ {l2}) is open,
-    a contradiction
-
-    complement of {l1} is open.
-
-    {l1, c1} {l2, c2}  {l1, c1, c2} {l2, c1, c2}  {c1, c2} open
-
-*)
+  gvs[] >>
+  Cases_on ‘open_in τ (l2 INSERT R1)’
+  >- (‘open_in τ ((l2 INSERT R1) ∩ (l2 INSERT R2))’
+        by simp[OPEN_IN_INTER] >>
+      ‘(l2 INSERT R1) ∩ (l2 INSERT R2) = {l2}’
+        by (gs[EXTENSION] >> metis_tac[]) >>
+      gvs[]) >>
+  ‘l2 INSERT R1 ⊆ topspace τ’
+    by metis_tac[OPEN_IN_SUBSET, SUBSET_DEF, IN_INSERT] >>
+  ‘closed_in τ (l2 INSERT R1)’ by metis_tac[] >>
+  qabbrev_tac ‘Q = topspace τ DIFF (l2 INSERT R1)’ >>
+  ‘open_in τ Q’ by gs[closed_in] >>
+  ‘open_in τ (Q ∩ (l1 INSERT R1))’ by simp[OPEN_IN_INTER] >>
+  ‘Q ∩ (l1 INSERT R1) = {l1}’ by (gs[EXTENSION, Abbr‘Q’] >> metis_tac[]) >>
+  gs[]
 QED
+
+Theorem corollary_model:
+  istopology { s | 0 ∈ s ∧ FINITE (COMPL s) ∨ 0 ∉ s }
+Proof
+  simp[istopology] >> rw[] >> simp[]
+  >- (simp[] >> gs[COMPL_DEF] >>
+      ‘UNIV DIFF (s ∩ t) = (UNIV DIFF s) ∪ (UNIV DIFF t)’ suffices_by simp[] >>
+      simp[EXTENSION]) >>
+  gs[COMPL_DEF] >> Cases_on ‘∀s. s ∈ k ⇒ 0 ∉ s’ >> gs[]
+  >- metis_tac[] >>
+  gs[SUBSET_DEF] >> first_x_assum drule >> simp[] >> strip_tac >> disj1_tac >>
+  conj_tac >- metis_tac[] >>
+  irule SUBSET_FINITE_I >> first_assum $ irule_at Any >>
+  simp[SUBSET_DEF] >> metis_tac[]
+QED
+
+Definition weird_def:
+  weird = topology {s | 0 ∈ s ∧ FINITE (COMPL s) ∨ 0 ∉ s }
+End
+
+Theorem open_in_weird:
+  open_in weird s ⇔ 0 ∈ s ∧ FINITE (COMPL s) ∨ 0 ∉ s
+Proof
+  simp[weird_def, topology_tybij |> cj 2 |> iffLR, corollary_model]
+QED
+
+Theorem topspace_weird:
+  topspace weird = UNIV
+Proof
+  simp[topspace, Once EXTENSION, open_in_weird] >> gen_tac >>
+  qexists_tac ‘UNIV’ >> simp[COMPL_DEF]
+QED
+
+Theorem weird_T2:
+  T2_space weird
+Proof
+  simp[T2_space_def, open_in_weird, topspace_weird] >>
+  rpt strip_tac >>
+  wlog_tac ‘b ≠ 0’ [‘a’, ‘b’] >- (gvs[] >> metis_tac[INTER_COMM]) >>
+  Cases_on ‘a = 0’
+  >- (qexistsl_tac [‘UNIV DELETE b’, ‘{b}’] >>
+      simp[COMPL_DEF, DIFF_DIFF_SUBSET, DELETE_DEF] >>
+      simp[EXTENSION]) >>
+  qexistsl_tac [‘{a}’, ‘{b}’] >> simp[] >> simp[EXTENSION]
+QED
+
+Theorem weird_door:
+  door_space weird
+Proof
+  simp[door_space_def, open_in_weird, topspace_weird, closed_in, COMPL_DEF,
+       DIFF_DIFF_SUBSET] >>
+  metis_tac[]
+QED
+
+Theorem limpt_weird:
+  limpt weird x (topspace weird) ⇔ x = 0
+Proof
+  ‘limpt weird 0 (topspace weird)’
+    suffices_by metis_tac[exercise_4_1_13_vi, weird_door, weird_T2] >>
+  simp[limpt_thm, open_in_weird, topspace_weird, SF CONJ_ss, COMPL_DEF] >>
+  rpt strip_tac >>
+  ‘INFINITE U’ by metis_tac[FINITE_DIFF_down, INFINITE_NUM_UNIV] >>
+  ‘INFINITE (U DELETE 0)’ by simp[] >>
+  drule INFINITE_INHAB >> simp[]
+QED
+
 
 val _ = export_theory();
 
