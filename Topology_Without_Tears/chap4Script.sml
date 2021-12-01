@@ -173,10 +173,58 @@ QED
 Theorem exercise_4_1_13_vi:
   T2_space τ ∧ door_space τ ⇒
   (limpt τ x (topspace τ) ∧ limpt τ y (topspace τ) ⇒ x = y) ∧
-  (z ∈ topspace τ ∧ ¬limpt τ z (topspace τ) ⇒ open_in τ {z})
+  (∀z. z ∈ topspace τ ∧ ¬limpt τ z (topspace τ) ⇒ open_in τ {z})
 Proof
-  rw[T2_space_def, door_space_def, limpt_thm]
-  >> cheat
+  simp[T2_space_def, door_space_def] >> strip_tac >>
+  reverse conj_asm2_tac
+  >- (simp[not_limpt_inter, SF CONJ_ss, PULL_EXISTS] >> rpt strip_tac
+      >- (‘{z} = U’ suffices_by simp[] >>
+          qpat_x_assum ‘_ ∩ _ = _’ mp_tac >>
+          simp[EXTENSION] >> metis_tac[OPEN_IN_SUBSET, SUBSET_DEF]) >>
+      gs[EXTENSION] >> metis_tac[]) >>
+  CCONTR_TAC >> gs[] >>
+  rename [‘l1 ≠ l2’] >>
+  ‘l1 ∈ topspace τ ∧ l2 ∈ topspace τ’
+    by metis_tac[limpt_thm] >>
+  first_assum $ drule_all_then $
+    qx_choosel_then [‘O1’, ‘O2’] strip_assume_tac >>
+  ‘¬open_in τ {l1} ∧ ¬open_in τ {l2}’
+    by (gs[limpt_thm] >>
+        qpat_x_assum ‘∀U. open_in τ U ∧ l1 ∈ U ⇒ _’ $
+                     qspec_then ‘{l1}’ mp_tac >>
+        qpat_x_assum ‘∀U. open_in τ U ∧ l2 ∈ U ⇒ _’ $
+                     qspec_then ‘{l2}’ mp_tac >>
+        simp[]) >>
+  ‘∃R1. R1 ≠ ∅ ∧ l1 ∉ R1 ∧ O1 = l1 INSERT R1’
+    by (qexists_tac ‘O1 DELETE l1’ >> simp[] >> metis_tac[]) >>
+  ‘∃R2. R2 ≠ ∅ ∧ l2 ∉ R2 ∧ O2 = l2 INSERT R2’
+    by (qexists_tac ‘O2 DELETE l2’ >> simp[] >> metis_tac[]) >>
+  ‘{l1} ⊆ topspace τ ∧ {l2} ⊆ topspace τ’ by simp[SUBSET_DEF] >>
+  ‘closed_in τ {l1}’ by metis_tac[] >>
+  ‘open_in τ (topspace τ DIFF {l1})’
+    by metis_tac[closed_in, DIFF_SUBSET] >>
+  ‘∃c1. c1 ∈ R1’ by metis_tac[MEMBER_NOT_EMPTY] >>
+  ‘l1 ≠ c1’ by metis_tac[] >>
+  ‘c1 ∈ topspace τ’
+    by metis_tac[IN_INSERT, SUBSET_DEF, OPEN_IN_SUBSET] >>
+  ‘∃P1 P2. open_in τ P1 ∧ open_in τ P2 ∧ P1 ∩ P2 = ∅ ∧ c1 ∈ P1 ∧
+           l1 ∈ P2’ by metis_tac[] >>
+  cheat
+
+(*  hmmm!
+
+    |...    open.......|     |  .... open ... |
+    {...R1 ..., c1} {l1} ... {l2} {... R2 ....}
+
+
+    if R1 U {l2} is open, then (R1 ∪ {l2}) ∩ (R2 ∪ {l2}) is open,
+    a contradiction
+
+    complement of {l1} is open.
+
+    {l1, c1} {l2, c2}  {l1, c1, c2} {l2, c1, c2}  {c1, c2} open
+
+*)
 QED
 
 val _ = export_theory();
