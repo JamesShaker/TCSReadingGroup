@@ -274,6 +274,59 @@ Proof
   drule INFINITE_INHAB >> simp[]
 QED
 
+Theorem exercise_4_1_14:
+  second_countable t ⇒
+  second_countable (subtopology t Y)
+Proof
+  rw[second_countable_def] >>
+  irule_at Any example_4_1_4 >>
+  first_assum $ irule_at Any >>
+  `{b ∩ Y | b ∈ B} = IMAGE (λx. x ∩ Y) B`
+    suffices_by simp[image_countable] >>
+  rw[EXTENSION]
+QED
+
+Definition regular_space_def:
+  regular_space t ⇔
+    ∀A x.
+      closed_in t A ∧
+      x ∈ topspace t ∧
+      x ∉ A ⇒
+      ∃U V.
+        open_in t U ∧
+        open_in t V ∧
+        x ∈ U ∧
+        A ⊆ V ∧
+        U ∩ V = ∅
+End
+
+Definition T3_space_def:
+  T3_space t ⇔ regular_space t ∧ T1_space t
+End
+
+Theorem exercise_4_1_17_i:
+  ∀A t. regular_space t ⇒ regular_space (subtopology t A)
+Proof
+  rw[regular_space_def] >>
+  gvs[CLOSED_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY,
+      OPEN_IN_SUBTOPOLOGY, PULL_EXISTS] >>
+  rename[`closedSets top A`, `A ∩ Y`] >>
+  first_x_assum drule_all >> rw[] >>
+  qexistsl_tac [`U`, `V`] >> rw[]
+  >- metis_tac[SUBSET_DEF, IN_INTER]
+  >> metis_tac[INTER_COMM, INTER_ASSOC, INTER_EMPTY]
+QED
+
+Theorem exercise_4_1_17_iii:
+  T3_space t ⇒ T2_space t
+Proof
+  rw[T3_space_def, T2_space_def,
+     regular_space_def, T1_space_def] >>
+  `closedSets t {a}` by metis_tac[] >>
+  `b ∉ {a}` by simp[] >>
+  last_x_assum drule_all >> rw[] >>
+  metis_tac[INTER_COMM]
+QED
 
 val _ = export_theory();
 

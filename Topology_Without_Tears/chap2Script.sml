@@ -2,9 +2,9 @@ open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory intrealTheory;
 open topologyTheory chap1Theory chap2_2Theory realTheory;
-open transcTheory;
 open arithmeticTheory;
 open pairTheory;
+open cardinalTheory;
 
 local open realSimps in end
 
@@ -271,7 +271,7 @@ Proof
         metis_tac[DECIDE ``x:num <= y ⇔ ¬ (y < x)``]) >>
   `(sqrt 2) pow 2 = 2` by simp[SQRT_POW2] >>
   `0 < k`
-    by (CCONTR_TAC >> gs[transcTheory.SQRT_POS_NE]) >>
+    by (CCONTR_TAC >> gs[realTheory.SQRT_POS_NE]) >>
   `&k = sqrt 2 * &j` by gvs[real_div] >>
   `&k pow 2 = (sqrt 2 * &j) pow 2` by simp[] >>
   qpat_x_assum `&k = _` $ K all_tac >> gs[POW_MUL, REAL_OF_NUM_POW] >>
@@ -795,11 +795,6 @@ Proof
          >- metis_tac[SUBSET_DEF]))
 QED
 
-Definition second_countable_def:
-  second_countable t ⇔ ∃B. basis B t ∧ countable B
-End
-
-
 Theorem countable_integer[simp]:
   countable univ(:int)
 Proof
@@ -856,52 +851,6 @@ Proof
   pop_assum SUBST1_TAC >>
   irule(cross_countable) >> simp[]
 QED
-
-Theorem SUBSET_TWO_ELEMENT_SET:
-  x ⊆ {a;b} ⇔ x = ∅ ∨ x = {a} ∨ x = {b} ∨ x = {a;b}
-Proof
-  eq_tac >> simp[DISJ_IMP_THM] >>
-  simp[SUBSET_DEF] >>
-  simp[EXTENSION] >> metis_tac[]
-QED
-
-Theorem BIGUNION_EQ_SING:
-  BIGUNION X = {x} ⇔ X = {{x}} ∨ X = {{x}; ∅}
-Proof
-  reverse eq_tac >- (strip_tac >> simp[]) >>
-  CONV_TAC CONTRAPOS_CONV >> simp[] >> strip_tac >>
-  Cases_on ‘X = ∅’ >> simp[] >>
-  Cases_on ‘X = {∅}’ >> simp[] >>
-  ‘∃s e. s ∈ X ∧ e ∈ s ∧ e ≠ x’
-    suffices_by (strip_tac >> simp[EXTENSION] >> metis_tac[]) >>
-  CCONTR_TAC >> gvs[] >>
-  ‘X ⊆ {{x}; ∅}’
-    by (simp[SUBSET_DEF] >> qx_gen_tac ‘s’ >> strip_tac >>
-        ‘∀e. e ∉ s ∨ e = x’ by metis_tac[] >>
-        Cases_on ‘s = ∅’ >> simp[] >>
-        ‘∀d. d ∈ s ⇒ d = x’ by metis_tac[] >>
-        simp[EXTENSION] >> metis_tac[MEMBER_NOT_EMPTY]) >>
-  metis_tac[SUBSET_TWO_ELEMENT_SET]
-QED
-
-Theorem exercise_2_2_4_ii:
-  ¬countable X ⇒ ¬second_countable (discrete_topology X)
-Proof
-  simp[second_countable_def] >> rpt strip_tac >>
-  Cases_on ‘basis B (discrete_topology X)’ >> simp[] >>
-  ‘∀x. x ∈ X ⇒ {x} ∈ B’
-    by (rpt strip_tac >>
-        ‘open_in (discrete_topology X) {x}’
-          by simp[openSets_discrete] >>
-        drule_then (drule_then strip_assume_tac o cj 2) $
-          iffLR basis_def >>
-        gs[BIGUNION_EQ_SING]) >>
-  ‘INJ (λx. {x}) X B’ by simp[INJ_DEF] >>
-  metis_tac[inj_countable]
-QED
-
-open cardinalTheory
-
 
 Theorem open_sets_form_basis:
   basis { s | open_in t s } t
