@@ -2,7 +2,7 @@ open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory topologyTheory
 open chap2Theory chap4Theory chap3Theory chap3_instancesTheory
-
+open realTheory RealArith; 
 val _ = new_theory "chap4_instances";
 
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
@@ -51,5 +51,48 @@ Proof
   qexistsl_tac [‘euclidean’, ‘ints’] >>
   simp[example_4_1_6, example_3_3_6]
 QED
+ 
+Theorem example_4_2_4:
+  a < b ∧ c < d ⇒
+  ∃f g.  homeomorphism (subtopology euclidean (ival a b),
+                        subtopology euclidean (ival c d)) (f,g)      
+Proof
+  ‘∀a b. a < b ⇒
+         ∃f g.homeomorphism(subtopology euclidean (ival a b),
+                            subtopology euclidean (ival 0 1)) (f,g)’
+    suffices_by
+    (rpt strip_tac >> rpt $ first_assum dxrule >>
+     metis_tac[homeomorphism_SYM,homeomorphism_TRANS]) >>
+  rpt strip_tac >>    
+  qabbrev_tac ‘g = λx. a * (1 - x) + b * x’ >>
+  qexistsl_tac [‘LINV g (ival a b)’,‘g’] >>
+  ‘BIJ g (ival 0 1) (ival a b)’ by
+    (simp[BIJ_DEF,Abbr‘g’,INJ_DEF,SURJ_DEF,ival_def] >> rw[] (* 6 *)
+     >- simp[REAL_SUB_LDISTRIB,
+             REAL_ARITH “x:real < x - y + z ⇔ y < z”]
+     >- (simp[REAL_SUB_LDISTRIB,
+              REAL_ARITH “x - y + z < b ⇔ x - b < y - z”] >>
+         simp[GSYM REAL_SUB_RDISTRIB])
+     >- (gs[REAL_SUB_LDISTRIB,
+            REAL_ARITH “x - y + z = x - y' + z' ⇔ y' - y = z' - z”] >>
+         gs[GSYM REAL_SUB_LDISTRIB])
+     >- simp[REAL_SUB_LDISTRIB,
+             REAL_ARITH “x:real < x - y + z ⇔ y < z”]
+     >-  (simp[REAL_SUB_LDISTRIB,
+               REAL_ARITH “x - y + z < b ⇔ x - b < y - z”] >>
+          simp[GSYM REAL_SUB_RDISTRIB])
+     >- qexists_tac ‘(x - a) /(b - a)’ >>
+     simp[real_div,REAL_SUB_LDISTRIB] >>
+     irule REAL_EQ_RMUL_IMP >>
+     qexists_tac ‘b - a’ >>
+     REWRITE_TAC[REAL_RDISTRIB,REAL_SUB_RDISTRIB] >>
+     simp[REAL_SUB_LDISTRIB]) >>
+  drule_then assume_tac $ cj 1 $ iffLR BIJ_DEF >>
+  rw[homeomorphism] (* 6 *)
+  >- simp[EXTENSION,TOPSPACE_SUBTOPOLOGY] >> rw[EQ_IMP_THM] (* 2 *)
+     >-
 
+             
+                          
+        
 val _ = export_theory();

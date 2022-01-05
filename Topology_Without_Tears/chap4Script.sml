@@ -328,5 +328,61 @@ Proof
   metis_tac[INTER_COMM]
 QED
 
+
+Definition homeomorphism:
+  homeomorphism (s,t) (f,g) ⇔
+  IMAGE f (topspace s) = topspace t ∧
+  IMAGE g (topspace t) = topspace s ∧
+  (∀a. a ∈ topspace s ⇒ g (f a) = a) ∧
+  (∀b. b ∈ topspace t ⇒ f (g b) = b) ∧
+  (∀V. open_in t V ⇒ open_in s (PREIMAGE f V)) ∧
+  (∀U. open_in s U ⇒ open_in t (PREIMAGE g U))
+End
+
+ 
+Theorem homeomorphism_SYM :
+ homeomorphism (s,t) (f,g) ⇔ homeomorphism (t,s) (g,f)
+Proof
+simp[homeomorphism] >> metis_tac[]
+QED
+
+
+
+Theorem homeomorphism_BIJ0[local] :
+ homeomorphism (s,t) (f,g) ⇒
+ BIJ f (topspace s) (topspace t)
+Proof 
+ rw[homeomorphism] >> rw[BIJ_IFF_INV] >-
+ metis_tac[IN_IMAGE,EXTENSION] >>
+ qexists_tac ‘g’ >> metis_tac[IN_IMAGE,EXTENSION]
+QED
+  
+ 
+Theorem homeomorphism_BIJ :
+ homeomorphism (s,t) (f,g) ⇒
+ BIJ f (topspace s) (topspace t) ∧
+ BIJ g (topspace t) (topspace s)
+Proof
+ metis_tac[homeomorphism_SYM,homeomorphism_BIJ0] 
+QED
+
+Theorem homeomorphism_TRANS:
+homeomorphism (s,t) (f,g) ∧ homeomorphism (t,u) (h,j) ⇒
+homeomorphism (s,u) (h o f, g o j)
+Proof       
+rw[homeomorphism,IMAGE_COMPOSE,GSYM PREIMAGE_COMP]
+>- (‘f a ∈ topspace t’ suffices_by simp[] >>
+   metis_tac[IN_IMAGE,EXTENSION])
+>- (‘j b ∈ topspace t’ suffices_by simp[] >>
+   metis_tac[IN_IMAGE,EXTENSION])
+QED
+
+Theorem homeomorphism_REFL:
+homeomorphism (s,s) (I,I)
+Proof        
+rw[homeomorphism,PREIMAGE_I]
+QED
+
+                           
 val _ = export_theory();
 
