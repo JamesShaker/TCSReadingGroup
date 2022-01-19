@@ -331,8 +331,8 @@ QED
 
 Definition homeomorphism:
   homeomorphism (s,t) (f,g) ⇔
-  IMAGE f (topspace s) = topspace t ∧
-  IMAGE g (topspace t) = topspace s ∧
+  BIJ f (topspace s) (topspace t) ∧
+  BIJ g (topspace t) (topspace s) ∧
   (∀a. a ∈ topspace s ⇒ g (f a) = a) ∧
   (∀b. b ∈ topspace t ⇒ f (g b) = b) ∧
   (∀V. open_in t V ⇒ open_in s (PREIMAGE f V)) ∧
@@ -351,10 +351,8 @@ QED
 Theorem homeomorphism_BIJ0[local] :
  homeomorphism (s,t) (f,g) ⇒
  BIJ f (topspace s) (topspace t)
-Proof 
- rw[homeomorphism] >> rw[BIJ_IFF_INV] >-
- metis_tac[IN_IMAGE,EXTENSION] >>
- qexists_tac ‘g’ >> metis_tac[IN_IMAGE,EXTENSION]
+Proof
+  metis_tac[homeomorphism]
 QED
   
  
@@ -370,17 +368,19 @@ Theorem homeomorphism_TRANS:
 homeomorphism (s,t) (f,g) ∧ homeomorphism (t,u) (h,j) ⇒
 homeomorphism (s,u) (h o f, g o j)
 Proof       
-rw[homeomorphism,IMAGE_COMPOSE,GSYM PREIMAGE_COMP]
->- (‘f a ∈ topspace t’ suffices_by simp[] >>
-   metis_tac[IN_IMAGE,EXTENSION])
->- (‘j b ∈ topspace t’ suffices_by simp[] >>
-   metis_tac[IN_IMAGE,EXTENSION])
+  rw[homeomorphism, GSYM PREIMAGE_COMP]
+  >- metis_tac[BIJ_COMPOSE]
+  >- metis_tac[BIJ_COMPOSE]
+  >- (‘f a ∈ topspace t’ suffices_by simp[] >>
+      metis_tac[BIJ_DEF, SURJ_DEF])
+  >- (‘j b ∈ topspace t’ suffices_by simp[] >>
+      metis_tac[BIJ_DEF, SURJ_DEF])
 QED
 
 Theorem homeomorphism_REFL:
 homeomorphism (s,s) (I,I)
 Proof        
-rw[homeomorphism,PREIMAGE_I]
+rw[BIJ_DEF, SURJ_DEF, INJ_DEF, homeomorphism,PREIMAGE_I]
 QED
 
                            

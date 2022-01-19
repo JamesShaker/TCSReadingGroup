@@ -45,6 +45,15 @@ Proof
   intLib.ARITH_TAC
 QED
 
+Theorem PREIMAGE_BIJ_LINV:
+  BIJ f s t ⇒ t ⊆ PREIMAGE (LINV f s) s
+Proof
+ rw[SUBSET_DEF] >> 
+ drule (BIJ_DEF |> iffLR |> cj 1) >> rw[] >> 
+ drule_then strip_assume_tac LINV_DEF >>
+ metis_tac[BIJ_DEF, SURJ_DEF]
+QED
+        
 Theorem exercise_4_1_9:
   ∃τ A. connected τ ∧ ¬connected (subtopology τ (A:real set))
 Proof
@@ -65,7 +74,7 @@ Proof
      metis_tac[homeomorphism_SYM,homeomorphism_TRANS]) >>
   rpt strip_tac >>    
   qabbrev_tac ‘g = λx. a * (1 - x) + b * x’ >>
-  qexistsl_tac [‘LINV g (ival a b)’,‘g’] >>
+  qexistsl_tac [‘LINV g (ival 0 1)’,‘g’] >>
   ‘BIJ g (ival 0 1) (ival a b)’ by
     (simp[BIJ_DEF,Abbr‘g’,INJ_DEF,SURJ_DEF,ival_def] >> rw[] (* 6 *)
      >- simp[REAL_SUB_LDISTRIB,
@@ -81,18 +90,24 @@ Proof
      >-  (simp[REAL_SUB_LDISTRIB,
                REAL_ARITH “x - y + z < b ⇔ x - b < y - z”] >>
           simp[GSYM REAL_SUB_RDISTRIB])
-     >- qexists_tac ‘(x - a) /(b - a)’ >>
+     >> qexists_tac ‘(x - a) /(b - a)’ >>
      simp[real_div,REAL_SUB_LDISTRIB] >>
      irule REAL_EQ_RMUL_IMP >>
      qexists_tac ‘b - a’ >>
      REWRITE_TAC[REAL_RDISTRIB,REAL_SUB_RDISTRIB] >>
-     simp[REAL_SUB_LDISTRIB]) >>
+     simp[] >> simp[REAL_SUB_LDISTRIB]) >>
   drule_then assume_tac $ cj 1 $ iffLR BIJ_DEF >>
-  rw[homeomorphism] (* 6 *)
-  >- simp[EXTENSION,TOPSPACE_SUBTOPOLOGY] >> rw[EQ_IMP_THM] (* 2 *)
-     >-
+  rw[homeomorphism, TOPSPACE_SUBTOPOLOGY] (* 6 *)
+  >- simp[BIJ_LINV_BIJ]
+  >- (drule_then strip_assume_tac BIJ_LINV_INV >> simp[]
+     )
+  >- (drule_then strip_assume_tac LINV_DEF >> simp[]
+     )
+  >- (gs[OPEN_IN_SUBTOPOLOGY] >>
+      qexists_tac ‘PREIMAGE (LINV g (ival 0 1)) t’ >>
+      rw[PREIMAGE_INTER] >> cheat
+     )   
+  >> cheat                 
+QED
 
-             
-                          
-        
 val _ = export_theory();
