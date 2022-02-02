@@ -61,6 +61,23 @@ Proof
   simp[example_4_1_6, example_3_3_6]
 QED
 
+Theorem inverses_monotone:
+  BIJ f s t ∧
+  (∀x y. x ∈ s ∧ y ∈ s ∧ x < y ⇒ f x < f y) ⇒
+  (∀u v. u ∈ t ∧ v ∈ t ∧ u < v ⇒ LINV f s u < LINV f s v)
+Proof
+  rw[] >> CCONTR_TAC >>
+  drule_then strip_assume_tac (BIJ_DEF |> iffLR |> cj 1) >>
+  drule_then assume_tac LINV_DEF >>
+  gs[REAL_NOT_LT] >>
+  ‘SURJ f s t’ by gs[BIJ_DEF] >>
+  ‘∃v0 u0. u0 ∈ s ∧ v0 ∈ s ∧ f u0 = u ∧ f v0 = v’
+    by metis_tac[SURJ_DEF] >> gvs[] >>
+  gvs[REAL_LE_LT] >> metis_tac[REAL_LT_TRANS, REAL_LT_REFL]
+QED
+
+
+
 Theorem example_4_2_4:
   a < b ∧ c < d ⇒
   ∃f g.  homeomorphism (subtopology euclidean (ival a b),
