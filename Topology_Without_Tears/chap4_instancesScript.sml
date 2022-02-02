@@ -2,7 +2,7 @@ open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory topologyTheory
 open chap2Theory chap4Theory chap3Theory chap3_instancesTheory
-open realTheory RealArith; 
+open realTheory RealArith;
 val _ = new_theory "chap4_instances";
 
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
@@ -48,23 +48,23 @@ QED
 Theorem PREIMAGE_BIJ_LINV:
   BIJ f s t ⇒ t ⊆ PREIMAGE (LINV f s) s
 Proof
- rw[SUBSET_DEF] >> 
- drule (BIJ_DEF |> iffLR |> cj 1) >> rw[] >> 
+ rw[SUBSET_DEF] >>
+ drule (BIJ_DEF |> iffLR |> cj 1) >> rw[] >>
  drule_then strip_assume_tac LINV_DEF >>
  metis_tac[BIJ_DEF, SURJ_DEF]
 QED
-        
+
 Theorem exercise_4_1_9:
   ∃τ A. connected τ ∧ ¬connected (subtopology τ (A:real set))
 Proof
   qexistsl_tac [‘euclidean’, ‘ints’] >>
   simp[example_4_1_6, example_3_3_6]
 QED
- 
+
 Theorem example_4_2_4:
   a < b ∧ c < d ⇒
   ∃f g.  homeomorphism (subtopology euclidean (ival a b),
-                        subtopology euclidean (ival c d)) (f,g)      
+                        subtopology euclidean (ival c d)) (f,g)
 Proof
   ‘∀a b. a < b ⇒
          ∃f g.homeomorphism(subtopology euclidean (ival a b),
@@ -72,7 +72,7 @@ Proof
     suffices_by
     (rpt strip_tac >> rpt $ first_assum dxrule >>
      metis_tac[homeomorphism_SYM,homeomorphism_TRANS]) >>
-  rpt strip_tac >>    
+  rpt strip_tac >>
   qabbrev_tac ‘g = λx. a * (1 - x) + b * x’ >>
   qexistsl_tac [‘LINV g (ival 0 1)’,‘g’] >>
   ‘BIJ g (ival 0 1) (ival a b)’ by
@@ -97,17 +97,32 @@ Proof
      REWRITE_TAC[REAL_RDISTRIB,REAL_SUB_RDISTRIB] >>
      simp[] >> simp[REAL_SUB_LDISTRIB]) >>
   drule_then assume_tac $ cj 1 $ iffLR BIJ_DEF >>
-  rw[homeomorphism, TOPSPACE_SUBTOPOLOGY] (* 6 *)
+  rw[homeomorphism, TOPSPACE_SUBTOPOLOGY] (* 5 *)
   >- simp[BIJ_LINV_BIJ]
-  >- (drule_then strip_assume_tac BIJ_LINV_INV >> simp[]
-     )
-  >- (drule_then strip_assume_tac LINV_DEF >> simp[]
-     )
+  >- (drule_then strip_assume_tac BIJ_LINV_INV >> simp[])
+  >- (drule_then strip_assume_tac LINV_DEF >> simp[])
   >- (gs[OPEN_IN_SUBTOPOLOGY] >>
-      qexists_tac ‘PREIMAGE (LINV g (ival 0 1)) t’ >>
-      rw[PREIMAGE_INTER] >> cheat
-     )   
-  >> cheat                 
+      qexists_tac ‘IMAGE g (t ∩ ival 0 1)’ >>
+      reverse conj_tac
+      >- (ONCE_REWRITE_TAC [EQ_SYM_EQ] >> simp[INTER_SUBSET_EQN] >>
+          simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[INJ_DEF]) >>
+      rw[] >>
+      qabbrev_tac ‘tt = t ∩ ival 0 1’ >>
+      ‘open_in euclidean tt’ by (simp[Abbr‘tt’] >> irule OPEN_IN_INTER >>
+                                 simp[]) >>
+      ‘∃OIS. tt = BIGUNION {ival a b | OIS a b}’ by metis_tac[prop2_2_1] >>
+      ‘∀c d. c ∈ ival 0 1 ∧ d ∈ ival 0 1 ⇒
+             IMAGE g (ival c d) = ival (g c) (g d)’
+        by (rw[] >> simp[EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
+            rw[]
+            >- (gs[ival_def] >>
+                simp[Abbr‘g’, REAL_SUB_LDISTRIB,
+                     REAL_ARITH
+                       “a:real - x + x' < a - y + y' ⇔ x' - x < y' - y”] >>
+                simp[GSYM REAL_SUB_RDISTRIB]) >>
+            cheat) >>
+      cheat)
+  >> cheat
 QED
 
 val _ = export_theory();

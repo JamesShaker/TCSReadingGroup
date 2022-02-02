@@ -331,22 +331,19 @@ QED
 
 Definition homeomorphism:
   homeomorphism (s,t) (f,g) ⇔
-  BIJ f (topspace s) (topspace t) ∧
-  BIJ g (topspace t) (topspace s) ∧
-  (∀a. a ∈ topspace s ⇒ g (f a) = a) ∧
-  (∀b. b ∈ topspace t ⇒ f (g b) = b) ∧
-  (∀V. open_in t V ⇒ open_in s (PREIMAGE f V)) ∧
-  (∀U. open_in s U ⇒ open_in t (PREIMAGE g U))
+    BIJ f (topspace s) (topspace t) ∧
+    BIJ g (topspace t) (topspace s) ∧
+    (∀a. a ∈ topspace s ⇒ g (f a) = a) ∧
+    (∀b. b ∈ topspace t ⇒ f (g b) = b) ∧
+    (∀V. open_in t V ⇒ open_in s (IMAGE g V)) ∧
+    (∀U. open_in s U ⇒ open_in t (IMAGE f U))
 End
 
- 
 Theorem homeomorphism_SYM :
  homeomorphism (s,t) (f,g) ⇔ homeomorphism (t,s) (g,f)
 Proof
 simp[homeomorphism] >> metis_tac[]
 QED
-
-
 
 Theorem homeomorphism_BIJ0[local] :
  homeomorphism (s,t) (f,g) ⇒
@@ -354,21 +351,20 @@ Theorem homeomorphism_BIJ0[local] :
 Proof
   metis_tac[homeomorphism]
 QED
-  
- 
+
 Theorem homeomorphism_BIJ :
  homeomorphism (s,t) (f,g) ⇒
  BIJ f (topspace s) (topspace t) ∧
  BIJ g (topspace t) (topspace s)
 Proof
- metis_tac[homeomorphism_SYM,homeomorphism_BIJ0] 
+ metis_tac[homeomorphism_SYM,homeomorphism_BIJ0]
 QED
 
 Theorem homeomorphism_TRANS:
-homeomorphism (s,t) (f,g) ∧ homeomorphism (t,u) (h,j) ⇒
-homeomorphism (s,u) (h o f, g o j)
-Proof       
-  rw[homeomorphism, GSYM PREIMAGE_COMP]
+  homeomorphism (s,t) (f,g) ∧ homeomorphism (t,u) (h,j) ⇒
+  homeomorphism (s,u) (h o f, g o j)
+Proof
+  rw[homeomorphism, GSYM IMAGE_IMAGE]
   >- metis_tac[BIJ_COMPOSE]
   >- metis_tac[BIJ_COMPOSE]
   >- (‘f a ∈ topspace t’ suffices_by simp[] >>
@@ -378,11 +374,11 @@ Proof
 QED
 
 Theorem homeomorphism_REFL:
-homeomorphism (s,s) (I,I)
-Proof        
-rw[BIJ_DEF, SURJ_DEF, INJ_DEF, homeomorphism,PREIMAGE_I]
+  homeomorphism (s,s) (I,I)
+Proof
+  rw[BIJ_DEF, SURJ_DEF, INJ_DEF, homeomorphism]
 QED
 
-                           
+
 val _ = export_theory();
 
