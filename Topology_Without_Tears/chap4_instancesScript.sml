@@ -63,7 +63,7 @@ QED
 
 Theorem inverses_monotone:
   BIJ f s t ∧
-  (∀x y. x ∈ s ∧ y ∈ s ∧ x < y ⇒ f x < f y) ⇒
+  (∀x:real y. x ∈ s ∧ y ∈ s ∧ x < y ⇒ f x:real < f y) ⇒
   (∀u v. u ∈ t ∧ v ∈ t ∧ u < v ⇒ LINV f s u < LINV f s v)
 Proof
   rw[] >> CCONTR_TAC >>
@@ -83,7 +83,7 @@ Theorem example_4_2_4:
   ∃f g.  homeomorphism (subtopology euclidean (ival a b),
                         subtopology euclidean (ival c d)) (f,g)
 Proof
-  ‘∀a b. a < b ⇒
+   ‘∀a b. a < b ⇒
          ∃f g.homeomorphism(subtopology euclidean (ival a b),
                             subtopology euclidean (ival 0 1)) (f,g)’
     suffices_by
@@ -91,6 +91,12 @@ Proof
      metis_tac[homeomorphism_SYM,homeomorphism_TRANS]) >>
   rpt strip_tac >>
   qabbrev_tac ‘g = λx. a * (1 - x) + b * x’ >>
+  ‘∀x1 x2. x1 < x2 ⇒ g x1 < g x2’
+   by
+    (rpt strip_tac >>
+     rw[Abbr‘g’,REAL_SUB_LDISTRIB,
+        REAL_ARITH “x - y + z < x - y'+ z' ⇔ z - y < z' - y'”] >>
+     rw[GSYM REAL_SUB_RDISTRIB]) >>  
   qexistsl_tac [‘LINV g (ival 0 1)’,‘g’] >>
   ‘BIJ g (ival 0 1) (ival a b)’ by
     (simp[BIJ_DEF,Abbr‘g’,INJ_DEF,SURJ_DEF,ival_def] >> rw[] (* 6 *)
@@ -114,10 +120,13 @@ Proof
      REWRITE_TAC[REAL_RDISTRIB,REAL_SUB_RDISTRIB] >>
      simp[] >> simp[REAL_SUB_LDISTRIB]) >>
   drule_then assume_tac $ cj 1 $ iffLR BIJ_DEF >>
+  qabbrev_tac ‘g' = LINV g (ival 0 1)’ >>
+  ‘∀u v. u ∈ ival a b ∧ v ∈ ival a b ∧ u < v ⇒ g' u < g' v’
+  by metis_tac[inverses_monotone] >>
+  drule_then assume_tac LINV_DEF >> gs[] >>
+  drule_then assume_tac BIJ_LINV_INV >> gs[] >>
   rw[homeomorphism, TOPSPACE_SUBTOPOLOGY] (* 5 *)
-  >- simp[BIJ_LINV_BIJ]
-  >- (drule_then strip_assume_tac BIJ_LINV_INV >> simp[])
-  >- (drule_then strip_assume_tac LINV_DEF >> simp[])
+  >- simp[BIJ_LINV_BIJ,Abbr‘g'’]
   >- (gs[OPEN_IN_SUBTOPOLOGY] >>
       qexists_tac ‘IMAGE g (t ∩ ival 0 1)’ >>
       reverse conj_tac
@@ -137,7 +146,19 @@ Proof
                      REAL_ARITH
                        “a:real - x + x' < a - y + y' ⇔ x' - x < y' - y”] >>
                 simp[GSYM REAL_SUB_RDISTRIB]) >>
-            cheat) >>
+            qexists_tac ‘g' x’ >>
+            ‘x ∈ ival a b’
+            by (‘g c ∈ ival a b ∧ g d ∈ ival a b’ suffices_by
+                gs[ival_def] >> metis_tac[INJ_DEF]) >>
+            simp[] >>
+            ‘g c ∈ ival a b ∧ g d ∈ ival a b’ by metis_tac[INJ_DEF] >>
+            gs[ival_def] >> metis_tac[REAL_LT_TRANS]) >>
+            simp[IMAGE_BIGUNION,Abbr‘tt’] >> irule OPEN_IN_BIGUNION >>
+            simp[PULL_EXISTS] >>
+            ‘∀a b. OIS a b ⇒ a ∈ ival 0 1 ∧ b ∈ ival 0 1’
+             suffices_by metis_tac[ivals_open] >>
+            qpat_x_assum ‘t ∩ _ = _’ mp_tac >>
+            simp[PULL_EXISTS,Once EXTENSION] >> 
       cheat)
   >> cheat
 QED
