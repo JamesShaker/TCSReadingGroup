@@ -83,7 +83,7 @@ Theorem example_4_2_4:
   ∃f g.  homeomorphism (subtopology euclidean (ival a b),
                         subtopology euclidean (ival c d)) (f,g)
 Proof
-   ‘∀a b. a < b ⇒
+  ‘∀a b. a < b ⇒
          ∃f g.homeomorphism(subtopology euclidean (ival a b),
                             subtopology euclidean (ival 0 1)) (f,g)’
     suffices_by
@@ -96,7 +96,7 @@ Proof
     (rpt strip_tac >>
      rw[Abbr‘g’,REAL_SUB_LDISTRIB,
         REAL_ARITH “x - y + z < x - y'+ z' ⇔ z - y < z' - y'”] >>
-     rw[GSYM REAL_SUB_RDISTRIB]) >>  
+     rw[GSYM REAL_SUB_RDISTRIB]) >>
   qexistsl_tac [‘LINV g (ival 0 1)’,‘g’] >>
   ‘BIJ g (ival 0 1) (ival a b)’ by
     (simp[BIJ_DEF,Abbr‘g’,INJ_DEF,SURJ_DEF,ival_def] >> rw[] (* 6 *)
@@ -136,30 +136,55 @@ Proof
       qabbrev_tac ‘tt = t ∩ ival 0 1’ >>
       ‘open_in euclidean tt’ by (simp[Abbr‘tt’] >> irule OPEN_IN_INTER >>
                                  simp[]) >>
-      ‘∃OIS. tt = BIGUNION {ival a b | OIS a b}’ by metis_tac[prop2_2_1] >>
-      ‘∀c d. c ∈ ival 0 1 ∧ d ∈ ival 0 1 ⇒
+      ‘∃OIS. tt = BIGUNION {ival a b | OIS a b ∧ 0 ≤ a ∧ a < b ∧ b ≤ 1 }’
+          by (drule (iffLR prop2_2_1) >> rw[] >> qexists_tac `P` >> rw[] >>
+              simp[Once EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
+              reverse(rw[ival_def])
+              >- metis_tac[]
+              >> rename [`c < x`, `x < d`] >>
+              qexistsl_tac [`c`, `d`] >> simp[] >>
+              qpat_x_assum `_ = BIGUNION _` mp_tac >>
+              simp[Once EXTENSION, ival_def, PULL_EXISTS] >>
+              strip_tac >>
+              CCONTR_TAC >> gs[REAL_NOT_LE]
+              >- (first_x_assum (qspecl_then [`min 0 ((d+c)/2)`] (mp_tac o iffRL)) >>
+                  impl_tac
+                  >- (qexistsl_tac [`c`, `d`] >> rw[REAL_LT_MIN, REAL_MIN_LT])
+                  >> rw[REAL_LT_MIN])
+              >> first_x_assum (qspecl_then [`max 1 ((d+c)/2)`] (mp_tac o iffRL)) >>
+              impl_tac
+              >- (qexistsl_tac [`c`, `d`] >> rw[REAL_LT_MAX, REAL_MAX_LT])
+              >> rw[REAL_MAX_LT]) >>
+      ‘∀c d. 0 ≤ c ∧ c < d ∧ d ≤ 1 ⇒
              IMAGE g (ival c d) = ival (g c) (g d)’
-        by (rw[] >> simp[EXTENSION, PULL_EXISTS, EQ_IMP_THM] >>
-            rw[]
-            >- (gs[ival_def] >>
-                simp[Abbr‘g’, REAL_SUB_LDISTRIB,
-                     REAL_ARITH
-                       “a:real - x + x' < a - y + y' ⇔ x' - x < y' - y”] >>
-                simp[GSYM REAL_SUB_RDISTRIB]) >>
-            qexists_tac ‘g' x’ >>
-            ‘x ∈ ival a b’
-            by (‘g c ∈ ival a b ∧ g d ∈ ival a b’ suffices_by
-                gs[ival_def] >> metis_tac[INJ_DEF]) >>
-            simp[] >>
-            ‘g c ∈ ival a b ∧ g d ∈ ival a b’ by metis_tac[INJ_DEF] >>
+        by (rw[] >> simp[EXTENSION, PULL_EXISTS, EQ_IMP_THM] >> rw[]
+            >- gs[ival_def]
+            >> qexists_tac ‘g' x’ >>
+            ‘a ≤ g c ∧ g d ≤ b’
+                by (conj_tac
+                    >- (Cases_on `c = 0` >> rw[]
+                        >- rw[Abbr‘g’]
+                        >> `c ∈ ival 0 1` by simp[ival_def] >>
+                        `g c ∈ ival a b` by metis_tac[INJ_DEF] >>
+                        gs[ival_def])
+                    >> Cases_on `d = 1` >> rw[]
+                    >- rw[Abbr‘g’]
+                    >> `d ∈ ival 0 1` by simp[ival_def] >>
+                    `g d ∈ ival a b` by metis_tac[INJ_DEF] >>
+                    gs[ival_def]) >>
+            ‘x ∈ ival a b’ by gs[ival_def] >>
+            simp[ival_def] >>
+            (* should change assum6 to a <= u /\ v <= b ... *)
             gs[ival_def] >> metis_tac[REAL_LT_TRANS]) >>
-            simp[IMAGE_BIGUNION,Abbr‘tt’] >> irule OPEN_IN_BIGUNION >>
-            simp[PULL_EXISTS] >>
-            ‘∀a b. OIS a b ⇒ a ∈ ival 0 1 ∧ b ∈ ival 0 1’
-             suffices_by metis_tac[ivals_open] >>
-            qpat_x_assum ‘t ∩ _ = _’ mp_tac >>
-            simp[PULL_EXISTS,Once EXTENSION] >> 
-      cheat)
+      simp[IMAGE_BIGUNION,Abbr‘tt’] >> irule OPEN_IN_BIGUNION >>
+      simp[PULL_EXISTS] >>
+      ‘∀a b. OIS a b ∧ a < b ⇒ a ∈ ival 0 1 ∧ b ∈ ival 0 1’
+          suffices_by metis_tac[ivals_open] >>
+      qpat_x_assum ‘t ∩ _ = _’ mp_tac >>
+      simp[PULL_EXISTS,Once EXTENSION] >> rw[]
+      >- ()
+      >>
+      )
   >> cheat
 QED
 
