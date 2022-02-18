@@ -18,6 +18,17 @@ Definition ival_def:
   ival (r:real) s = { x | r < x ∧ x < s }
 End
 
+Theorem ival_subset[simp]:
+  ival a b ⊆ ival c d ⇔ c ≤ a ∧ b ≤ d ∨ b ≤ a
+Proof
+  simp[ival_def, SUBSET_DEF, EQ_IMP_THM] >> rpt strip_tac >>
+  Cases_on ‘a < b’ >> simp[] >> CCONTR_TAC >> gs[REAL_NOT_LE]
+  >- (first_x_assum $ qspec_then ‘min c ((a + b) / 2) ’ mp_tac >>
+      simp[REAL_LT_MIN, REAL_MIN_LT]) >>
+  first_x_assum $ qspec_then ‘max d ((a + b) / 2) ’ mp_tac >>
+  simp[REAL_LT_MAX, REAL_MAX_LT]
+QED
+
 Definition euclidean_def:
   euclidean = topology { s | ∀x. x ∈ s ⇒ ∃a b. x ∈ ival a b ∧ ival a b ⊆ s}
 End
@@ -53,7 +64,7 @@ QED
 Theorem ivals_open[simp]:
   open_in euclidean (ival r s)
 Proof
-  simp[open_in_euclidean] >> metis_tac[SUBSET_REFL]
+  simp[open_in_euclidean] >> metis_tac[REAL_LE_REFL]
 QED
 
 Theorem neginfr_open[simp]:
