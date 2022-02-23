@@ -379,6 +379,37 @@ Proof
   rw[BIJ_DEF, SURJ_DEF, INJ_DEF, homeomorphism]
 QED
 
+Theorem homeomorphism_same_domain:
+  homeomorphism (t1, t2) (f, g) ∧ (∀x. x ∈ topspace t1 ⇒ f' x = f x)  ⇒
+  homeomorphism (t1, t2) (f', g)
+Proof
+  rw[homeomorphism] 
+  >- (gs[BIJ_DEF, INJ_IFF, SURJ_DEF] >> simp[SF CONJ_ss])
+  >- gs[BIJ_DEF, INJ_IFF, SURJ_DEF] 
+  >- (‘IMAGE f' U = IMAGE f U’ suffices_by simp[] >>
+      irule IMAGE_CONG >> rw[] >> last_x_assum irule >>
+      metis_tac[OPEN_IN_SUBSET, SUBSET_DEF])
+QED
+        
+Theorem exercise4_2_6i:
+  let fs = {f | ∃g. homeomorphism (t, t) (f, g) ∧ ∀ x. x ∉ topspace t ⇒ f x = x} in
+    ∃e. e ∈ fs ∧ (∀f. f ∈ fs ⇒ f = f o e) ∧ 
+        (∀ f. f ∈ fs ⇒ ∃ g. g ∈ fs ∧ f o g = e) ∧
+        (∀f g. f ∈ fs ∧ g ∈ fs ⇒ f o g ∈ fs)
+Proof
+  rw[] >> qexists_tac ‘I’ >> rw[]
+  >- metis_tac[homeomorphism_REFL]
+  >- (qexists_tac ‘λx. if x ∈ topspace t then LINV f (topspace t) x else x’ >>
+      rw[]
+      >- (qexists_tac ‘f’ >>
+          dxrule_then assume_tac (iffLR homeomorphism_SYM) >> 
+          drule_then irule homeomorphism_same_domain >> rw[] >>
+          gs[homeomorphism, BIJ_DEF] >> metis_tac[LINV_DEF])
+      >- (rw[FUN_EQ_THM] >> rw[] >> gs[homeomorphism] >>
+          metis_tac[BIJ_LINV_INV])
+     )
+  >- (simp[] >> metis_tac[homeomorphism_TRANS])
+QED
 
 val _ = export_theory();
 
