@@ -411,5 +411,58 @@ Proof
   >- (simp[] >> metis_tac[homeomorphism_TRANS])
 QED
 
+        
+Theorem exercise_4_2_7i:
+ homeomorphism (t1,t2) (f,g) ∧
+ T0_space t1 ⇒ T0_space t2
+Proof 
+ rw[T0_space_def,homeomorphism] >>
+ ‘g a ∈ topspace t1 ∧ g b ∈ topspace t1 ∧ g a ≠ g b’
+ by metis_tac[INJ_DEF,BIJ_DEF] >>
+ first_x_assum $ drule_all_then strip_assume_tac
+ >- (* 2 *)
+ (qexists_tac ‘IMAGE f s’ >> simp[] >> disj1_tac >>
+  rw[] (* 2 *)
+  >- metis_tac[] >>
+  metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]) >>
+ qexists_tac ‘IMAGE f s’ >> simp[] >> disj2_tac >>
+ rw[] (* 2 *)
+ >- metis_tac[] >>
+ metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]
+QED
+
+Theorem T1_space_alt:
+ T1_space t ⇔
+ ∀a b. a ∈ topspace t ∧ b ∈ topspace t ∧
+       a ≠ b ⇒
+       ∃s1 s2. open_in t s1 ∧ open_in t s2 ∧
+               a ∈ s1 ∧ b ∉ s1 ∧ b ∈ s2 ∧ a ∉ s2
+Proof                
+ rw[T1_space_def,EQ_IMP_THM] (* 2 *)
+ >- (qexistsl_tac
+    [‘(topspace t) DIFF {b}’,‘(topspace t) DIFF {a}’] >>
+    simp[] >> gs[closed_in]) >>
+ simp[closed_in] >>
+ ‘∀y. y ≠ x ∧ y ∈ topspace t ⇒ ∃s. open_in t s ∧
+  y ∈ s ∧ x ∉ s’
+  by metis_tac[] >>
+ gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
+ rename [‘open_in t (c _)’,‘_ ∈ c _’] >> 
+ ‘(topspace t DIFF {x}) =
+  BIGUNION (IMAGE c (topspace t DIFF {x}))’
+  by (simp[Once EXTENSION,PULL_EXISTS] >>
+    metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]) >>
+ pop_assum SUBST1_TAC >>
+ irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[] 
+QED
+                     
+Theorem exercise_4_2_7ii:
+ homeomorphism (t1,t2) (f,g) ∧
+ T1_space t1 ⇒ T1_space t2
+Proof 
+ rw[T1_space_def]       
+        
+  
+         
 val _ = export_theory();
 
