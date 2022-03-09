@@ -455,14 +455,105 @@ Proof
  pop_assum SUBST1_TAC >>
  irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[] 
 QED
-                     
+
+Theorem homeomorphism_fun:
+    homeomorphism (s,t) (f,g) ⇒
+        (∀x. x ∈ topspace s ⇒ f x ∈ topspace t) ∧
+        (∀y. y ∈ topspace t ⇒ g y ∈ topspace s)
+Proof
+    rw[homeomorphism,BIJ_ALT,FUNSET]
+QED
+
+Theorem homeomorphism_closed_in:
+    homeomorphism (s,t) (f,g) ⇒
+        (∀U. closed_in s U ⇒ closed_in t (IMAGE f U)) ∧
+        (∀V. closed_in t V ⇒ closed_in s (IMAGE g V))
+Proof
+    rw[homeomorphism,closed_in]
+    >- (‘topspace t = IMAGE f (topspace s)’ by simp[BIJ_IMAGE] >>
+        pop_assum SUBST1_TAC >> simp[IMAGE_SUBSET])
+    >- (first_x_assum $ dxrule >> qmatch_abbrev_tac ‘_ _ s1 ⇒ _ _ s2’ >>
+        ‘s1 = s2’ suffices_by simp[] >> UNABBREV_ALL_TAC >>
+        rw[EXTENSION,IN_IMAGE] >> eq_tac >> rw[]
+        >- fs[BIJ_ALT,FUNSET]
+        >- (fs[BIJ_DEF,INJ_DEF] >> rename [‘f x = f y’] >>
+            CCONTR_TAC >> fs[] >> ‘x ∈ topspace s’ by fs[SUBSET_DEF] >>
+            qpat_x_assum ‘∀x y. _’ $ dxrule_all_then assume_tac >> fs[])
+        >- (qexists_tac ‘g x’ >> simp[] >> fs[BIJ_ALT,FUNSET]))
+    >- (‘topspace s = IMAGE g (topspace t)’ by simp[BIJ_IMAGE] >>
+        pop_assum SUBST1_TAC >> simp[IMAGE_SUBSET])
+    >- (first_x_assum $ dxrule >> qmatch_abbrev_tac ‘_ _ s1 ⇒ _ _ s2’ >>
+        ‘s1 = s2’ suffices_by simp[] >> UNABBREV_ALL_TAC >>
+        rw[EXTENSION,IN_IMAGE] >> eq_tac >> rw[]
+        >- fs[BIJ_ALT,FUNSET]
+        >- (fs[BIJ_DEF,INJ_DEF] >> rename [‘g x = g y’] >>
+            CCONTR_TAC >> fs[] >> ‘x ∈ topspace t’ by fs[SUBSET_DEF] >>
+            qpat_x_assum ‘∀x y. _’ $ dxrule_all_then assume_tac >> fs[])
+        >- (qexists_tac ‘f x’ >> simp[] >> fs[BIJ_ALT,FUNSET]))
+QED
+
 Theorem exercise_4_2_7ii:
- homeomorphism (t1,t2) (f,g) ∧
- T1_space t1 ⇒ T1_space t2
+    homeomorphism (s,t) (f,g) ∧ T1_space s ⇒ T1_space t
 Proof 
- rw[T1_space_def]       
-        
-  
-         
+    rw[T1_space_def] >>
+    ‘g x ∈ topspace s’ by fs[homeomorphism,BIJ_ALT,FUNSET] >>
+    first_x_assum $ dxrule_then assume_tac >>
+    drule_all $ cj 1 homeomorphism_closed_in >>
+    gs[homeomorphism]
+QED
+
+Theorem in_open_in_topspace:
+    x ∈ U ∧ open_in s U ⇒ x ∈ topspace s
+Proof
+    rw[topspace] >> qexists_tac ‘U’ >> simp[]
+QED
+
+Theorem exercise_4_2_7iii:
+    homeomorphism (s,t) (f,g) ∧ T2_space s ⇒ T2_space t
+Proof 
+    rw[T2_space_def] >>
+    ‘g a ∈ topspace s ∧ g b ∈ topspace s’ by fs[homeomorphism,BIJ_ALT,FUNSET] >>
+    ‘g a ≠ g b’ by (fs[homeomorphism,BIJ_DEF,INJ_DEF] >> CCONTR_TAC >>
+        ‘g a = g b’ by fs[] >>
+        qpat_x_assum ‘∀x y. _’ $ dxrule_all_then assume_tac >> fs[]) >>
+    first_x_assum $ dxrule_all_then assume_tac >> fs[] >>
+    qexistsl_tac [‘IMAGE f A’,‘IMAGE f B’] >>
+    NTAC 2 $ irule_at Any $ cj 6 $ iffLR homeomorphism >>
+    qexistsl_tac [‘s’,‘s’,‘g’,‘g’] >> simp[Excl "IN_IMAGE"] >>
+    NTAC 2 (dxrule_then assume_tac IMAGE_IN >>
+    pop_assum $ qspec_then ‘f’ mp_tac) >>
+    simp[iffLR homeomorphism,SF SFY_ss,Excl "IN_IMAGE"] >>
+    NTAC 2 $ DISCH_THEN kall_tac >>
+    pop_assum mp_tac >> CONV_TAC CONTRAPOS_CONV >> rw[GSYM MEMBER_NOT_EMPTY] >>
+    rename [‘f x = f y’] >> qexists_tac ‘x’ >>
+    ‘x = y’ suffices_by simp[] >> fs[homeomorphism,BIJ_DEF,INJ_DEF] >>
+    first_x_assum irule >> simp[in_open_in_topspace,SF SFY_ss]
+QED
+
+(* second_countable_def *)
+Theorem exercise_4_2_7iv:
+    homeomorphism (τ₁,τ₂) (f,g) ∧ second_countable τ₁ ⇒ second_countable τ₂
+Proof
+    rw[second_countable_def] >>
+    qexists_tac ‘IMAGE (IMAGE f) B’ >>
+    simp[image_countable] >> gs[basis_def,PULL_EXISTS] >>
+    conj_tac >- fs[homeomorphism] >> rw[] >>
+    ‘open_in τ₁ (IMAGE g s)’ by fs[homeomorphism] >>
+    first_x_assum $ dxrule_then strip_assume_tac >>
+    qexists_tac ‘IMAGE (IMAGE f) u’ >> simp[IMAGE_SUBSET] >>
+    pop_assum (mp_tac o Q.AP_TERM ‘IMAGE f’) >>
+    simp[IMAGE_BIGUNION,IMAGE_IMAGE] >>
+    DISCH_THEN $ SUBST1_TAC o SYM >> rw[EXTENSION] >>
+    gs[homeomorphism,in_open_in_topspace,SF CONJ_ss,SF SFY_ss]
+QED
+
+(*
+separable_def
+dense_def
+closure_def
+limpt
+neigh
+*)
+
 val _ = export_theory();
 
