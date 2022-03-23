@@ -383,17 +383,17 @@ Theorem homeomorphism_same_domain:
   homeomorphism (t1, t2) (f, g) ∧ (∀x. x ∈ topspace t1 ⇒ f' x = f x)  ⇒
   homeomorphism (t1, t2) (f', g)
 Proof
-  rw[homeomorphism] 
+  rw[homeomorphism]
   >- (gs[BIJ_DEF, INJ_IFF, SURJ_DEF] >> simp[SF CONJ_ss])
-  >- gs[BIJ_DEF, INJ_IFF, SURJ_DEF] 
+  >- gs[BIJ_DEF, INJ_IFF, SURJ_DEF]
   >- (‘IMAGE f' U = IMAGE f U’ suffices_by simp[] >>
       irule IMAGE_CONG >> rw[] >> last_x_assum irule >>
       metis_tac[OPEN_IN_SUBSET, SUBSET_DEF])
 QED
-        
+
 Theorem exercise4_2_6i:
   let fs = {f | ∃g. homeomorphism (t, t) (f, g) ∧ ∀ x. x ∉ topspace t ⇒ f x = x} in
-    ∃e. e ∈ fs ∧ (∀f. f ∈ fs ⇒ f = f o e) ∧ 
+    ∃e. e ∈ fs ∧ (∀f. f ∈ fs ⇒ f = f o e) ∧
         (∀ f. f ∈ fs ⇒ ∃ g. g ∈ fs ∧ f o g = e) ∧
         (∀f g. f ∈ fs ∧ g ∈ fs ⇒ f o g ∈ fs)
 Proof
@@ -402,7 +402,7 @@ Proof
   >- (qexists_tac ‘λx. if x ∈ topspace t then LINV f (topspace t) x else x’ >>
       rw[]
       >- (qexists_tac ‘f’ >>
-          dxrule_then assume_tac (iffLR homeomorphism_SYM) >> 
+          dxrule_then assume_tac (iffLR homeomorphism_SYM) >>
           drule_then irule homeomorphism_same_domain >> rw[] >>
           gs[homeomorphism, BIJ_DEF] >> metis_tac[LINV_DEF])
       >- (rw[FUN_EQ_THM] >> rw[] >> gs[homeomorphism] >>
@@ -411,11 +411,11 @@ Proof
   >- (simp[] >> metis_tac[homeomorphism_TRANS])
 QED
 
-        
+
 Theorem exercise_4_2_7i:
  homeomorphism (t1,t2) (f,g) ∧
  T0_space t1 ⇒ T0_space t2
-Proof 
+Proof
  rw[T0_space_def,homeomorphism] >>
  ‘g a ∈ topspace t1 ∧ g b ∈ topspace t1 ∧ g a ≠ g b’
  by metis_tac[INJ_DEF,BIJ_DEF] >>
@@ -437,7 +437,7 @@ Theorem T1_space_alt:
        a ≠ b ⇒
        ∃s1 s2. open_in t s1 ∧ open_in t s2 ∧
                a ∈ s1 ∧ b ∉ s1 ∧ b ∈ s2 ∧ a ∉ s2
-Proof                
+Proof
  rw[T1_space_def,EQ_IMP_THM] (* 2 *)
  >- (qexistsl_tac
     [‘(topspace t) DIFF {b}’,‘(topspace t) DIFF {a}’] >>
@@ -447,13 +447,13 @@ Proof
   y ∈ s ∧ x ∉ s’
   by metis_tac[] >>
  gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
- rename [‘open_in t (c _)’,‘_ ∈ c _’] >> 
+ rename [‘open_in t (c _)’,‘_ ∈ c _’] >>
  ‘(topspace t DIFF {x}) =
   BIGUNION (IMAGE c (topspace t DIFF {x}))’
   by (simp[Once EXTENSION,PULL_EXISTS] >>
     metis_tac[OPEN_IN_SUBSET,SUBSET_DEF]) >>
  pop_assum SUBST1_TAC >>
- irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[] 
+ irule OPEN_IN_BIGUNION >> simp[] >> metis_tac[]
 QED
 
 Theorem homeomorphism_fun:
@@ -494,7 +494,7 @@ QED
 
 Theorem exercise_4_2_7ii:
     homeomorphism (s,t) (f,g) ∧ T1_space s ⇒ T1_space t
-Proof 
+Proof
     rw[T1_space_def] >>
     ‘g x ∈ topspace s’ by fs[homeomorphism,BIJ_ALT,FUNSET] >>
     first_x_assum $ dxrule_then assume_tac >>
@@ -510,7 +510,7 @@ QED
 
 Theorem exercise_4_2_7iii:
     homeomorphism (s,t) (f,g) ∧ T2_space s ⇒ T2_space t
-Proof 
+Proof
     rw[T2_space_def] >>
     ‘g a ∈ topspace s ∧ g b ∈ topspace s’ by fs[homeomorphism,BIJ_ALT,FUNSET] >>
     ‘g a ≠ g b’ by (fs[homeomorphism,BIJ_DEF,INJ_DEF] >> CCONTR_TAC >>
@@ -554,6 +554,73 @@ closure_def
 limpt
 neigh
 *)
+
+Theorem homeomorphism_INJ:
+  homeomorphism (τ₁,τ₂) (f,g) ⇒
+  (∀a b.
+    a ∈ topspace τ₁ ∧ b ∈ topspace τ₁ ⇒
+    (f a = f b ⇔ a = b)) ∧
+  (∀a b.
+    a ∈ topspace τ₂ ∧ b ∈ topspace τ₂ ⇒
+    (g a = g b ⇔ a = b))
+Proof
+  rw[] >> metis_tac[homeomorphism, BIJ_DEF, INJ_DEF]
+QED
+
+Theorem homeomorphism_limpt:
+  homeomorphism (τ₁,τ₂) (f,g) ∧ limpt τ₁ a A ⇒
+  limpt τ₂ (f a) (IMAGE f A)
+Proof
+  rw[limpt_thm]
+  >- (drule homeomorphism_fun >> rw[])
+  >> rw[PULL_EXISTS] >>
+  `open_in τ₁ (IMAGE g U)` by metis_tac[homeomorphism] >>
+  first_x_assum drule >> rw[PULL_EXISTS] >>
+  `a = g (f a)` by metis_tac[homeomorphism] >>
+  first_x_assum drule >> rw[] >>
+  rename1 `g b ≠ g (f a)` >>
+  qexists_tac `g b` >> rw[]
+  >- metis_tac[OPEN_IN_SUBSET, homeomorphism, SUBSET_DEF]
+  >> qpat_x_assum `a = g (_ _)` (ASSUME_TAC o GSYM) >>
+  gs[] >>
+  `g b ∈ topspace τ₁`
+    suffices_by metis_tac[homeomorphism_INJ] >>
+  metis_tac[homeomorphism_fun, SUBSET_DEF, OPEN_IN_SUBSET]
+QED
+
+Theorem homeomorphism_closure:
+  homeomorphism (τ₁,τ₂) (f,g) ∧ A ⊆ topspace τ₁ ⇒
+  closure τ₂ (IMAGE f A) = IMAGE f (closure τ₁ A)
+Proof
+  rw[closure_def, EXTENSION] >> eq_tac >> rw[]
+  >- metis_tac[]
+  >- (dxrule $ iffLR homeomorphism_SYM >> rw[] >>
+      drule homeomorphism_limpt >> rw[] >>
+      first_x_assum drule >> rw[] >>
+      qexists_tac `g x` >> rw[]
+      >- metis_tac[homeomorphism, limpt_thm]
+      >> `IMAGE g (IMAGE f A) = A`
+            suffices_by metis_tac[] >>
+      rw[EXTENSION, PULL_EXISTS] >>
+      metis_tac[homeomorphism, SUBSET_DEF])
+  >- metis_tac[]
+  >> metis_tac[homeomorphism_limpt]
+QED
+
+Theorem exercise_4_2_7v:
+  homeomorphism (τ₁,τ₂) (f,g) ∧ separable τ₁ ⇒
+  separable τ₂
+Proof
+  rw[separable_def] >>
+  qexists_tac `IMAGE f A` >> rw[]
+  >- (drule homeomorphism_fun >> rw[] >>
+      gs[SUBSET_DEF, PULL_EXISTS])
+  >- (fs[dense_def] >>
+      drule_all homeomorphism_closure >> rw[] >>
+      rw[EXTENSION] >>
+      metis_tac[homeomorphism_fun, homeomorphism])
+  >> metis_tac[cardinalTheory.COUNTABLE_IMAGE]
+QED
 
 val _ = export_theory();
 
