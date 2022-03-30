@@ -1,7 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory topologyTheory
-open chap2Theory chap4Theory chap3Theory chap3_instancesTheory
+open chap1Theory chap2Theory chap4Theory chap3Theory chap3_instancesTheory
 open realTheory RealArith;
 val _ = new_theory "chap4_instances";
 
@@ -304,6 +304,41 @@ Proof
   irule_at Any (INST_TYPE [beta |-> “:real”] homeomorphism_TRANS) >>
   irule_at Any example_4_2_5 >>
   metis_tac[example_4_2_4, REAL_ARITH “-1r < 1”]
+QED
+
+Theorem example_4_3_1:
+  ¬homeomorphism (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
+                  subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1}∪{x | 2 ≤ x ∧ x ≤ 3}))
+  (f, g)
+
+Proof
+  qmatch_abbrev_tac ‘¬homeomorphism (top1, top2) _’ \\
+  CCONTR_TAC \\
+  gs[] \\
+  ‘closed_in top2 {x | 0 ≤ x ∧ x ≤ 1}’
+    by (simp[CLOSED_IN_SUBTOPOLOGY, Abbr ‘top2’] \\
+        qexists_tac ‘{x | 0 ≤ x ∧ x ≤ 1}’ \\
+        simp[INTER_UNION]) \\
+  ‘open_in top2 {x | 0 ≤ x ∧ x ≤ 1}’
+    by (simp[OPEN_IN_SUBTOPOLOGY, Abbr ‘top2’] \\
+        qexists_tac ‘ival (-1) (3/2)’ \\
+        simp[] \\
+        simp[EXTENSION, ival_def]) \\
+  ‘¬ connected top2’
+    by (simp[connected_def] \\
+        qexists_tac ‘{x | 0 ≤ x ∧ x ≤ 1}’ \\
+        simp[clopen_def] \\
+        conj_tac
+        >- (simp[TOPSPACE_SUBTOPOLOGY, Abbr ‘top2’, EXTENSION] \\
+            qexists_tac ‘2’ \\
+            simp[])
+        >- (simp[EXTENSION] \\
+            qexists_tac ‘0’ \\
+            simp[])
+       ) \\
+  ‘¬ connected top1’
+    by (cheat) \\
+  cheat
 QED
 
 val _ = export_theory();
