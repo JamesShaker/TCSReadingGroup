@@ -622,7 +622,5 @@ Proof
   >> metis_tac[cardinalTheory.COUNTABLE_IMAGE]
 QED
 
-
-
 val _ = export_theory();
 
