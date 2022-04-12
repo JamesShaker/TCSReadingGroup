@@ -530,7 +530,6 @@ Proof
     first_x_assum irule >> simp[in_open_in_topspace,SF SFY_ss]
 QED
 
-(* second_countable_def *)
 Theorem exercise_4_2_7iv:
     homeomorphism (τ₁,τ₂) (f,g) ∧ second_countable τ₁ ⇒ second_countable τ₂
 Proof
@@ -546,14 +545,6 @@ Proof
     DISCH_THEN $ SUBST1_TAC o SYM >> rw[EXTENSION] >>
     gs[homeomorphism,in_open_in_topspace,SF CONJ_ss,SF SFY_ss]
 QED
-
-(*
-separable_def
-dense_def
-closure_def
-limpt
-neigh
-*)
 
 Theorem homeomorphism_INJ:
   homeomorphism (τ₁,τ₂) (f,g) ⇒
@@ -620,6 +611,36 @@ Proof
       rw[EXTENSION] >>
       metis_tac[homeomorphism_fun, homeomorphism])
   >> metis_tac[cardinalTheory.COUNTABLE_IMAGE]
+QED
+
+Theorem homeomorphism_clopen:
+    homeomorphism (s,t) (f,g) ⇒
+        (∀U. clopen s U ⇒ clopen t (IMAGE f U)) ∧
+        (∀V. clopen t V ⇒ clopen s (IMAGE g V))
+Proof
+    strip_tac >> simp[clopen_def,iffLR homeomorphism,homeomorphism_closed_in,SF SFY_ss]
+QED
+
+Theorem homeomorphism_IMAGE_IMAGE:
+    homeomorphism (s,t) (f,g) ⇒
+        (∀U. U ⊆ topspace s ⇒ IMAGE g (IMAGE f U) = U) ∧
+        (∀V. V ⊆ topspace t ⇒ IMAGE f (IMAGE g V) = V)
+Proof
+    simp[SUBSET_DEF,EXTENSION,PULL_EXISTS] >> metis_tac[homeomorphism]
+QED
+
+Theorem homeomorphism_connected:
+    homeomorphism (τ₁,τ₂) (f,g) ∧ connected τ₁ ⇒ connected τ₂
+Proof
+    rw[connected_def] >> eq_tac >> rw[]
+    >- (‘s ⊆ topspace τ₂’ by fs[clopen_def,OPEN_IN_SUBSET] >>
+        drule_all_then assume_tac $ cj 2 homeomorphism_clopen >>
+        first_x_assum $ dxrule_then assume_tac o iffLR >> fs[] >>
+        first_x_assum $ mp_tac o Q.AP_TERM ‘IMAGE f’ >>
+        simp[homeomorphism_IMAGE_IMAGE,SF SFY_ss] >>
+        DISCH_THEN kall_tac >> fs[homeomorphism,BIJ_IMAGE])
+    >| [‘clopen τ₁ (topspace τ₁)’ by simp[clopen_def],‘clopen τ₁ ∅’ by simp[clopen_def]] >>
+    drule_all_then assume_tac $ cj 1 homeomorphism_clopen >> fs[homeomorphism,BIJ_IMAGE]
 QED
 
 val _ = export_theory();
