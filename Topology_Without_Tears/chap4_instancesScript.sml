@@ -306,6 +306,55 @@ Proof
   metis_tac[example_4_2_4, REAL_ARITH “-1r < 1”]
 QED
 
+Theorem COUNTABLE_LEMMA:
+    countable s ⇔ ∃f (t: num set). BIJ f t s
+Proof
+    simp[countable_def] >> reverse eq_tac >> rw[]
+    >- metis_tac[BIJ_SYM,BIJ_DEF,INJ_SUBSET,SUBSET_REFL,SUBSET_UNIV] >>
+    ‘∃f (t: num set). BIJ f s t’ suffices_by metis_tac[BIJ_SYM] >>
+    qexistsl_tac [‘f’,‘IMAGE f s’] >> metis_tac[INJ_IMAGE_BIJ]
+QED
+
+Theorem INJ_real_of_num:
+    INJ real_of_num s UNIV
+Proof
+    simp[INJ_DEF]
+QED
+
+(*
+discrete_topology_def
+openSets_discrete
+homeomorphism
+subtopology
+
+countable_surj
+COUNTABLE_ALT_BIJ
+COUNTABLE_ALT
+
+LINV_DEF
+*)
+Theorem exercise_4_2_8:
+    (∃f g B. homeomorphism (discrete_topology A,subtopology euclidean B) (f,g)) ⇔ countable A
+Proof
+    Cases_on ‘countable A’ >> simp[]
+    >- (gs[COUNTABLE_LEMMA] >>
+        ‘homeomorphism (discrete_topology A,discrete_topology t) (LINV f t,f)’ by (
+            drule_then strip_assume_tac $ iffLR BIJ_DEF >>
+            simp[homeomorphism,BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss] >>
+            metis_tac[INJ_DEF,SURJ_DEF,LINV_DEF]) >>
+        ‘∃g h. homeomorphism (discrete_topology t,subtopology euclidean (IMAGE real_of_num t)) (g,h)’
+            suffices_by metis_tac[homeomorphism_TRANS] >>
+        qexistsl_tac [‘real_of_num’,‘LINV real_of_num t’] >>
+        cheat
+        (*
+        simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
+            BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss]
+        *)
+    )
+    >- (cheat
+    )
+QED
+
 Theorem example_4_3_1:
   ¬homeomorphism (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
                   subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1}∪{x | 2 ≤ x ∧ x ≤ 3}))
