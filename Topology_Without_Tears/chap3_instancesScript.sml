@@ -8,9 +8,9 @@ val _ = new_theory "chap3_instances";
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
 
 Theorem example3_1_12:
-  closure euclidean {r| rational r} = UNIV
+  closure euclidean rational = UNIV
 Proof
- qabbrev_tac ‘Qbar = closure euclidean {r | rational r}’ >>
+ qabbrev_tac ‘Qbar = closure euclidean rational’ >>
  CCONTR_TAC >> gs[EXTENSION] >>
  ‘closedSets euclidean Qbar’
    by simp[remark_3_1_10_i,Abbr‘Qbar’] >>
@@ -21,7 +21,7 @@ Proof
  gs[ival_def,SUBSET_DEF] >>
  ‘∃q. rational q ∧ a < q ∧ q < b’ by gs[rationals_dense] >>
  ‘q ∉ Qbar’ by simp[] >>
- gs[Abbr‘Qbar’,closure_def]
+ gs[Abbr‘Qbar’,closure_def,IN_DEF]
 QED
 
 Theorem exercise_3_2_2ii:
@@ -149,6 +149,20 @@ Theorem connected_euclidean[simp]:
 Proof
   metis_tac[connected_def, prop_3_3_3, topspace_euclidean]
 QED
- 
+
+Theorem dense_rational:
+    dense euclidean rational
+Proof
+    simp[dense_def,example3_1_12]
+QED
+
+Theorem separable_euclidean[simp]:
+    separable euclidean
+Proof
+    simp[separable_def] >>
+    qexists_tac ‘rational’ >>
+    simp[countable_rational,dense_rational]
+QED
+
 val _ = export_theory();
 

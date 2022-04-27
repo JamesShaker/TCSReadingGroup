@@ -332,6 +332,17 @@ COUNTABLE_ALT_BIJ
 COUNTABLE_ALT
 
 LINV_DEF
+ival_def
+
+separable_def
+exercise_3_2_4_vi
+exercise_4_2_7v
+separable_euclidean
+separability of subspaces
+
+exercise_4_1_14
+exercise_2_2_4_i
+exercise_2_2_4_ii
 *)
 Theorem exercise_4_2_8:
     (∃f g B. homeomorphism (discrete_topology A,subtopology euclidean B) (f,g)) ⇔ countable A
@@ -345,12 +356,16 @@ Proof
         ‘∃g h. homeomorphism (discrete_topology t,subtopology euclidean (IMAGE real_of_num t)) (g,h)’
             suffices_by metis_tac[homeomorphism_TRANS] >>
         qexistsl_tac [‘real_of_num’,‘LINV real_of_num t’] >>
-        cheat
-        (*
         simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
-            BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss]
-        *)
-    )
+            BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss] >>
+        ‘INJ $& t UNIV’ by simp[INJ_DEF] >> drule_then assume_tac LINV_DEF >> rw[] >>
+        simp[BIJ_LINV_BIJ,INJ_IMAGE_BIJ,SF SFY_ss] >>
+        qexists_tac ‘BIGUNION {ival (&x - 1) (&x + 1) | x ∈ U}’ >>
+        simp[PULL_EXISTS,OPEN_IN_BIGUNION] >> rw[Once EXTENSION,PULL_EXISTS] >>
+        simp[ival_def,EQ_IMP_THM] >> rw[]
+        >- (rename [‘x ∈ U’] >> qexists_tac ‘x’ >> simp[])
+        >- (rename [‘&a < &(b + 1)’] >> gs[REAL_SUB] >> Cases_on ‘b ≤ 1’ >> gs[] >>
+            ‘a = b’ by simp[] >> simp[]))
     >- (cheat
     )
 QED
@@ -359,7 +374,6 @@ Theorem example_4_3_1:
   ¬homeomorphism (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
                   subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1}∪{x | 2 ≤ x ∧ x ≤ 3}))
   (f, g)
-
 Proof
   qmatch_abbrev_tac ‘¬homeomorphism (top1, top2) _’ \\
   CCONTR_TAC \\
