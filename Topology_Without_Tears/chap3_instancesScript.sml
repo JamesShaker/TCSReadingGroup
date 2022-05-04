@@ -2,8 +2,8 @@ open HolKernel Parse boolLib bossLib;
 open pred_setTheory topologyTheory;
 open realTheory chap1Theory chap3Theory chap2_instancesTheory;
 
-     
-     
+
+
 val _ = new_theory "chap3_instances";
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
 
@@ -77,19 +77,19 @@ Proof
   irule realTheory.REAL_LET_TRANS >> qexists_tac ‘sup A’ >> rw[] >>
   irule realTheory.REAL_SUP_UBOUND >> metis_tac[]
 QED
-        
+
 Theorem open_in_euclidean_UNIV[simp]:
         open_in euclidean UNIV
 Proof
 rw[open_in_euclidean] >>
 qexistsl_tac [‘x - 1’,‘x + 1’] >> simp[ival_def]
 QED
-        
+
 Theorem prop_3_3_3:
   ∀t. clopen euclidean t ⇔ t = {} ∨ t = UNIV
 Proof
   simp[clopen_def,EQ_IMP_THM,OPEN_IN_EMPTY,CLOSED_IN_EMPTY,
-       closed_in,DISJ_IMP_THM] >> 
+       closed_in,DISJ_IMP_THM] >>
   rpt strip_tac >> CCONTR_TAC >> gs[] >>
   fs[GSYM MEMBER_NOT_EMPTY] >>
   ‘∃z. z IN (UNIV DIFF t)’
@@ -107,7 +107,7 @@ Proof
     by simp[Abbr‘s’] >>
   ‘s ≠ {}’ by (simp[GSYM MEMBER_NOT_EMPTY,Abbr‘s’] >>
                qexists_tac ‘x’ >> simp[]) >>
-  ‘sup s ∈ s’  
+  ‘sup s ∈ s’
     by metis_tac[lemma_3_3_2] >>
   ‘∀r. r ∈ s ⇒ r ≤ z’
     by simp[Abbr‘s’] >>
@@ -165,4 +165,3 @@ Proof
 QED
 
 val _ = export_theory();
-

@@ -176,8 +176,9 @@ QED
 Theorem rational_ADD_I:
 rational a ∧ rational b ⇒ rational (a + b)
 Proof
-  rw[rational_def] >> simp[REAL_ADD_RAT,GSYM real_of_int_mul,Excl "real_of_int_mul",
-                          GSYM real_of_int_add,Excl "real_of_int_add"] >>
+  rw[rational_def] >>
+  simp[REAL_ADD_RAT,GSYM real_of_int_mul,Excl "real_of_int_mul",
+       GSYM real_of_int_add,Excl "real_of_int_add"] >>
   irule_at Any EQ_REFL >> simp[]
 QED
 
@@ -186,7 +187,8 @@ rational (- a) ⇔ rational a
 Proof
   ‘∀a. rational a ⇒ rational (- a)’
     suffices_by metis_tac[REAL_NEG_NEG] >>
-  rw[rational_def] >> simp[neg_rat,GSYM real_of_int_neg,Excl "real_of_int_neg"]  >>
+  rw[rational_def] >>
+  simp[neg_rat,GSYM real_of_int_neg,Excl "real_of_int_neg"]  >>
   metis_tac[]
 QED
 
@@ -527,18 +529,22 @@ Proof
       >> gvs[] >>
       rename [‘real_of_int a - 1 / 2 < real_of_int b’] >>
       ‘a = b’ suffices_by (strip_tac >> gvs[]) >>
-      ‘2 * real_of_int a - 1 < 2 * real_of_int b ∧ 2 * real_of_int b < 2 * real_of_int a + 1’
+      ‘2 * real_of_int a - 1 < 2 * real_of_int b ∧
+       2 * real_of_int b < 2 * real_of_int a + 1’
         by
         (strip_tac >> rev_drule REAL_LT_LMUL_IMP >> strip_tac >>
          first_x_assum $ qspec_then ‘2’ mp_tac >> strip_tac >>
          ‘0r < 2r’ by simp[] >> first_x_assum drule >> strip_tac
-         >- (‘2 * (real_of_int a − 1 / 2) = 2 * real_of_int a − 1’ suffices_by metis_tac[] >>
+         >- (‘2 * (real_of_int a − 1 / 2) = 2 * real_of_int a − 1’
+               suffices_by metis_tac[] >>
              simp[REAL_SUB_LDISTRIB])
-         >- (‘2 * real_of_int b < 2 * (real_of_int a + 1 / 2)’  by simp[REAL_LT_LMUL_IMP] >>
-             ‘2 * (real_of_int a + 1 / 2) = 2 * real_of_int a + 1’ suffices_by metis_tac[] >>
+         >- (‘2 * real_of_int b < 2 * (real_of_int a + 1 / 2)’
+               by simp[REAL_LT_LMUL_IMP] >>
+             ‘2 * (real_of_int a + 1 / 2) = 2 * real_of_int a + 1’
+               suffices_by metis_tac[] >>
              simp[REAL_ADD_LDISTRIB])) >>
-      gs[real_of_int_Nmul, Excl "real_of_int_mul", real_of_int_addN, Excl "real_of_int_add",
-         real_of_int_subN, Excl "real_of_int_sub"]>>
+      gs[real_of_int_Nmul, Excl "real_of_int_mul", real_of_int_addN,
+         Excl "real_of_int_add", real_of_int_subN, Excl "real_of_int_sub"]>>
       intLib.ARITH_TAC) >>
   drule ival_without_int >> strip_tac >>
   qexistsl_tac [‘a’,‘b’] >> gvs[SUBSET_DEF] >>
@@ -623,7 +629,8 @@ Theorem open_rectangle_topology_exists:
   ∃t. topspace t = UNIV ∧ basis open_rectangles t
 Proof
   simp[prop_2_2_8] >> rw[] (* 2 *)
-  >- (simp[Once EXTENSION, open_rectangles, PULL_EXISTS, open_rectangle, FORALL_PROD] >>
+  >- (simp[Once EXTENSION, open_rectangles, PULL_EXISTS, open_rectangle,
+           FORALL_PROD] >>
       qx_genl_tac [`x`, `y`] >> qexistsl_tac [`x-1`, `x+1`, `y-1`, `y+1`] >>
       simp[])
   >> Cases_on `b1 ∩ b2 = ∅` (* 2 *)
@@ -639,9 +646,11 @@ Proof
   >- (`j < d`
         by (CCONTR_TAC >> gs[REAL_NOT_LT] >> qpat_x_assum `_ ∩ _ ≠ _` mp_tac >>
             simp[EXTENSION, open_rectangle, FORALL_PROD]) >>
-      qexists_tac `{open_rectangle h (min b i) j (min d k)}` >> simp[] >> conj_tac
+      qexists_tac `{open_rectangle h (min b i) j (min d k)}` >> simp[] >>
+      conj_tac
       >- (irule_at Any EQ_REFL >> simp[REAL_LT_MIN])
-      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >> qx_genl_tac [`x`, `y`] >>
+      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >>
+      qx_genl_tac [`x`, `y`] >>
       simp[EQ_IMP_THM, REAL_LT_MIN])
   >> gs[REAL_NOT_LE] >>
   `c < k`
@@ -649,8 +658,8 @@ Proof
             simp[EXTENSION, open_rectangle, FORALL_PROD]) >>
   qexists_tac `{open_rectangle h (min b i) c (min d k)}` >> simp[] >> conj_tac
       >- (irule_at Any EQ_REFL >> simp[REAL_LT_MIN])
-      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >> qx_genl_tac [`x`, `y`] >>
-      simp[EQ_IMP_THM, REAL_LT_MIN]
+      >> simp[open_rectangle, EXTENSION, FORALL_PROD] >>
+  qx_genl_tac [`x`, `y`] >> simp[EQ_IMP_THM, REAL_LT_MIN]
 QED
 
 Theorem negx_squared[simp]:
@@ -753,8 +762,9 @@ Proof
   simp[R_includes_centre]
 QED
 
-val euclidean_2_def =
-    new_specification ("euclidean_2_def", ["euclidean_2"], open_rectangle_topology_exists)
+val euclidean_2_def = new_specification (
+  "euclidean_2_def", ["euclidean_2"],
+  open_rectangle_topology_exists);
 
 Theorem open_rectangle_open =
             euclidean_2_def |> cj 2 |> ONCE_REWRITE_RULE [basis_def] |> cj 1 |>
@@ -913,7 +923,10 @@ QED
 
 
 (*
-Let B be the collection of all half-open intervals of the form (a, b], a < b, where (a, b] = {x : x ∈ R, a < x 􏰄 b}. Then B is a basis for a topology on R, since R is the union of all members of B and the intersection of any two half-open intervals is a half-open interval.
+Let B be the collection of all half-open intervals of the form (a, b], a < b,
+where (a, b] = {x : x ∈ R, a < x ≤ b}. Then B is a basis for a topology on R,
+since R is the union of all members of B and the intersection of any two
+half-open intervals is a half-open interval.
 *)
 
 Definition lhalf_open_ival:
@@ -926,7 +939,8 @@ Proof
   ‘∃t. topspace t = UNIV ∧ basis {lhalf_open_ival a b | a < b} t’
     by
     (simp[prop_2_2_8] >> rpt strip_tac (* 2 *)
-     >- (rw[Once EXTENSION,PULL_EXISTS] >> qexistsl_tac [‘x - 1’,‘x’] >> simp[lhalf_open_ival]) >>
+     >- (rw[Once EXTENSION,PULL_EXISTS] >> qexistsl_tac [‘x - 1’,‘x’] >>
+         simp[lhalf_open_ival]) >>
      rw[SUBSET_DEF] >> rename[‘lhalf_open_ival a b ∩ lhalf_open_ival c d’] >>
      wlog_tac ‘a ≤ c’ [‘a’,‘b’,‘c’,‘d’] (* 2 *)
      >- metis_tac[INTER_COMM,RealArith.REAL_ARITH “¬(a:real ≤ c) ⇒ c ≤ a”] >>

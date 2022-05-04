@@ -654,7 +654,8 @@ Proof
   >- metis_tac[]
   >> rw[] >> qexists_tac `topspace t1` >> rw[]
   >- (rw[topspace] >> metis_tac[])
-  >> `topspace t1 = topspace t2` suffices_by simp[] >> rw[topspace, Once EXTENSION]
+  >> `topspace t1 = topspace t2` suffices_by simp[] >>
+  rw[topspace, Once EXTENSION]
 QED
 
 Theorem exercise1_3_7_iii:
@@ -733,7 +734,8 @@ Proof
       simp[SUBSET_DEF, PULL_EXISTS, ODD_EVEN] >>
       simp[infinite_num_inj] >> qexists_tac ‘λn. f (2 * n + 1)’ >>
       simp[INJ_IFF, EVEN_ADD, EVEN_MULT])
-  >- (pop_assum mp_tac >> simp[EXTENSION] >> qexists_tac ‘f (SUC 0)’ >> simp[]) >>
+  >- (pop_assum mp_tac >> simp[EXTENSION] >> qexists_tac ‘f (SUC 0)’ >>
+      simp[]) >>
   pop_assum mp_tac >> simp[infinite_num_inj] >> qexists_tac ‘f o $* 2’ >>
   simp[INJ_IFF, EVEN_MULT]
 QED
@@ -762,7 +764,7 @@ Proof
   ‘OS ≠ ∅’
     by (simp[Once EXTENSION, Abbr‘OS’, Abbr‘sbar’] >>
         ‘topspace t DIFF s ≠ ∅’ by
-          (simp[] >> strip_tac >> metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE]) >>
+          (simp[] >> strip_tac >> metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE])>>
         drule_then (qx_choose_then ‘ee’ mp_tac) (iffRL MEMBER_NOT_EMPTY) >>
         simp[] >> metis_tac[]) >>
   ‘s = BIGINTER OS’
@@ -773,7 +775,8 @@ Proof
         >- metis_tac[]
         >- (‘a ∈ topspace t’ suffices_by metis_tac[] >>
             ‘topspace t DIFF s ≠ ∅’ by
-              (simp[] >> strip_tac >> metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE]) >>
+              (simp[] >> strip_tac >>
+               metis_tac[SUBSET_ANTISYM, OPEN_IN_TOPSPACE]) >>
             drule_then (qx_choose_then ‘ee’ mp_tac) (iffRL MEMBER_NOT_EMPTY) >>
             simp[] >> metis_tac[])) >>
   qexists_tac ‘OS’ >> simp[] >> simp[Abbr‘OS’, PULL_EXISTS, Abbr‘sbar’] >>

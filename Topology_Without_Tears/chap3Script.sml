@@ -165,7 +165,8 @@ Proof
       >- simp[dense_def]
       >- (‘∀x. x ∉ A ∧ x ∈ topspace t ⇒ limpt t x A’ by (
            rpt strip_tac >>
-           ‘∀U. x ∈ U ∧ open_in t U ⇒ U ∩ A ≠ {}’ by metis_tac[MEMBER_NOT_EMPTY] >>
+           ‘∀U. x ∈ U ∧ open_in t U ⇒ U ∩ A ≠ {}’
+             by metis_tac[MEMBER_NOT_EMPTY] >>
            simp[limpt_thm] >> gs[EXTENSION] >> metis_tac[]) >>
           simp [dense_def, closure_def, EXTENSION] >>
           metis_tac[SUBSET_DEF, limpt_thm]))

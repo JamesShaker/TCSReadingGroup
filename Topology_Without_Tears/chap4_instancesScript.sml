@@ -389,7 +389,7 @@ QED
 
 https://math.stackexchange.com/questions/339401/closed-unit-interval-is-connected-proof
 *)
-                
+
 Theorem closed_ival_connected:
   connected (subtopology euclidean {a| x ≤ a ∧ a ≤ y})
 Proof
@@ -404,10 +404,10 @@ Proof
  (*
 
 
- 
+
  ‘t1 ∩ t2 = {}’ by (gvs[EXTENSION,SUBSET_DEF] >> metis_tac[])
-  
- 
+
+
 
 
 
@@ -422,16 +422,17 @@ rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
  rw[] >> rename [‘open_in _ t1’,‘closedSets _ t2’] >>
  Cases_on ‘t1 ∩ {a | x ≤ a ∧ a ≤ y} = ∅’ >> rw[INTER_SUBSET_EQN] >>
 *)
-QED 
- 
- 
-    
+QED
 
-        
+
+
+
+
 Theorem example_4_3_1:
-  ¬homeomorphism (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
-                  subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1}∪{x | 2 ≤ x ∧ x ≤ 3}))
-  (f, g)
+  ¬homeomorphism
+    (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
+     subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1} ∪ {x | 2 ≤ x ∧ x ≤ 3}))
+    (f, g)
 Proof
   qmatch_abbrev_tac ‘¬homeomorphism (top1, top2) _’ \\
   CCONTR_TAC \\
@@ -460,7 +461,7 @@ Proof
   ‘connected top1’
     suffices_by
     metis_tac[homeomorphism_connected] \\
-  
+
   cheat
 QED
 

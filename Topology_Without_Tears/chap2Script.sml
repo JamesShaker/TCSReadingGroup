@@ -18,7 +18,8 @@ Theorem basis_def':
       ∀s. open_in t s ⇔ ∃u. u ⊆ B ∧ s = BIGUNION u
 Proof
   rw[basis_def] >> eq_tac  (* 2 *)
-  >- (simp[] >> rpt strip_tac >> eq_tac >> simp[] >> metis_tac[SUBSET_DEF,OPEN_IN_BIGUNION])
+  >- (simp[] >> rpt strip_tac >> eq_tac >> simp[] >>
+      metis_tac[SUBSET_DEF,OPEN_IN_BIGUNION])
   >> metis_tac[]
 QED
 

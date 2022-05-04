@@ -12,16 +12,16 @@ val _ = new_theory "chap4";
    as subtopology *)
 
 Theorem example_4_1_4:
-	basis B t ⇒
-	basis {b ∩ Y | b ∈ B} (subtopology t Y)
+        basis B t ⇒
+        basis {b ∩ Y | b ∈ B} (subtopology t Y)
 Proof
-	rw[basis_def, OPEN_IN_SUBTOPOLOGY]
-	>- metis_tac[]
-	>> first_x_assum drule >> rw[] >>
-	qexists_tac `{b ∩ Y | b ∈ u}` >> rw[]
-	>- (rw[SUBSET_DEF] >> metis_tac[SUBSET_DEF])
-	>> rw[Once EXTENSION] >> simp[PULL_EXISTS] >>
-	metis_tac[]
+        rw[basis_def, OPEN_IN_SUBTOPOLOGY]
+        >- metis_tac[]
+        >> first_x_assum drule >> rw[] >>
+        qexists_tac `{b ∩ Y | b ∈ u}` >> rw[]
+        >- (rw[SUBSET_DEF] >> metis_tac[SUBSET_DEF])
+        >> rw[Once EXTENSION] >> simp[PULL_EXISTS] >>
+        metis_tac[]
 QED
 
 Theorem exercise_4_1_4:
@@ -36,7 +36,7 @@ QED
 Theorem exercise_4_1_5:
   closed_in (subtopology τ Y) Z ⇔ ∃A. Z = A ∩ Y ∧ closed_in τ A
 Proof
-  rw[OPEN_IN_SUBTOPOLOGY, closed_in, TOPSPACE_SUBTOPOLOGY, EQ_IMP_THM] (* 4 *) >~
+  rw[OPEN_IN_SUBTOPOLOGY, closed_in, TOPSPACE_SUBTOPOLOGY, EQ_IMP_THM] (* 4 *)>~
   [‘topspace τ ∩ Y DIFF Z = A ∩ Y’]
   >- (qexists_tac ‘topspace τ DIFF A’ >>
       simp[DIFF_DIFF_SUBSET, OPEN_IN_SUBSET] >>
@@ -392,7 +392,8 @@ Proof
 QED
 
 Theorem exercise4_2_6i:
-  let fs = {f | ∃g. homeomorphism (t, t) (f, g) ∧ ∀ x. x ∉ topspace t ⇒ f x = x} in
+  let fs = {f | ∃g. homeomorphism (t, t) (f, g) ∧ ∀ x. x ∉ topspace t ⇒ f x = x}
+  in
     ∃e. e ∈ fs ∧ (∀f. f ∈ fs ⇒ f = f o e) ∧
         (∀ f. f ∈ fs ⇒ ∃ g. g ∈ fs ∧ f o g = e) ∧
         (∀f g. f ∈ fs ∧ g ∈ fs ⇒ f o g ∈ fs)
@@ -618,7 +619,8 @@ Theorem homeomorphism_clopen:
         (∀U. clopen s U ⇒ clopen t (IMAGE f U)) ∧
         (∀V. clopen t V ⇒ clopen s (IMAGE g V))
 Proof
-    strip_tac >> simp[clopen_def,iffLR homeomorphism,homeomorphism_closed_in,SF SFY_ss]
+  strip_tac >>
+  simp[clopen_def,iffLR homeomorphism,homeomorphism_closed_in,SF SFY_ss]
 QED
 
 Theorem homeomorphism_IMAGE_IMAGE:
@@ -639,8 +641,11 @@ Proof
         first_x_assum $ mp_tac o Q.AP_TERM ‘IMAGE f’ >>
         simp[homeomorphism_IMAGE_IMAGE,SF SFY_ss] >>
         DISCH_THEN kall_tac >> fs[homeomorphism,BIJ_IMAGE])
-    >| [‘clopen τ₁ (topspace τ₁)’ by simp[clopen_def],‘clopen τ₁ ∅’ by simp[clopen_def]] >>
-    drule_all_then assume_tac $ cj 1 homeomorphism_clopen >> fs[homeomorphism,BIJ_IMAGE]
+    >| [‘clopen τ₁ (topspace τ₁)’ by simp[clopen_def],
+        ‘clopen τ₁ ∅’ by simp[clopen_def]
+       ] >>
+    drule_all_then assume_tac $ cj 1 homeomorphism_clopen >>
+    fs[homeomorphism,BIJ_IMAGE]
 QED
 
 val _ = export_theory();
