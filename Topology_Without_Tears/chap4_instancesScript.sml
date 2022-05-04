@@ -344,6 +344,7 @@ exercise_4_1_14
 exercise_2_2_4_i
 exercise_2_2_4_ii
 *)
+
 Theorem exercise_4_2_8:
     (∃f g B. homeomorphism (discrete_topology A,subtopology euclidean B) (f,g)) ⇔ countable A
 Proof
@@ -366,10 +367,61 @@ Proof
         >- (rename [‘x ∈ U’] >> qexists_tac ‘x’ >> simp[])
         >- (rename [‘&a < &(b + 1)’] >> gs[REAL_SUB] >> Cases_on ‘b ≤ 1’ >> gs[] >>
             ‘a = b’ by simp[] >> simp[]))
-    >- (cheat
+    >- (rpt strip_tac >>
+     metis_tac[exercise_2_2_4_i,exercise_4_1_14,
+               chap2_2Theory.exercise_2_2_4_ii,exercise_4_2_7iv,homeomorphism_SYM]
     )
 QED
 
+
+
+Theorem closed_euclidean_UNIV[simp]:
+  closedSets euclidean UNIV
+Proof
+ rw[closed_in]
+QED
+
+ (*
+
+https://math.stackexchange.com/questions/339401/closed-unit-interval-is-connected-proof
+*)
+                
+Theorem closed_ival_connected:
+  connected (subtopology euclidean {a| x ≤ a ∧ a ≤ y})
+Proof
+ CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
+ qabbrev_tac ‘xy = {a | x ≤ a ∧ a ≤ y}’ >>
+ rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
+ ‘(t1 ∪ t2) ∩ xy = xy’
+ by (gs[EXTENSION] >> metis_tac[]) >>
+ gs[INTER_SUBSET_EQN] >>
+ ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
+ 
+
+
+ 
+ ‘t1 ∩ t2 = {}’ by (gvs[EXTENSION,SUBSET_DEF] >> metis_tac[])
+  
+ 
+
+
+
+
+
+rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
+    CLOSED_IN_SUBTOPOLOGY] >> reverse eq_tac (* 2 *)
+ >- (rw[] (* 4 *)
+     >- (qexists_tac ‘UNIV’ >> simp[])
+     >- (qexists_tac ‘UNIV’ >> simp[])
+     >> qexists_tac ‘{}’ >> simp[]) >>
+ rw[] >> rename [‘open_in _ t1’,‘closedSets _ t2’] >>
+ Cases_on ‘t1 ∩ {a | x ≤ a ∧ a ≤ y} = ∅’ >> rw[INTER_SUBSET_EQN] >>
+ 
+ 
+ 
+    
+
+        
 Theorem example_4_3_1:
   ¬homeomorphism (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
                   subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1}∪{x | 2 ≤ x ∧ x ≤ 3}))
@@ -399,8 +451,10 @@ Proof
             qexists_tac ‘0’ \\
             simp[])
        ) \\
-  ‘¬ connected top1’
-    by (cheat) \\
+  ‘connected top1’
+    suffices_by
+    metis_tac[homeomorphism_connected] \\
+  
   cheat
 QED
 
