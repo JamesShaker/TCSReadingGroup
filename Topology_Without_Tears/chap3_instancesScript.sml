@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 open pred_setTheory topologyTheory;
-open realTheory chap1Theory chap3Theory chap2Theory;
+open realTheory chap1Theory chap3Theory chap2_instancesTheory;
 
      
      

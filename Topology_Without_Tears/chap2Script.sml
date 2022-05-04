@@ -2,7 +2,7 @@ open HolKernel Parse boolLib bossLib;
 
 open chap1Theory pred_setTheory topologyTheory;
 
-val _ = new_theory "chap2_2";
+val _ = new_theory "chap2";
 
 (* definition 2.2.2 *)
 Definition basis_def:

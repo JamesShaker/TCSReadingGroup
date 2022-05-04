@@ -1,7 +1,8 @@
 open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory topologyTheory
-open chap1Theory chap2Theory chap4Theory chap3Theory chap3_instancesTheory
+open chap1Theory chap2_instancesTheory chap4Theory chap3Theory
+     chap3_instancesTheory
 open realTheory RealArith;
 val _ = new_theory "chap4_instances";
 
@@ -346,34 +347,37 @@ exercise_2_2_4_ii
 *)
 
 Theorem exercise_4_2_8:
-    (∃f g B. homeomorphism (discrete_topology A,subtopology euclidean B) (f,g)) ⇔ countable A
+  (∃f g B. homeomorphism (discrete_topology A,subtopology euclidean B) (f,g)) ⇔
+    countable A
 Proof
-    Cases_on ‘countable A’ >> simp[]
-    >- (gs[COUNTABLE_LEMMA] >>
-        ‘homeomorphism (discrete_topology A,discrete_topology t) (LINV f t,f)’ by (
-            drule_then strip_assume_tac $ iffLR BIJ_DEF >>
-            simp[homeomorphism,BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss] >>
+  Cases_on ‘countable A’ >> simp[]
+  >- (gs[COUNTABLE_LEMMA] >>
+      ‘homeomorphism (discrete_topology A,discrete_topology t) (LINV f t,f)’
+        by (drule_then strip_assume_tac $ iffLR BIJ_DEF >>
+            simp[homeomorphism,BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,
+                 LINV_DEF,SF SFY_ss] >>
             metis_tac[INJ_DEF,SURJ_DEF,LINV_DEF]) >>
-        ‘∃g h. homeomorphism (discrete_topology t,subtopology euclidean (IMAGE real_of_num t)) (g,h)’
-            suffices_by metis_tac[homeomorphism_TRANS] >>
-        qexistsl_tac [‘real_of_num’,‘LINV real_of_num t’] >>
-        simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
-            BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,SF SFY_ss] >>
-        ‘INJ $& t UNIV’ by simp[INJ_DEF] >> drule_then assume_tac LINV_DEF >> rw[] >>
-        simp[BIJ_LINV_BIJ,INJ_IMAGE_BIJ,SF SFY_ss] >>
-        qexists_tac ‘BIGUNION {ival (&x - 1) (&x + 1) | x ∈ U}’ >>
-        simp[PULL_EXISTS,OPEN_IN_BIGUNION] >> rw[Once EXTENSION,PULL_EXISTS] >>
-        simp[ival_def,EQ_IMP_THM] >> rw[]
-        >- (rename [‘x ∈ U’] >> qexists_tac ‘x’ >> simp[])
-        >- (rename [‘&a < &(b + 1)’] >> gs[REAL_SUB] >> Cases_on ‘b ≤ 1’ >> gs[] >>
-            ‘a = b’ by simp[] >> simp[]))
-    >- (rpt strip_tac >>
-     metis_tac[exercise_2_2_4_i,exercise_4_1_14,
-               chap2_2Theory.exercise_2_2_4_ii,exercise_4_2_7iv,homeomorphism_SYM]
-    )
+      ‘∃g h. homeomorphism (discrete_topology t,
+                            subtopology euclidean (IMAGE real_of_num t)) (g,h)’
+        suffices_by metis_tac[homeomorphism_TRANS] >>
+      qexistsl_tac [‘real_of_num’,‘LINV real_of_num t’] >>
+      simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
+           BIJ_LINV_BIJ,SUBSET_DEF,PULL_EXISTS,BIJ_LINV_INV,LINV_DEF,
+           SF SFY_ss] >>
+      ‘INJ $& t univ(:real)’ by simp[INJ_DEF] >>
+      drule_then assume_tac LINV_DEF >>
+      rw[] >>
+      simp[BIJ_LINV_BIJ,INJ_IMAGE_BIJ,SF SFY_ss] >>
+      qexists_tac ‘BIGUNION {ival (&x - 1) (&x + 1) | x ∈ U}’ >>
+      simp[PULL_EXISTS,OPEN_IN_BIGUNION] >> rw[Once EXTENSION,PULL_EXISTS] >>
+      simp[ival_def,EQ_IMP_THM] >> rw[]
+      >- (rename [‘x ∈ U’] >> qexists_tac ‘x’ >> simp[])
+      >- (rename [‘&a < &(b + 1)’] >> gs[REAL_SUB] >> Cases_on ‘b ≤ 1’ >>
+          gs[] >> ‘a = b’ by simp[] >> simp[]))
+  >- (rpt strip_tac >>
+      metis_tac[exercise_2_2_4_i,exercise_4_1_14, chap2Theory.exercise_2_2_4_ii,
+                exercise_4_2_7iv,homeomorphism_SYM])
 QED
-
-
 
 Theorem closed_euclidean_UNIV[simp]:
   closedSets euclidean UNIV

@@ -1,14 +1,14 @@
 open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory intrealTheory;
-open topologyTheory chap1Theory chap2_2Theory realTheory;
+open topologyTheory chap1Theory chap2Theory realTheory;
 open arithmeticTheory;
 open pairTheory;
 open cardinalTheory;
 
 local open realSimps in end
 
-val _ = new_theory "chap2";
+val _ = new_theory "chap2_instances";
 
 val _ = intLib.deprecate_int();
 

@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 open topologyTheory pred_setTheory
-open chap1Theory chap2_2Theory chap3Theory;
+open chap1Theory chap2Theory chap3Theory;
 
 val _ = new_theory "chap4";
 
