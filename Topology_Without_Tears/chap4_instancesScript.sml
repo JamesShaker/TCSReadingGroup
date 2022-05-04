@@ -380,7 +380,7 @@ Proof
 QED
 
 Theorem closed_euclidean_UNIV[simp]:
-  closedSets euclidean UNIV
+  closed_in euclidean UNIV
 Proof
  rw[closed_in]
 QED

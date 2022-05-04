@@ -81,7 +81,7 @@ Theorem exercise_4_1_11:
 Proof
   rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
      CLOSED_IN_SUBTOPOLOGY] >> eq_tac >> strip_tac (* 3 *)
-  >- (gvs[] >> rename [‘open_in τ X’,‘closedSets τ Y’] >>
+  >- (gvs[] >> rename [‘open_in τ X’,‘closed_in τ Y’] >>
       ‘X ∩ A = Y ∩ A ∧ X ∩ B = Y ∩ B’ by
         (qpat_x_assum ‘X ∩ (A ∪ B) = Y ∩ (A ∪ B)’ mp_tac >> simp[EXTENSION] >>
          metis_tac[]) >>
@@ -310,7 +310,7 @@ Proof
   rw[regular_space_def] >>
   gvs[CLOSED_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY,
       OPEN_IN_SUBTOPOLOGY, PULL_EXISTS] >>
-  rename[`closedSets top A`, `A ∩ Y`] >>
+  rename[`closed_in top A`, `A ∩ Y`] >>
   first_x_assum drule_all >> rw[] >>
   qexistsl_tac [`U`, `V`] >> rw[]
   >- metis_tac[SUBSET_DEF, IN_INTER]
@@ -322,7 +322,7 @@ Theorem exercise_4_1_17_iii:
 Proof
   rw[T3_space_def, T2_space_def,
      regular_space_def, T1_space_def] >>
-  `closedSets t {a}` by metis_tac[] >>
+  `closed_in t {a}` by metis_tac[] >>
   `b ∉ {a}` by simp[] >>
   last_x_assum drule_all >> rw[] >>
   metis_tac[INTER_COMM]

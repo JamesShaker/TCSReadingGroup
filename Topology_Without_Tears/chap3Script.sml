@@ -224,7 +224,7 @@ Theorem prop_3_2_6 = limpt
 
 Theorem corollary_3_2_7:
   A ⊆ topspace t ⇒
-  (closedSets t A ⇔
+  (closed_in t A ⇔
      ∀x. x ∈ topspace t ∧ x ∉ A ⇒
          ∃N. neigh t (N,x) ∧ N ⊆ topspace t DIFF A)
 Proof

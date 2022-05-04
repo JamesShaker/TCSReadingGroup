@@ -310,10 +310,6 @@ Proof
   disch_then $ qspec_then ‘x’ mp_tac >> simp[]
 QED
 
-(* what the book calls a closed set is written closed_in, here we alias with
-   closedSet *)
-Overload closedSets = “closed_in”
-
 Theorem prop1_2_5:
   closed_in top ∅ ∧ closed_in top (topspace top) ∧ (* i *)
   ((∀t. t ∈ s ⇒ closed_in top t) ∧ s ≠ ∅ ⇒ closed_in top (BIGINTER s)) ∧

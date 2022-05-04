@@ -12,7 +12,7 @@ Theorem example3_1_12:
 Proof
  qabbrev_tac ‘Qbar = closure euclidean rational’ >>
  CCONTR_TAC >> gs[EXTENSION] >>
- ‘closedSets euclidean Qbar’
+ ‘closed_in euclidean Qbar’
    by simp[remark_3_1_10_i,Abbr‘Qbar’] >>
  gs[closed_in] >>
  ‘x ∈ UNIV DIFF Qbar’
