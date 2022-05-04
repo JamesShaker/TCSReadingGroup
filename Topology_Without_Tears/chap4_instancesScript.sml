@@ -396,7 +396,8 @@ Proof
  by (gs[EXTENSION] >> metis_tac[]) >>
  gs[INTER_SUBSET_EQN] >>
  ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
- 
+ cheat
+ (*
 
 
  
@@ -416,7 +417,8 @@ rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
      >> qexists_tac ‘{}’ >> simp[]) >>
  rw[] >> rename [‘open_in _ t1’,‘closedSets _ t2’] >>
  Cases_on ‘t1 ∩ {a | x ≤ a ∧ a ≤ y} = ∅’ >> rw[INTER_SUBSET_EQN] >>
- 
+*)
+QED 
  
  
     
