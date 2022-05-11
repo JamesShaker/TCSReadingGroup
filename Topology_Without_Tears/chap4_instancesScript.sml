@@ -385,33 +385,57 @@ Proof
  rw[closed_in]
 QED
 
+Theorem open_members_grow_towards_bound:
+    open_in euclidean s ∧ a ∈ s ∧ a < b ⇒ ∃c. c ∈ s ∧ a < c ∧ c < b
+Proof
+    rw[open_in_euclidean] >> last_x_assum drule >> rw[] >> rename [‘ival x y’] >>
+    ‘a < min b y’ by (gs[REAL_LT_MIN,ival_def]) >>
+    dxrule_then (qx_choose_then ‘r’ strip_assume_tac) REAL_MEAN >> qexists_tac ‘r’ >>
+    gs[REAL_LT_MIN,ival_def,SUBSET_DEF]
+QED
+
  (*
 
 https://math.stackexchange.com/questions/339401/closed-unit-interval-is-connected-proof
 *)
 
 Theorem closed_ival_connected:
-  connected (subtopology euclidean {a| x ≤ a ∧ a ≤ y})
+    connected (subtopology euclidean {a| x ≤ a ∧ a ≤ y})
 Proof
- CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
- qabbrev_tac ‘xy = {a | x ≤ a ∧ a ≤ y}’ >>
- rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
- ‘(t1 ∪ t2) ∩ xy = xy’
- by (gs[EXTENSION] >> metis_tac[]) >>
- gs[INTER_SUBSET_EQN] >>
- ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
+    CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
+    qabbrev_tac ‘xy = {a | x ≤ a ∧ a ≤ y}’ >>
+    rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
+    ‘(t1 ∪ t2) ∩ xy = xy’
+    by (gs[EXTENSION] >> metis_tac[]) >>
+    gs[INTER_SUBSET_EQN] >>
+    ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
+    ‘∃a b. a ∈ A ∧ b ∈ B’ by metis_tac[MEMBER_NOT_EMPTY] >>
+    wlog_tac ‘a < b’ [‘a’,‘b’,‘A’,‘B’,‘t1’,‘t2’]
+    >- (‘b ≠ a’ by (strip_tac >> gvs[] >> last_x_assum mp_tac >>
+            simp[EXTENSION] >> metis_tac[]) >>
+        ‘b < a’ by simp[] >> metis_tac[UNION_COMM,INTER_COMM]) >>
+    qabbrev_tac ‘c = sup {x | x ∈ A ∧ x < b}’ >>
+    ‘c ∈ xy’ by (‘a ≤ c ∧ c ≤ b’ suffices_by gvs[Abbr ‘xy’] >>
+        simp[Abbr ‘c’] >> irule_at Any REAL_IMP_SUP_LE >> irule_at Any REAL_IMP_LE_SUP >>
+        simp[] >> rpt $ first_assum $ irule_at Any >> simp[] >>
+        qexists_tac ‘b’ >> gvs[]) >>
+    ‘c ∉ A’ by (
+        Cases_on ‘c = b’
+        >- (gvs[] >> strip_tac >> last_x_assum mp_tac >>
+            simp[EXTENSION] >> metis_tac[]) >>
+        ‘c < b’ by (‘c ≤ b’ suffices_by simp[] >> simp[Abbr ‘c’] >>
+            irule REAL_IMP_SUP_LE >> simp[] >> metis_tac[IN_INTER]) >>
+        strip_tac >>
+        ‘∃d. d ∈ t1 ∧ c < d ∧ d < b’ by metis_tac[open_members_grow_towards_bound,IN_INTER] >>
+        ‘d ∈ xy ∧ d ∈ A’ by gvs[Abbr ‘xy’] >> qpat_x_assum ‘c < d’ mp_tac >>
+        simp[REAL_NOT_LT,Abbr ‘c’] >> irule REAL_SUP_UBOUND >>
+        simp[] >> metis_tac[IN_INTER]) >>
+    ‘c ∈ B’ by (gvs[] >> metis_tac[SUBSET_DEF,IN_UNION]) >>
+    
  cheat
  (*
 
-
-
  ‘t1 ∩ t2 = {}’ by (gvs[EXTENSION,SUBSET_DEF] >> metis_tac[])
-
-
-
-
-
-
 
 rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
     CLOSED_IN_SUBTOPOLOGY] >> reverse eq_tac (* 2 *)
