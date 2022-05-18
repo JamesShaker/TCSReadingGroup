@@ -402,59 +402,54 @@ https://math.stackexchange.com/questions/339401/closed-unit-interval-is-connecte
 Theorem closed_ival_connected:
     connected (subtopology euclidean {a| x ≤ a ∧ a ≤ y})
 Proof
-    CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
-    qabbrev_tac ‘xy = {a | x ≤ a ∧ a ≤ y}’ >>
-    rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
-    ‘(t1 ∪ t2) ∩ xy = xy’
+  CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
+  qabbrev_tac ‘xy = {a | x ≤ a ∧ a ≤ y}’ >>
+  rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
+  ‘(t1 ∪ t2) ∩ xy = xy’
     by (gs[EXTENSION] >> metis_tac[]) >>
-    gs[INTER_SUBSET_EQN] >>
-    ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
-    ‘∃a b. a ∈ A ∧ b ∈ B’ by metis_tac[MEMBER_NOT_EMPTY] >>
-    wlog_tac ‘a < b’ [‘a’,‘b’,‘A’,‘B’,‘t1’,‘t2’]
-    >- (‘b ≠ a’ by (strip_tac >> gvs[] >> last_x_assum mp_tac >>
-            simp[EXTENSION] >> metis_tac[]) >>
-        ‘b < a’ by simp[] >> metis_tac[UNION_COMM,INTER_COMM]) >>
-    qabbrev_tac ‘c = sup {x | x ∈ A ∧ x < b}’ >>
-    ‘c ∈ xy’ by (‘a ≤ c ∧ c ≤ b’ suffices_by gvs[Abbr ‘xy’] >>
-        simp[Abbr ‘c’] >> irule_at Any REAL_IMP_SUP_LE >> irule_at Any REAL_IMP_LE_SUP >>
-        simp[] >> rpt $ first_assum $ irule_at Any >> simp[] >>
-        qexists_tac ‘b’ >> gvs[]) >>
-    ‘c ∉ A’ by (
-        Cases_on ‘c = b’
-        >- (gvs[] >> strip_tac >> last_x_assum mp_tac >>
-            simp[EXTENSION] >> metis_tac[]) >>
-        ‘c < b’ by (‘c ≤ b’ suffices_by simp[] >> simp[Abbr ‘c’] >>
-            irule REAL_IMP_SUP_LE >> simp[] >> metis_tac[IN_INTER]) >>
-        strip_tac >>
-        ‘∃d. d ∈ t1 ∧ c < d ∧ d < b’ by metis_tac[open_members_grow_towards_bound,IN_INTER] >>
-        ‘d ∈ xy ∧ d ∈ A’ by gvs[Abbr ‘xy’] >> qpat_x_assum ‘c < d’ mp_tac >>
-        simp[REAL_NOT_LT,Abbr ‘c’] >> irule REAL_SUP_UBOUND >>
+  gs[INTER_SUBSET_EQN] >>
+  ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
+  ‘∃a b. a ∈ A ∧ b ∈ B’ by metis_tac[MEMBER_NOT_EMPTY] >>
+  wlog_tac ‘a < b’ [‘a’,‘b’,‘A’,‘B’,‘t1’,‘t2’]
+  >- (‘b ≠ a’ by (strip_tac >> gvs[] >> last_x_assum mp_tac >>
+                  simp[EXTENSION] >> metis_tac[]) >>
+      ‘b < a’ by simp[] >> metis_tac[UNION_COMM,INTER_COMM]) >>
+  qabbrev_tac ‘c = sup {x | x ∈ A ∧ x < b}’ >>
+  ‘∀y. y ∈ A ∧ y < b ⇒ y ≤ c’
+    by (simp[Abbr‘c’] >> rpt strip_tac >> irule REAL_SUP_UBOUND >>
         simp[] >> metis_tac[IN_INTER]) >>
-    ‘c ∈ B’ by (gvs[] >> metis_tac[SUBSET_DEF,IN_UNION]) >>
-    
- cheat
- (*
-
- ‘t1 ∩ t2 = {}’ by (gvs[EXTENSION,SUBSET_DEF] >> metis_tac[])
-
-rw[connected_def,TOPSPACE_SUBTOPOLOGY,clopen_def,OPEN_IN_SUBTOPOLOGY,
-    CLOSED_IN_SUBTOPOLOGY] >> reverse eq_tac (* 2 *)
- >- (rw[] (* 4 *)
-     >- (qexists_tac ‘UNIV’ >> simp[])
-     >- (qexists_tac ‘UNIV’ >> simp[])
-     >> qexists_tac ‘{}’ >> simp[]) >>
- rw[] >> rename [‘open_in _ t1’,‘closedSets _ t2’] >>
- Cases_on ‘t1 ∩ {a | x ≤ a ∧ a ≤ y} = ∅’ >> rw[INTER_SUBSET_EQN] >>
-*)
+  ‘∀x. (∀y. y ∈ A ∧ y < b ⇒ y ≤ x) ⇒ c ≤ x’
+    by (rpt strip_tac >> simp[Abbr‘c’] >>
+        irule REAL_IMP_SUP_LE >> simp[] >> metis_tac[IN_INTER]) >>
+  ‘a ≤ c’ by simp[] >>
+  ‘c ∈ xy’ by (simp[Abbr‘xy’] >> ‘x ≤ a’ suffices_by simp[] >>
+               gvs[]) >>
+  ‘c ∉ A’ by (
+    Cases_on ‘c = b’
+    >- (gvs[] >> strip_tac >> last_x_assum mp_tac >>
+        simp[EXTENSION] >> metis_tac[]) >>
+    ‘c < b’ by (‘c ≤ b’ suffices_by (strip_tac >> simp[]) >> simp[]) >>
+    strip_tac >>
+    ‘∃d. d ∈ t1 ∧ c < d ∧ d < b’
+      by metis_tac[open_members_grow_towards_bound,IN_INTER] >>
+    ‘d ∈ xy ∧ d ∈ A’ by gvs[Abbr ‘xy’] >> qpat_x_assum ‘c < d’ mp_tac >>
+    simp[REAL_NOT_LT]) >>
+  ‘c ∈ B’ by (gvs[] >> metis_tac[SUBSET_DEF,IN_UNION]) >>
+  ‘c ≤ b’ by simp[] >>
+  ‘c ∈ t2’ by metis_tac[IN_INTER] >>
+  ‘∃cn cx. c ∈ ival cn cx ∧ ival cn cx ⊆ t2’ by metis_tac[open_in_euclidean] >>
+  ‘cn < c ∧ c < cx ∧ ∀x. cn < x ∧ x < cx ⇒ x ∈ t2’
+    by gs[ival_def, SUBSET_DEF] >>
+  ‘c ≤ cn’ suffices_by simp[] >>
+  first_assum irule >>
+  qx_gen_tac ‘e’ >> rpt strip_tac >>
+  ‘e ≤ c’ by simp[] >>
+  CCONTR_TAC >> ‘e ∈ t2’ by simp[] >> metis_tac[NOT_IN_EMPTY, IN_INTER]
 QED
-
-
-
-
 
 Theorem example_4_3_1:
   ¬homeomorphism
-    (subtopology euclidean {x|0 ≤ x ∧ x ≤ 2},
+    (subtopology euclidean {x | 0 ≤ x ∧ x ≤ 2},
      subtopology euclidean ({x | 0 ≤ x ∧ x ≤ 1} ∪ {x | 2 ≤ x ∧ x ≤ 3}))
     (f, g)
 Proof
@@ -482,11 +477,59 @@ Proof
             qexists_tac ‘0’ \\
             simp[])
        ) \\
-  ‘connected top1’
-    suffices_by
-    metis_tac[homeomorphism_connected] \\
+  ‘connected top1’ suffices_by metis_tac[homeomorphism_connected] \\
+  simp[Abbr‘top1’, closed_ival_connected]
+QED
 
+(* definition 4.3.3 *)
+Definition interval_def:
+  interval (A:real set) ⇔
+    ∀x y z. x ∈ A ∧ z ∈ A ∧ x < y ∧ y < z ⇒ y ∈ A
+End
+
+Theorem remark4_3_4i[simp]:
+  interval {x}
+Proof
+  simp[interval_def]
+QED
+
+Theorem helpful_lemma:
+  ∀A. (∀a. a ∈ A ⇒ ∃b. b ∈ A ∧ a < b) ∨
+      sup A ∈ A ∨ sup A ∉ A
+Proof
   cheat
 QED
+
+(*
+Theorem remark4_3_4ii:
+  interval A ⇔
+    (∃a. A = {a}) ∨
+    (∃a b. A = { x | a ≤ x ∧ x ≤ b }) ∨
+    (∃a b. A = { x | a < x ∧ x < b }) ∨
+    (∃a b. A = { x | a ≤ x ∧ x < b }) ∨
+    (∃a b. A = { x | a < x ∧ x ≤ b }) ∨
+    (∃a.   A = { x | x < a }) ∨
+    (∃a.   A = { x | a < x }) ∨
+    (∃a.   A = { x | x ≤ a }) ∨
+    (∃a.   A = { x | a ≤ x }) ∨
+    A = UNIV
+Proof
+  rw[interval_def, EQ_IMP_THM] >> gvs[] >>
+  Cases_on ‘∃lb. ∀a. a ∈ A ⇒ lb ≤ a’ >> gvs[]
+  >- (Cases_on ‘∃ub. ∀a. a ∈ A ⇒ a ≤ ub’ >> gvs[]
+      >- (Cases_on ‘lb ∈ A’ >> Cases_on ‘ub ∈ A’
+          >- (‘A = {x | lb ≤ x ∧ x ≤ ub}’
+                suffices_by metis_tac[] >>
+              rw[EXTENSION, EQ_IMP_THM] >>
+              metis_tac[REAL_LE_LT])
+          >- (‘A = {x | lb ≤ x ∧ x < sup A}’
+                suffices_by metis_tac[] >>
+              rw[EXTENSION, EQ_IMP_THM]
+              >- irule (iffLR REAL_SUP_LE) >> metis_tac[REAL_LE_LT] >>
+              first_x_assum irule >>
+
+
+QED
+*)
 
 val _ = export_theory();
