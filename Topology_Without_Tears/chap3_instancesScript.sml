@@ -249,7 +249,21 @@ Proof
    (‘x ≠ z’ by (strip_tac >> gvs[]) >>
     ‘z < x’ by simp[] >>
     first_x_assum drule >> simp[] >> qexistsl_tac [‘B2’,‘B1’] >>
-    simp[] 
+    simp[] >> gvs[GSYM MEMBER_NOT_EMPTY] >> rpt strip_tac (* 5 *)
+    >- (* because A DIFF B2 ∩ A = B1 ∩ A*)
+       metis_tac[EXTENSION,IN_DIFF,IN_INTER]
+    >- metis_tac[]
+    >- metis_tac[EXTENSION,IN_DIFF,IN_INTER]
+    >- metis_tac[EXTENSION,IN_DIFF,IN_INTER] >>
+    ‘A DIFF (A DIFF B2 ∩ A) = A DIFF (B1 ∩ A)’
+    >- metis_tac[] >>
+    ‘A DIFF (A DIFF B2 ∩ A) = B2 ∩ A’ suffices_by metis_tac[]
+    >- irule DIFF_DIFF_SUBSET >> rw[INTER_SUBSET])
+
+
+
+    
+    fs[DIFF_DIFF_SUBSET]
 
     (*up to here *)
 gs[REAL_NOT_LT,REAL_LE_LT] >>
