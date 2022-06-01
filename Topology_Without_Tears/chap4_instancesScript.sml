@@ -385,15 +385,6 @@ Proof
  rw[closed_in]
 QED
 
-Theorem open_members_grow_towards_bound:
-    open_in euclidean s ∧ a ∈ s ∧ a < b ⇒ ∃c. c ∈ s ∧ a < c ∧ c < b
-Proof
-    rw[open_in_euclidean] >> last_x_assum drule >> rw[] >> rename [‘ival x y’] >>
-    ‘a < min b y’ by (gs[REAL_LT_MIN,ival_def]) >>
-    dxrule_then (qx_choose_then ‘r’ strip_assume_tac) REAL_MEAN >> qexists_tac ‘r’ >>
-    gs[REAL_LT_MIN,ival_def,SUBSET_DEF]
-QED
-
  (*
 
 https://math.stackexchange.com/questions/339401/closed-unit-interval-is-connected-proof
@@ -482,5 +473,5 @@ Proof
 QED
 
 
-       
+
 val _ = export_theory();

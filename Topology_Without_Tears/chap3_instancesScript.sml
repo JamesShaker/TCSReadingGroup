@@ -162,11 +162,73 @@ Proof
             ‘A = {x | inf A < x ∧ x ≤ sup A}’,‘A = {x | inf A ≤ x ∧ x ≤ sup A}’] end >>
     rw[EXTENSION] >> gs[IN_APP] >> TRY eq_tac >> rw[] (* 9 *) >>
     metis_tac[REAL_LT_SUP,REAL_INF_LT,REAL_LE_LT]
-QED    
+QED
 
+Theorem open_members_grow_towards_bound:
+    open_in euclidean s ∧ a ∈ s ∧ a < b ⇒ ∃c. c ∈ s ∧ a < c ∧ c < b
+Proof
+    rw[open_in_euclidean] >> last_x_assum drule >> rw[] >> rename [‘ival x y’] >>
+    ‘a < min b y’ by (gs[REAL_LT_MIN,ival_def]) >>
+    dxrule_then (qx_choose_then ‘r’ strip_assume_tac) REAL_MEAN >> qexists_tac ‘r’ >>
+    gs[REAL_LT_MIN,ival_def,SUBSET_DEF]
+QED
 
+Theorem interval_thm:
+  ∀A. interval A ⇔ ∀x y z. x ∈ A ∧ z ∈ A ∧ x ≤ y ∧ y ≤ z ⇒ y ∈ A
+Proof
+  metis_tac[interval_def, REAL_LE_LT]
+QED
 
-        
+Theorem interval_connected:
+  interval xy ⇒ connected (subtopology euclidean xy)
+Proof
+  CCONTR_TAC >> gs[remark_3_3_9,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
+  rename [‘t1 ∩ xy ∪ t2 ∩ _’] >>
+  ‘(t1 ∪ t2) ∩ xy = xy’
+    by (gs[EXTENSION] >> metis_tac[]) >>
+  gs[INTER_SUBSET_EQN] >>
+  ‘xy ≠ {}’ by (strip_tac >> gvs[]) >>
+  ‘∃a b. a ∈ A ∧ b ∈ B’ by metis_tac[MEMBER_NOT_EMPTY] >>
+  wlog_tac ‘a < b’ [‘a’,‘b’,‘A’,‘B’,‘t1’,‘t2’]
+  >- (‘b ≠ a’ by (strip_tac >> gvs[] >>
+                  gs[EXTENSION] >> metis_tac[]) >>
+      ‘b < a’ by simp[] >> metis_tac[UNION_COMM,INTER_COMM]) >>
+  qabbrev_tac ‘c = sup {x | x ∈ A ∧ x < b}’ >>
+  ‘∀y. y ∈ A ∧ y < b ⇒ y ≤ c’
+    by (simp[Abbr‘c’] >> rpt strip_tac >> irule REAL_SUP_UBOUND >>
+        simp[] >> metis_tac[IN_INTER]) >>
+  ‘∀x. (∀y. y ∈ A ∧ y < b ⇒ y ≤ x) ⇒ c ≤ x’
+    by (rpt strip_tac >> simp[Abbr‘c’] >>
+        irule REAL_IMP_SUP_LE >> simp[] >> metis_tac[IN_INTER]) >>
+  ‘a ≤ c’ by simp[] >>
+  ‘c ∈ xy’
+    by (gs[interval_thm] >> first_x_assum irule >> rw[]
+        >- (qexists_tac `a` >> simp[])
+        >> qexists_tac `b` >> simp[]) >>
+  ‘c ∉ A’
+    by (Cases_on ‘c = b’
+        >- (gvs[] >> strip_tac >> gvs[EXTENSION] >> metis_tac[])
+        >> ‘c < b’
+              by (‘c ≤ b’ suffices_by (strip_tac >> simp[]) >> simp[]) >>
+        strip_tac >>
+        ‘∃d. d ∈ t1 ∧ c < d ∧ d < b’
+          by metis_tac[open_members_grow_towards_bound,IN_INTER] >>
+        ‘d ∈ xy ∧ d ∈ A’ by metis_tac[interval_def, IN_INTER] >>
+        qpat_x_assum ‘c < d’ mp_tac >>
+        simp[REAL_NOT_LT]) >>
+  ‘c ∈ B’ by (gvs[] >> metis_tac[SUBSET_DEF,IN_UNION]) >>
+  ‘c ≤ b’ by simp[] >>
+  ‘c ∈ t2’ by metis_tac[IN_INTER] >>
+  ‘∃cn cx. c ∈ ival cn cx ∧ ival cn cx ⊆ t2’ by metis_tac[open_in_euclidean] >>
+  ‘cn < c ∧ c < cx ∧ ∀x. cn < x ∧ x < cx ⇒ x ∈ t2’
+    by gs[ival_def, SUBSET_DEF] >>
+  ‘c ≤ cn’ suffices_by simp[] >>
+  first_assum irule >>
+  qx_gen_tac ‘e’ >> rpt strip_tac >>
+  ‘e ≤ c’ by simp[] >>
+  CCONTR_TAC >> ‘e ∈ t2’ by simp[] >> metis_tac[NOT_IN_EMPTY, IN_INTER]
+QED
+
 Theorem prop_3_3_3:
   ∀t. clopen euclidean t ⇔ t = {} ∨ t = UNIV
 Proof
@@ -225,97 +287,7 @@ Proof
       gs[IN_DEF]) >>
   gs[]
 QED
-        
-Theorem prop_3_3_3:
-  interval A ⇒ 
-  ∀B. clopen (subtopology euclidean A) B ⇔ B = {} ∨ B = A
-Proof 
-  simp[clopen_def,EQ_IMP_THM,OPEN_IN_EMPTY,CLOSED_IN_EMPTY,
-       closed_in,DISJ_IMP_THM,OPEN_IN_SUBTOPOLOGY,TOPSPACE_SUBTOPOLOGY] >>
-  reverse (rpt strip_tac) (* 5 *)
-  >- (qexists_tac ‘UNIV’ >> simp[])
-  >- (qexists_tac ‘{}’ >> simp[])
-  >- (qexists_tac ‘{}’ >> simp[])
-  >- (qexists_tac ‘UNIV’ >> simp[]) >>
-  CCONTR_TAC >> gvs[] >>
-  rename [‘A DIFF B2 ∩ A = B1 ∩ A’] >>  
-  fs[GSYM MEMBER_NOT_EMPTY] >>
-  ‘B1 ∩ A ≠ {}’
-   by
-    (strip_tac >> gvs[INTER_SUBSET_EQN]) >> 
-  ‘∃z. z IN (A DIFF B2 ∩ A)’
-    by metis_tac[MEMBER_NOT_EMPTY] >>
-  wlog_tac ‘x < z’ [‘x’,‘z’,‘B1’,‘B2’] (* 2 *) >-
-   (‘x ≠ z’ by (strip_tac >> gvs[]) >>
-    ‘z < x’ by simp[] >>
-    first_x_assum drule >> simp[] >> qexistsl_tac [‘B2’,‘B1’] >>
-    simp[] >> gvs[GSYM MEMBER_NOT_EMPTY] >> rpt strip_tac (* 5 *)
-    >- (* because A DIFF B2 ∩ A = B1 ∩ A*)
-       metis_tac[EXTENSION,IN_DIFF,IN_INTER]
-    >- metis_tac[]
-    >- metis_tac[EXTENSION,IN_DIFF,IN_INTER]
-    >- metis_tac[EXTENSION,IN_DIFF,IN_INTER] >>
-    ‘A DIFF (A DIFF B2 ∩ A) = A DIFF (B1 ∩ A)’
-    >- metis_tac[] >>
-    ‘A DIFF (A DIFF B2 ∩ A) = B2 ∩ A’ suffices_by metis_tac[]
-    >- irule DIFF_DIFF_SUBSET >> rw[INTER_SUBSET])
 
-
-
-    
-    fs[DIFF_DIFF_SUBSET]
-
-    (*up to here *)
-gs[REAL_NOT_LT,REAL_LE_LT] >>
-    first_x_assum (qspecl_then [‘z’,‘x’,‘UNIV DIFF t’] mp_tac)>>
-    simp[X_DIFF_EQ_X,DIFF_DIFF_SUBSET,DISJOINT_DEF] >>
-    strip_tac >> gs[]) >>
-  qabbrev_tac ‘s = t INTER {a | x ≤ a ∧ a ≤ z}’ >>
-  ‘closed_in euclidean s’
-    by (simp[Abbr‘s’] >> irule CLOSED_IN_INTER >>
-        simp[closed_is_closed] >> simp[closed_in]) >>
-  ‘∀r. r ∈ s ⇒ r < z + 1’
-    by simp[Abbr‘s’] >>
-  ‘s ≠ {}’ by (simp[GSYM MEMBER_NOT_EMPTY,Abbr‘s’] >>
-               qexists_tac ‘x’ >> simp[]) >>
-  ‘sup s ∈ s’
-    by metis_tac[lemma_3_3_2] >>
-  ‘∀r. r ∈ s ⇒ r ≤ z’
-    by simp[Abbr‘s’] >>
-  ‘sup s < z’
-    by (first_x_assum drule >>
-        simp[REAL_LE_LT,DISJ_IMP_THM] >>
-        strip_tac >> gs[Abbr‘s’]) >>
-  ‘sup s ∈ t’ by gs[Abbr‘s’] >>
-  ‘∃a b. sup s ∈ ival a b ∧ ival a b ⊆ t’
-    by metis_tac[open_in_euclidean] >>
-  ‘∃t0. sup s < t0 ∧ t0 < min b z’
-    by (irule REAL_MEAN >> simp[REAL_LT_MIN] >>
-        gs[ival_def]) >>
-  ‘t0 ∈ t’
-    by (gs[SUBSET_DEF] >> first_x_assum irule >>
-        gs[ival_def,REAL_LT_MIN]) >>
-  ‘t0 ∈ {c | sup s ≤ c ∧ c ≤ z}’
-    by gs[REAL_LT_MIN] >>
-  ‘x ≤ t0 ∧ t0 ≤ z’
-    by (gs[] >> irule REAL_LE_TRANS >>
-        qexists_tac ‘sup s’ >> simp[] >>
-        irule REAL_SUP_UBOUND >>
-        reverse $ rpt conj_tac (* 3 *) >-
-        (gs[IN_DEF] >> metis_tac[]) >>
-        simp[Abbr‘s’] >> qexists_tac ‘x’ >> simp[])  >>
-  ‘t0 ∈ s’
-  by simp[Abbr‘s’] >>
-  ‘t0 ≤ sup s’
-  by (irule REAL_SUP_UBOUND >>
-      reverse $ rpt conj_tac (* 3 *) >-
-       (gs[IN_DEF] >> metis_tac[]) >-
-       (simp[Abbr‘s’] >> qexists_tac ‘x’ >> simp[]) >>
-      gs[IN_DEF]) >>
-  gs[]
-QED
-
-                
 Theorem connected_euclidean[simp]:
   connected euclidean
 Proof
@@ -336,5 +308,5 @@ Proof
     simp[countable_rational,dense_rational]
 QED
 
-        
+
 val _ = export_theory();
