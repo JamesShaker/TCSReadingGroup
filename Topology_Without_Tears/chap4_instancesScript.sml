@@ -472,6 +472,37 @@ Proof
   simp[Abbr‘top1’, closed_ival_connected]
 QED
 
+Overload EST = “subtopology euclidean”
 
+(*
+remark_4_3_6
+interval_def
+REAL_MEAN
+*)
+Theorem corollary_4_3_7:
+    a < b ∧ c < d ⇒
+    ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x < d}) (f,g) ∧
+    ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g) ∧
+    ¬homeomorphism (EST {x | a ≤ x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g)
+Proof
+    strip_tac >> conj_asm1_tac
+    >- (strip_tac >> dxrule_then assume_tac $ iffLR homeomorphism_SYM >>
+        drule_then (qspec_then ‘c’ mp_tac) remark_4_3_6 >>
+        simp[TOPSPACE_SUBTOPOLOGY,SUBTOPOLOGY_SUBTOPOLOGY,SUBSET_INTER2] >>
+        ‘{x | c ≤ x ∧ x < d} DIFF {c} = {x | c < x ∧ x < d}’ by simp[EXTENSION] >>
+        simp[] >> strip_tac >>
+        drule homeomorphism_connected >> simp[prop_4_3_5] >>
+        conj_tac >- metis_tac[remark4_3_4ii] >>
+        simp[interval_def] >> cheat
+        (* show g c in (a,b) *)
+        (*
+        ‘g c ∈ {x | a < x ∧ x < b}’ by (gs[homeomorphism,BIJ_DEF,INJ_DEF]
+        ) >>
+        *)
+        (* use REAL_MEAN in a,g c and g c,b *)
+        (* qexists with those *)
+    ) >>
+    cheat
+QED
 
 val _ = export_theory();

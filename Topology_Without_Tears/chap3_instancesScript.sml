@@ -229,6 +229,20 @@ Proof
   CCONTR_TAC >> ‘e ∈ t2’ by simp[] >> metis_tac[NOT_IN_EMPTY, IN_INTER]
 QED
 
+Theorem prop_4_3_5:
+    connected (subtopology euclidean xy) ⇔ interval xy
+Proof
+    eq_tac >> simp[interval_connected] >>
+    rw[interval_def] >> CCONTR_TAC >>
+    qpat_x_assum ‘connected _’ mp_tac >>
+    simp[remark_3_3_9,OPEN_IN_SUBTOPOLOGY,TOPSPACE_SUBTOPOLOGY,PULL_EXISTS] >>
+    qexistsl_tac [‘{w | w < y}’,‘{w | y < w}’] >>
+    rw[EXTENSION]
+    >- (simp[REAL_NOT_LT] >> metis_tac[REAL_LE_TOTAL])
+    >- (metis_tac[REAL_LT_TOTAL]) >>
+    metis_tac[]
+QED
+
 Theorem prop_3_3_3:
   ∀t. clopen euclidean t ⇔ t = {} ∨ t = UNIV
 Proof

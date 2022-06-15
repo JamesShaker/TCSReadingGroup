@@ -648,5 +648,20 @@ Proof
     fs[homeomorphism,BIJ_IMAGE]
 QED
 
+Theorem remark_4_3_6:
+    homeomorphism (t1,t2) (f,g) ∧ a ∈ topspace t1 ⇒
+        homeomorphism (subtopology t1 (topspace t1 DIFF {a}),subtopology t2 (topspace t2 DIFF {f a})) (f,g)
+Proof
+    rw[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,SUBSET_INTER2,GSYM DELETE_DEF]
+    >- (simp[BIJ_DELETE])
+    >- (‘f a ∈ topspace t2 ∧ g (f a) = a’ suffices_by metis_tac[BIJ_DELETE] >>
+        gs[BIJ_DEF,INJ_DEF])
+    >> (rpt $ first_assum $ irule_at Any >> rw[EXTENSION,EQ_IMP_THM]
+        >- metis_tac[]
+        >- gs[BIJ_DEF,INJ_DEF]
+        >- metis_tac[]
+        >- metis_tac[in_open_in_topspace])
+QED
+
 val _ = export_theory();
 
