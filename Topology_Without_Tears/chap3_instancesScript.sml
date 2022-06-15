@@ -164,6 +164,42 @@ Proof
     metis_tac[REAL_LT_SUP,REAL_INF_LT,REAL_LE_LT]
 QED
 
+Theorem better_remark4_3_4ii:
+  interval A ⇔
+    (∃a. A = {a}) ∨
+    (∃a b. a < b ∧ A = { x | a ≤ x ∧ x ≤ b }) ∨
+    (∃a b. a < b ∧ A = { x | a < x ∧ x < b }) ∨
+    (∃a b. a < b ∧ A = { x | a ≤ x ∧ x < b }) ∨
+    (∃a b. a < b ∧ A = { x | a < x ∧ x ≤ b }) ∨
+    (∃a.           A = { x | x < a }) ∨
+    (∃a.           A = { x | a < x }) ∨
+    (∃a.           A = { x | x ≤ a }) ∨
+    (∃a.           A = { x | a ≤ x }) ∨
+    A = UNIV ∨ A = ∅
+Proof
+  simp[remark4_3_4ii] >> Cases_on ‘A = ∅’ >> simp[]
+  >- (disj1_tac >> qexistsl_tac [‘1’, ‘0’] >> simp[EXTENSION]) >>
+  Cases_on ‘A = UNIV’ >> simp[] >>
+  Q.ASM_CASES_TAC ‘∃a. A = {a}’  >> simp[] >>
+  Q.ASM_CASES_TAC ‘∃a. A = {x | x < a}’  >> simp[] >>
+  Q.ASM_CASES_TAC ‘∃a. A = {x | x ≤ a}’  >> simp[] >>
+  Q.ASM_CASES_TAC ‘∃a. A = {x | a < x}’  >> simp[] >>
+  Q.ASM_CASES_TAC ‘∃a. A = {x | a ≤ x}’  >> simp[] >>
+  eq_tac >> rw[] >> simp[SF SFY_ss]
+  >- (Cases_on ‘a < b’ >- metis_tac[] >>
+      gs[] >> Cases_on ‘a = b’
+      >- (last_x_assum $ qspec_then ‘a’ mp_tac >>
+          simp[EXTENSION]) >>
+      gs[EXTENSION])
+  >- (Cases_on ‘a < b’ >- metis_tac[] >>
+      gs[EXTENSION])
+  >- (Cases_on ‘a < b’ >- metis_tac[] >>
+      gs[EXTENSION])
+  >- (Cases_on ‘a < b’ >- metis_tac[] >>
+      gs[EXTENSION]) >>
+  metis_tac[]
+QED
+
 Theorem open_members_grow_towards_bound:
     open_in euclidean s ∧ a ∈ s ∧ a < b ⇒ ∃c. c ∈ s ∧ a < c ∧ c < b
 Proof

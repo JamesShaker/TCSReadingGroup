@@ -480,29 +480,129 @@ interval_def
 REAL_MEAN
 *)
 Theorem corollary_4_3_7:
-    a < b ∧ c < d ⇒
-    ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x < d}) (f,g) ∧
-    ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g) ∧
-    ¬homeomorphism (EST {x | a ≤ x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g)
+  a < b ∧ c < d ⇒
+  (∀f g.
+     ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x < d}) (f,g)) ∧
+  (∀f g.
+     ¬homeomorphism (EST {x | a < x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g)) ∧
+  (∀f g.
+     ¬homeomorphism (EST {x | a ≤ x ∧ x < b},EST {x | c ≤ x ∧ x ≤ d}) (f,g))
 Proof
-    strip_tac >> conj_asm1_tac
-    >- (strip_tac >> dxrule_then assume_tac $ iffLR homeomorphism_SYM >>
-        drule_then (qspec_then ‘c’ mp_tac) remark_4_3_6 >>
-        simp[TOPSPACE_SUBTOPOLOGY,SUBTOPOLOGY_SUBTOPOLOGY,SUBSET_INTER2] >>
-        ‘{x | c ≤ x ∧ x < d} DIFF {c} = {x | c < x ∧ x < d}’ by simp[EXTENSION] >>
-        simp[] >> strip_tac >>
-        drule homeomorphism_connected >> simp[prop_4_3_5] >>
-        conj_tac >- metis_tac[remark4_3_4ii] >>
-        simp[interval_def] >> cheat
-        (* show g c in (a,b) *)
-        (*
-        ‘g c ∈ {x | a < x ∧ x < b}’ by (gs[homeomorphism,BIJ_DEF,INJ_DEF]
-        ) >>
-        *)
-        (* use REAL_MEAN in a,g c and g c,b *)
-        (* qexists with those *)
-    ) >>
-    cheat
+  strip_tac >> rpt conj_asm1_tac >> rpt gen_tac
+  >- (strip_tac >> dxrule_then assume_tac $ iffLR homeomorphism_SYM >>
+      drule_then (qspec_then ‘c’ mp_tac) remark_4_3_6 >>
+      simp[TOPSPACE_SUBTOPOLOGY,SUBTOPOLOGY_SUBTOPOLOGY,SUBSET_INTER2] >>
+      ‘{x | c ≤ x ∧ x < d} DIFF {c} = {x | c < x ∧ x < d}’ by simp[EXTENSION] >>
+      simp[] >> strip_tac >>
+      drule homeomorphism_connected >> simp[prop_4_3_5] >>
+      conj_tac >- metis_tac[remark4_3_4ii] >>
+      simp[interval_def] >>
+      ‘a < g c ∧ g c < b’
+        by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
+            gs[BIJ_IFF_INV]) >>
+      ‘∃a' b'. a < a' ∧ a' < g c ∧ g c < b' ∧ b' < b’
+        by metis_tac[REAL_MEAN] >>
+      metis_tac[REAL_LT_REFL, REAL_LT_TRANS])
+  >- (pop_assum kall_tac >>
+      strip_tac >> dxrule_then assume_tac $ iffLR homeomorphism_SYM >>
+      drule_then (qspec_then ‘c’ mp_tac) remark_4_3_6 >>
+      simp[TOPSPACE_SUBTOPOLOGY,SUBTOPOLOGY_SUBTOPOLOGY,SUBSET_INTER2] >>
+      ‘{x | c ≤ x ∧ x ≤ d} DIFF {c} = {x | c < x ∧ x ≤ d}’ by simp[EXTENSION] >>
+      simp[] >> strip_tac >>
+      drule homeomorphism_connected >> simp[prop_4_3_5] >>
+      conj_tac >- metis_tac[remark4_3_4ii] >>
+      simp[interval_def] >>
+      ‘a < g c ∧ g c < b’
+        by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
+            gs[BIJ_IFF_INV]) >>
+      ‘∃a' b'. a < a' ∧ a' < g c ∧ g c < b' ∧ b' < b’
+        by metis_tac[REAL_MEAN] >>
+      metis_tac[REAL_LT_REFL, REAL_LT_TRANS])
+  >- (strip_tac >> dxrule_then assume_tac $ iffLR homeomorphism_SYM >>
+      drule_then (qspec_then ‘d’ mp_tac) remark_4_3_6 >>
+      simp[TOPSPACE_SUBTOPOLOGY,SUBTOPOLOGY_SUBTOPOLOGY,SUBSET_INTER2] >>
+      ‘{x | c ≤ x ∧ x ≤ d} DIFF {d} = {x | c ≤ x ∧ x < d}’ by simp[EXTENSION] >>
+      simp[] >> strip_tac >>
+      Cases_on ‘g d = a’
+      >- (‘{ x | a ≤ x ∧ x < b } DIFF { g d } = { x | a < x ∧ x < b }’
+            by simp[EXTENSION] >> gs[] >>
+          metis_tac[homeomorphism_SYM]) >>
+      drule homeomorphism_connected >> simp[prop_4_3_5] >>
+      conj_tac >- metis_tac[remark4_3_4ii] >>
+      simp[interval_def] >>
+      ‘a < g d ∧ g d < b’
+        by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
+            gs[BIJ_IFF_INV] >> metis_tac[REAL_LE_LT]) >>
+      ‘∃a' b'. a < a' ∧ a' < g d ∧ g d < b' ∧ b' < b’
+        by metis_tac[REAL_MEAN] >>
+      metis_tac[REAL_LT_REFL, REAL_LT_TRANS, REAL_LE_LT])
 QED
+
+
+Theorem closed_ival_homeo_01:
+  a < b ⇒
+  homeomorphism (EST {x | a ≤ x ∧ x ≤ b}, EST {x | 0 ≤ x ∧ x ≤ 1})
+                ((λy. (y - a) / (b - a)), (λy. y * (b - a) + a))
+Proof
+  strip_tac >> qmatch_abbrev_tac ‘homeomorphism _ (f,g)’ >>
+  ‘(∀x. f (g x) = x) ∧ (∀x. g (f x) = x)’
+    by (simp[Abbr‘f’, Abbr‘g’] >> simp[real_div]) >>
+  ‘∀x. 0 ≤ x ∧ x ≤ 1 ⇒ a ≤ g x ∧ g x ≤ b’
+    by (simp[Abbr‘g’, REAL_LE_MUL] >>
+        simp[REAL_ARITH “x + y ≤ z ⇔ x ≤ z - y”]) >>
+  ‘∀x. a ≤ x ∧ x ≤ b ⇒ 0 ≤ f x ∧ f x ≤ 1’
+    by simp[Abbr‘f’, REAL_LE_MUL] >>
+  ‘∀x y. g x < g y ⇔ x < y’ by simp[Abbr‘g’] >>
+  ‘∀x y. f x < f y ⇔ x < y’ by simp[Abbr‘f’] >>
+  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >> rpt strip_tac
+  >- (simp[BIJ_IFF_INV] >> metis_tac[])
+  >- (simp[BIJ_IFF_INV] >> metis_tac[])
+  >- (rename [‘V = OS ∩ _’] >>
+      qexists ‘IMAGE g OS’ >>
+      simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
+      simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
+      ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
+      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
+      metis_tac[])
+  >- (rename [‘V = OS ∩ _’] >>
+      qexists ‘IMAGE f OS’ >>
+      simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
+      simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
+      ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
+      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
+      metis_tac[])
+QED
+
+(* fact that only one of these disjuncts is possible follows from 4.3.7 above and
+   the fact that {0} can't be homeomorphic to any of the others because their
+   cardinalities are totally different. *)
+Theorem exercise_4_3_1:
+  interval A ∧ A ≠ ∅ ⇒
+  (∃f g. homeomorphism (EST A, EST {0}) (f,g)) ∨
+  (∃f g. homeomorphism (EST A, EST {x | 0 < x ∧ x < 1}) (f,g)) ∨
+  (∃f g. homeomorphism (EST A, EST {x | 0 ≤ x ∧ x ≤ 1}) (f,g)) ∨
+  (∃f g. homeomorphism (EST A, EST {x | 0 ≤ x ∧ x < 1}) (f,g))
+Proof
+  strip_tac >> gvs[better_remark4_3_4ii]
+  >- (disj1_tac >> qexistsl_tac [‘λi. 0’, ‘λi. a’] >>
+      simp[homeomorphism, TOPSPACE_SUBTOPOLOGY, OPEN_IN_SUBTOPOLOGY] >>
+      rpt strip_tac >> simp[BIJ_IFF_INV]
+      >- (qexists ‘K a’ >> simp[])
+      >- (qexists ‘K 0’ >> simp[])
+      >- (Cases_on ‘t ∩ {0} = ∅’ >> simp[]
+          >- (qexists ‘∅’ >> simp[]) >>
+          qexists ‘ival (a - 1) (a + 1)’ >> simp[] >>
+          gs[EXTENSION, ival_def, SF CONJ_ss]) >>
+      Cases_on ‘t ∩ {a} = ∅’ >> simp[]
+      >- (qexists ‘∅’ >> simp[]) >>
+      qexists ‘ival (-1) 1’ >> simp[] >>
+      gs[EXTENSION, ival_def, SF CONJ_ss])
+  >- metis_tac[closed_ival_homeo_01]
+  >- metis_tac[example_4_2_4, REAL_ARITH “0 < 1r”,
+               ival_def] >>
+  cheat (* many more still to do *)
+QED
+
+
 
 val _ = export_theory();
