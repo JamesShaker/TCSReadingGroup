@@ -573,6 +573,72 @@ Proof
       metis_tac[])
 QED
 
+
+          
+        
+Theorem homeo_flip_open_closed_ends:
+a < b ⇒
+  homeomorphism (EST {x | a ≤ x ∧ x < b },
+                 EST {x | -b < x ∧ x ≤ -a})
+                (real_neg,real_neg)
+Proof
+  simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,
+       OPEN_IN_SUBTOPOLOGY,BIJ_DEF,INJ_DEF,SURJ_DEF] >>
+  rw[] (* 4 *)
+  >- (qexists_tac ‘-x’ >> rw[])
+  >- (qexists_tac ‘-x’ >> rw[])
+  >> (qexists_tac ‘IMAGE numeric_negate t’ >>
+      simp[EXTENSION] >> conj_tac (* 2 *)
+      >- (gs[open_in_euclidean,PULL_EXISTS] >> rw[] >>
+          first_x_assum
+          (drule_then
+           (qx_choosel_then [‘m’,‘n’] strip_assume_tac)) >>
+          qexistsl_tac [‘-n’,‘-m’] >> gs[SUBSET_DEF,ival_def]>>
+          simp[REAL_ARITH “a:real = -b ⇔ -a = b”]) >>
+      simp[REAL_ARITH “a:real = -b ⇔ -a = b”] >> gen_tac >>
+      Cases_on ‘-x ∈ t’ >> simp[])
+QED      
+
+
+
+Theorem closed_open_ival_homeo_01:
+  a < b ⇒
+  homeomorphism (EST {x | a ≤ x ∧ x < b}, EST {x | 0 ≤ x ∧ x < 1})
+                ((λy. (y - a) / (b - a)), (λy. y * (b - a) + a))
+Proof
+  strip_tac >> qmatch_abbrev_tac ‘homeomorphism _ (f,g)’ >>
+  ‘(∀x. f (g x) = x) ∧ (∀x. g (f x) = x)’
+    by (simp[Abbr‘f’, Abbr‘g’] >> simp[real_div]) >>
+  ‘∀x. 0 ≤ x ∧ x < 1 ⇒ a ≤ g x ∧ g x < b’
+    by (simp[Abbr‘g’, REAL_LE_MUL] >>
+        simp[REAL_ARITH “x + y < z ⇔ x < z - y”]) >>
+  ‘∀x. a ≤ x ∧ x < b ⇒ 0 ≤ f x ∧ f x < 1’
+    by simp[Abbr‘f’, REAL_LE_MUL] >>
+  ‘∀x y. g x < g y ⇔ x < y’ by simp[Abbr‘g’] >>
+  ‘∀x y. f x < f y ⇔ x < y’ by simp[Abbr‘f’] >>
+  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >> rpt strip_tac
+  >- (simp[BIJ_IFF_INV] >> metis_tac[])
+  >- (simp[BIJ_IFF_INV] >> metis_tac[])
+  >- (rename [‘V = OS ∩ _’] >>
+      qexists ‘IMAGE g OS’ >>
+      simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
+      simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
+      ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
+      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
+      metis_tac[])
+  >- (rename [‘V = OS ∩ _’] >>
+      qexists ‘IMAGE f OS’ >>
+      simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
+      simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
+      ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
+      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
+      metis_tac[])
+QED
+                
+    
+                                 
+
+
 (* fact that only one of these disjuncts is possible follows from 4.3.7 above and
    the fact that {0} can't be homeomorphic to any of the others because their
    cardinalities are totally different. *)
@@ -599,7 +665,13 @@ Proof
       gs[EXTENSION, ival_def, SF CONJ_ss])
   >- metis_tac[closed_ival_homeo_01]
   >- metis_tac[example_4_2_4, REAL_ARITH “0 < 1r”,
-               ival_def] >>
+               ival_def]
+  >- metis_tac[closed_open_ival_homeo_01]
+  >- metis_tac[homeomorphism_TRANS,homeomorphism_SYM,
+               closed_open_ival_homeo_01,
+               homeo_flip_open_closed_ends,
+               REAL_ARITH “--x = x:real ∧
+                           (-a < -b ⇔ b < a:real)”] >>
   cheat (* many more still to do *)
 QED
 
