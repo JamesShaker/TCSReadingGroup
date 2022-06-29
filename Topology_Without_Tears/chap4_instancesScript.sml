@@ -573,9 +573,6 @@ Proof
       metis_tac[])
 QED
 
-
-          
-        
 Theorem homeo_flip_open_closed_ends:
 a < b ⇒
   homeomorphism (EST {x | a ≤ x ∧ x < b },
@@ -597,9 +594,7 @@ Proof
           simp[REAL_ARITH “a:real = -b ⇔ -a = b”]) >>
       simp[REAL_ARITH “a:real = -b ⇔ -a = b”] >> gen_tac >>
       Cases_on ‘-x ∈ t’ >> simp[])
-QED      
-
-
+QED
 
 Theorem closed_open_ival_homeo_01:
   a < b ⇒
@@ -634,10 +629,50 @@ Proof
       qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
       metis_tac[])
 QED
-                
-    
-                                 
 
+Theorem INJ_IMAGE_INTER:
+    (∀x y. f x = f y ⇔ x = y) ⇒ IMAGE f (A ∩ B) = IMAGE f A ∩ IMAGE f B
+Proof
+    rw[EXTENSION,PULL_EXISTS] >> metis_tac[]
+QED
+
+Theorem homeo_negate:
+    B = IMAGE (real_neg) A ⇒
+    homeomorphism (EST A,EST B)
+                (real_neg,real_neg)
+Proof
+    simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
+       BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,INJ_IMAGE_INTER,IMAGE_IMAGE,combinTheory.o_DEF] >>
+    rw[] >> irule_at Any EQ_REFL >> gs[open_in_euclidean,PULL_EXISTS] >>
+    rw[] >> first_x_assum $ dxrule_then strip_assume_tac >>
+    gs[ival_def,SUBSET_DEF,REAL_ARITH “x = -y ⇔ -x = y”] >>
+    rpt $ irule_at Any $ iffRL REAL_LT_NEG >>
+    rpt $ first_assum $ irule_at Any >> simp[]
+QED
+
+Theorem homeo_shift:
+    B = IMAGE ((+) d) A ⇒
+    homeomorphism (EST A,EST B)
+                ((+) d,flip (-) d)
+Proof
+    simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,
+       OPEN_IN_SUBTOPOLOGY,BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,REAL_ADD_SUB] >>
+    rw[]
+    >- (simp[INJ_IMAGE_INTER,IMAGE_IMAGE,combinTheory.o_DEF,REAL_ADD_SUB] >>
+        irule_at Any EQ_REFL >> gs[open_in_euclidean,PULL_EXISTS] >>
+        rw[] >> first_x_assum $ dxrule_then strip_assume_tac >>
+        gs[ival_def,SUBSET_DEF,REAL_EQ_SUB_LADD] >>
+        rpt $ irule_at Any $ REAL_ARITH “x < (y:real) ⇒ x - z < y - z” >>
+        rpt $ first_assum $ irule_at Any >> simp[])
+    >- (simp[INJ_IMAGE_INTER,IMAGE_IMAGE,combinTheory.o_DEF,REAL_ADD_SUB] >>
+        irule_at Any EQ_REFL >> gs[open_in_euclidean,PULL_EXISTS] >>
+        rw[] >> first_x_assum $ dxrule_then strip_assume_tac >>
+        gs[ival_def,SUBSET_DEF,REAL_ARITH “y = x + z ⇔ z = y - x: real”] >>
+        rpt $ irule_at Any $ REAL_ARITH “x < (y:real) ⇒ z + x < z + y” >>
+        rpt $ first_assum $ irule_at Any >> simp[])
+QED
+
+Theorem htrans = homeomorphism_TRANS |> INST_TYPE [“:α” |-> “:real”,“:β” |-> “:real”,“:γ” |-> “:real”]
 
 (* fact that only one of these disjuncts is possible follows from 4.3.7 above and
    the fact that {0} can't be homeomorphic to any of the others because their
@@ -671,7 +706,21 @@ Proof
                closed_open_ival_homeo_01,
                homeo_flip_open_closed_ends,
                REAL_ARITH “--x = x:real ∧
-                           (-a < -b ⇔ b < a:real)”] >>
+                           (-a < -b ⇔ b < a:real)”]
+  >- ((* (-inf,a) -> (-a,inf) -> (1,inf) -> (0,1) *)
+      disj2_tac >> disj1_tac >> irule_at Any htrans >>
+      cheat
+  )
+  >- ((* (a,inf) -> (1,inf) -> (0,1) *)
+      cheat
+  )
+  >- ((* (-inf,a] -> [-a,inf) -> [1,inf) -> (0,1] -> [0,1) *)
+      cheat
+  )
+  >- ((* [a,inf) -> [1,inf) -> (0,1] -> [0,1) *)
+      cheat
+  ) >>
+  (* (inf,inf) -> (-1,1) -> (0,1) *)
   cheat (* many more still to do *)
 QED
 
