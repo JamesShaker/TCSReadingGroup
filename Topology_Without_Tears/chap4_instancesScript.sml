@@ -672,7 +672,98 @@ Proof
         rpt $ first_assum $ irule_at Any >> simp[])
 QED
 
-Theorem htrans = homeomorphism_TRANS |> INST_TYPE [“:α” |-> “:real”,“:β” |-> “:real”,“:γ” |-> “:real”]
+Theorem htrans =
+        homeomorphism_TRANS
+          |> INST_TYPE [“:α” |-> “:real”,“:β” |-> “:real”,“:γ” |-> “:real”]
+
+Theorem open_in_IMAGE_realinv:
+  0 ∉ t ∧ open_in euclidean t ⇒ open_in euclidean (IMAGE realinv t)
+Proof
+  simp[open_in_euclidean, PULL_EXISTS, ival_def, SUBSET_DEF] >> rw[] >>
+  first_x_assum $ drule_then strip_assume_tac >>
+  rename [‘x ∈ t’, ‘a < x’, ‘x < b’] >>
+  Cases_on ‘0 < a’
+  >- (qexistsl [‘inv b’, ‘inv a’] >> simp[] >> qx_gen_tac ‘y’ >> strip_tac >>
+      qexists ‘inv y’ >> simp[REAL_INV_INV] >> first_assum irule >>
+      Cases_on ‘0 < y’ >> simp[] >> gs[REAL_NOT_LT] >>
+      ‘0 < b * y’ by simp[] >>
+      pop_assum mp_tac >> ‘0 < b’ by simp[] >>
+      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
+      ONCE_REWRITE_TAC [REAL_MUL_COMM] >> simp[]) >>
+  gs[REAL_NOT_LT] >>
+  Cases_on ‘b < 0’
+  >- (gs[] >> qexistsl [‘inv b’, ‘inv a’] >> simp[] >>
+      qx_gen_tac ‘y’ >> rw[] >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
+      first_assum irule >> Cases_on ‘y < 0’ >> simp[] >>
+      gs[REAL_NOT_LT] >> gs[REAL_LE_LT] >>
+      ‘0 < a * y’ by simp[] >>
+      pop_assum mp_tac >>
+      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
+      ASM_REWRITE_TAC[] >> simp[]) >>
+  Cases_on ‘a = 0’ >> gs[]
+  >- (qexistsl [‘inv b’, ‘2 * inv x’] >> simp[] >> qx_gen_tac ‘y’ >>
+      strip_tac >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
+      first_assum irule >> Cases_on ‘0 < y’ >> simp[] >>
+      gs[REAL_NOT_LT, REAL_LE_LT] >>
+      ‘0 < b * y’ by simp[] >>
+      pop_assum mp_tac >> ‘0 < b’ by simp[] >>
+      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
+      PURE_ONCE_REWRITE_TAC [REAL_MUL_COMM] >> ASM_REWRITE_TAC [] >>
+      simp[]) >>
+  Cases_on ‘b = 0’ >> gs[] >>
+  qexistsl [‘2 * inv x’, ‘inv a’] >> simp[] >> qx_gen_tac ‘y’ >>
+  strip_tac >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
+  first_assum irule >> reverse $ Cases_on ‘0 < y’ >> simp[]
+  >- gs[REAL_NOT_LT, REAL_LE_LT] >>
+  ‘0 < a * y’ by simp[] >>
+  pop_assum mp_tac >>
+  pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
+  ASM_REWRITE_TAC[] >> simp[]
+QED
+
+
+Theorem open_in_euclidean_DELETE:
+  open_in euclidean t ⇒
+  open_in euclidean (t DELETE a)
+Proof
+  strip_tac >>
+  ‘t DELETE a = (t ∩ { x | x < a }) ∪ (t ∩ { x | a < x})’
+    by (simp[EXTENSION, EQ_IMP_THM] >> rw[] >> simp[]) >>
+  pop_assum SUBST1_TAC >>
+  irule OPEN_IN_UNION >> conj_tac >>
+  irule OPEN_IN_INTER >> simp[]
+QED
+
+Theorem INJ_IMAGE_DELETE:
+  (∀x y. f x = f y ⇔ x = y) ⇒ IMAGE f (x DELETE e) = IMAGE f x DELETE f e
+Proof
+  simp[EXTENSION] >> metis_tac[]
+QED
+
+Theorem homeo_inv:
+  0 ∉ A ∧ B = IMAGE inv A ⇒ homeomorphism (EST A, EST B) (inv, inv)
+Proof
+  simp[homeomorphism, TOPSPACE_SUBTOPOLOGY, OPEN_IN_SUBTOPOLOGY, PULL_EXISTS,
+       REAL_INV_INV, BIJ_DEF, INJ_DEF, SURJ_DEF, INJ_IMAGE_INTER,
+       REAL_INV_INJ, IMAGE_IMAGE, combinTheory.o_DEF] >> rw[]
+  >> (qexists‘IMAGE realinv (t DELETE 0)’ >> reverse conj_tac
+      >- (simp[EXTENSION] >> rw[EQ_IMP_THM] >>
+          metis_tac[REAL_INV_INV, REAL_INV_0]) >>
+      simp[open_in_euclidean_DELETE, open_in_IMAGE_realinv])
+QED
+
+Theorem upray_homeo_01:
+  ∃f g. homeomorphism (EST {x | c < x }, EST { x | 0 < x ∧ x < 1 }) (f,g)
+Proof
+  irule_at Any htrans >> irule_at (Pos hd) homeo_shift >>
+  ‘{ x | 1 < x } = IMAGE ($+ (1 - c)) { x | c < x }’
+    by (simp[EXTENSION, EQ_IMP_THM, PULL_EXISTS] >> rw[] >>
+        qexists ‘c + x - 1’ >> simp[]) >>
+  first_assum $ irule_at Any >>
+  irule_at Any homeo_inv >> simp[EXTENSION] >>
+  rw[EQ_IMP_THM] >> simp[] >>
+  qexists ‘inv x’ >> simp[REAL_INV_INV]
+QED
 
 (* fact that only one of these disjuncts is possible follows from 4.3.7 above and
    the fact that {0} can't be homeomorphic to any of the others because their
@@ -709,11 +800,13 @@ Proof
                            (-a < -b ⇔ b < a:real)”]
   >- ((* (-inf,a) -> (-a,inf) -> (1,inf) -> (0,1) *)
       disj2_tac >> disj1_tac >> irule_at Any htrans >>
-      cheat
-  )
-  >- ((* (a,inf) -> (1,inf) -> (0,1) *)
-      cheat
-  )
+      irule_at (Pos hd) homeo_negate >>
+      ‘IMAGE real_neg { x | x < a} = {x | -a < x }’
+        by (simp[EXTENSION] >> rw[EQ_IMP_THM] >> simp[] >>
+            qexists ‘-x’ >> simp[]) >>
+      first_x_assum (irule_at Any o SYM) >>
+      metis_tac[upray_homeo_01])
+  >- metis_tac[upray_homeo_01]
   >- ((* (-inf,a] -> [-a,inf) -> [1,inf) -> (0,1] -> [0,1) *)
       cheat
   )
