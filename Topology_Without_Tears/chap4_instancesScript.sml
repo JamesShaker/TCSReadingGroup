@@ -677,50 +677,29 @@ Theorem htrans =
           |> INST_TYPE [“:α” |-> “:real”,“:β” |-> “:real”,“:γ” |-> “:real”]
 
 Theorem open_in_IMAGE_realinv:
-  0 ∉ t ∧ open_in euclidean t ⇒ open_in euclidean (IMAGE realinv t)
+    0 ∉ t ∧ open_in euclidean t ⇒ open_in euclidean (IMAGE realinv t)
 Proof
-  simp[open_in_euclidean, PULL_EXISTS, ival_def, SUBSET_DEF] >> rw[] >>
-  first_x_assum $ drule_then strip_assume_tac >>
-  rename [‘x ∈ t’, ‘a < x’, ‘x < b’] >>
-  Cases_on ‘0 < a’
-  >- (qexistsl [‘inv b’, ‘inv a’] >> simp[] >> qx_gen_tac ‘y’ >> strip_tac >>
-      qexists ‘inv y’ >> simp[REAL_INV_INV] >> first_assum irule >>
-      Cases_on ‘0 < y’ >> simp[] >> gs[REAL_NOT_LT] >>
-      ‘0 < b * y’ by simp[] >>
-      pop_assum mp_tac >> ‘0 < b’ by simp[] >>
-      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
-      ONCE_REWRITE_TAC [REAL_MUL_COMM] >> simp[]) >>
-  gs[REAL_NOT_LT] >>
-  Cases_on ‘b < 0’
-  >- (gs[] >> qexistsl [‘inv b’, ‘inv a’] >> simp[] >>
-      qx_gen_tac ‘y’ >> rw[] >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
-      first_assum irule >> Cases_on ‘y < 0’ >> simp[] >>
-      gs[REAL_NOT_LT] >> gs[REAL_LE_LT] >>
-      ‘0 < a * y’ by simp[] >>
-      pop_assum mp_tac >>
-      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
-      ASM_REWRITE_TAC[] >> simp[]) >>
-  Cases_on ‘a = 0’ >> gs[]
-  >- (qexistsl [‘inv b’, ‘2 * inv x’] >> simp[] >> qx_gen_tac ‘y’ >>
-      strip_tac >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
-      first_assum irule >> Cases_on ‘0 < y’ >> simp[] >>
-      gs[REAL_NOT_LT, REAL_LE_LT] >>
-      ‘0 < b * y’ by simp[] >>
-      pop_assum mp_tac >> ‘0 < b’ by simp[] >>
-      pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
-      PURE_ONCE_REWRITE_TAC [REAL_MUL_COMM] >> ASM_REWRITE_TAC [] >>
-      simp[]) >>
-  Cases_on ‘b = 0’ >> gs[] >>
-  qexistsl [‘2 * inv x’, ‘inv a’] >> simp[] >> qx_gen_tac ‘y’ >>
-  strip_tac >> qexists ‘inv y’ >> simp[REAL_INV_INV] >>
-  first_assum irule >> reverse $ Cases_on ‘0 < y’ >> simp[]
-  >- gs[REAL_NOT_LT, REAL_LE_LT] >>
-  ‘0 < a * y’ by simp[] >>
-  pop_assum mp_tac >>
-  pop_assum (assume_tac o MATCH_MP REAL_LT_RMUL_0) >>
-  ASM_REWRITE_TAC[] >> simp[]
+    simp[open_in_euclidean, PULL_EXISTS, ival_def, SUBSET_DEF] >> rw[] >>
+    first_x_assum $ drule_then strip_assume_tac >>
+    rename [‘x ∈ t’, ‘a < x’, ‘x < b’] >>
+    ‘x < 0 ∨ x = 0 ∨ 0 < x’ by simp[] >> gvs[]
+    >- (‘∃c. x < c ∧ c < min b 0’ by (irule REAL_MEAN >> simp[REAL_LT_MIN]) >>
+        gvs[REAL_LT_MIN] >> qexistsl_tac [‘inv c’,‘inv a’] >> rw[] >>
+        rename [‘_ * y’] >> qexists_tac ‘inv y’ >> simp[REAL_INV_INV] >>
+        first_assum irule >> Cases_on ‘y < 0’ >> simp[]
+        >- (‘b * y < c * y’ by simp[] >> simp[REAL_LT_TRANS]) >>
+        gs[REAL_NOT_LT] >> gs[REAL_LE_LT] >>
+        drule_then assume_tac REAL_LT_RMUL_0 >>
+        pop_assum $ qspec_then ‘a’ assume_tac >> gvs[])
+    >- (‘∃c. max a 0 < c ∧ c < x’ by (irule REAL_MEAN >> simp[REAL_MAX_LT]) >>
+        gvs[REAL_MAX_LT] >> qexistsl_tac [‘inv b’,‘inv c’] >> rw[] >>
+        rename [‘_ * y’] >> qexists_tac ‘inv y’ >> simp[REAL_INV_INV] >>
+        first_assum irule >> Cases_on ‘0 < y’ >> simp[]
+        >- (‘a * y < c * y’ by simp[] >> simp[REAL_LT_TRANS]) >>
+        gs[REAL_NOT_LT] >> gs[REAL_LE_LT] >>
+        ‘0 < b’ by simp[] >> drule_then assume_tac REAL_LT_RMUL_0 >>
+        pop_assum $ qspec_then ‘y’ assume_tac >> gvs[])
 QED
-
 
 Theorem open_in_euclidean_DELETE:
   open_in euclidean t ⇒
