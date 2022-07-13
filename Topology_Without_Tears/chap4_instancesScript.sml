@@ -549,12 +549,13 @@ Proof
     by (simp[Abbr‘f’, Abbr‘g’] >> simp[real_div]) >>
   ‘∀x. 0 ≤ x ∧ x ≤ 1 ⇒ a ≤ g x ∧ g x ≤ b’
     by (simp[Abbr‘g’, REAL_LE_MUL] >>
-        simp[REAL_ARITH “x + y ≤ z ⇔ x ≤ z - y”]) >>
+        simp[REAL_ARITH “x + y ≤ z ⇔ x ≤ z - y:real”]) >>
   ‘∀x. a ≤ x ∧ x ≤ b ⇒ 0 ≤ f x ∧ f x ≤ 1’
     by simp[Abbr‘f’, REAL_LE_MUL] >>
   ‘∀x y. g x < g y ⇔ x < y’ by simp[Abbr‘g’] >>
   ‘∀x y. f x < f y ⇔ x < y’ by simp[Abbr‘f’] >>
-  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >> rpt strip_tac
+  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >>
+  rpt strip_tac
   >- (simp[BIJ_IFF_INV] >> metis_tac[])
   >- (simp[BIJ_IFF_INV] >> metis_tac[])
   >- (rename [‘V = OS ∩ _’] >>
@@ -562,21 +563,20 @@ Proof
       simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
       simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
       ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
-      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
-      metis_tac[])
+      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >>
+      rpt strip_tac >> metis_tac[])
   >- (rename [‘V = OS ∩ _’] >>
       qexists ‘IMAGE f OS’ >>
       simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
       simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
       ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
-      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
-      metis_tac[])
+      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >>
+      rpt strip_tac >> metis_tac[])
 QED
 
 Theorem homeo_flip_open_closed_ends:
-a < b ⇒
-  homeomorphism (EST {x | a ≤ x ∧ x < b },
-                 EST {x | -b < x ∧ x ≤ -a})
+  a < b ⇒
+  homeomorphism (EST {x | a ≤ x ∧ x < b }, EST {x | -b < x ∧ x ≤ -a})
                 (real_neg,real_neg)
 Proof
   simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,
@@ -606,12 +606,13 @@ Proof
     by (simp[Abbr‘f’, Abbr‘g’] >> simp[real_div]) >>
   ‘∀x. 0 ≤ x ∧ x < 1 ⇒ a ≤ g x ∧ g x < b’
     by (simp[Abbr‘g’, REAL_LE_MUL] >>
-        simp[REAL_ARITH “x + y < z ⇔ x < z - y”]) >>
+        simp[REAL_ARITH “x + y < z ⇔ x < z - y:real”]) >>
   ‘∀x. a ≤ x ∧ x < b ⇒ 0 ≤ f x ∧ f x < 1’
     by simp[Abbr‘f’, REAL_LE_MUL] >>
   ‘∀x y. g x < g y ⇔ x < y’ by simp[Abbr‘g’] >>
   ‘∀x y. f x < f y ⇔ x < y’ by simp[Abbr‘f’] >>
-  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >> rpt strip_tac
+  simp[homeomorphism, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >>
+  rpt strip_tac
   >- (simp[BIJ_IFF_INV] >> metis_tac[])
   >- (simp[BIJ_IFF_INV] >> metis_tac[])
   >- (rename [‘V = OS ∩ _’] >>
@@ -619,15 +620,15 @@ Proof
       simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
       simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
       ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
-      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
-      metis_tac[])
+      qexistsl_tac [‘g c’, ‘g d’] >> gs[ival_def, SUBSET_DEF] >>
+      rpt strip_tac >> metis_tac[])
   >- (rename [‘V = OS ∩ _’] >>
       qexists ‘IMAGE f OS’ >>
       simp[EXTENSION] >> reverse conj_tac >- metis_tac[] >>
       simp[open_in_euclidean, PULL_EXISTS] >> qx_gen_tac ‘x’ >> rpt strip_tac >>
       ‘∃c d. x ∈ ival c d ∧ ival c d ⊆ OS’ by metis_tac[open_in_euclidean] >>
-      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >> rpt strip_tac >>
-      metis_tac[])
+      qexistsl_tac [‘f c’, ‘f d’] >> gs[ival_def, SUBSET_DEF] >>
+      rpt strip_tac >> metis_tac[])
 QED
 
 Theorem INJ_IMAGE_INTER:
@@ -642,18 +643,18 @@ Theorem homeo_negate:
                 (real_neg,real_neg)
 Proof
     simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
-       BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,INJ_IMAGE_INTER,IMAGE_IMAGE,combinTheory.o_DEF] >>
+       BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,INJ_IMAGE_INTER,IMAGE_IMAGE,
+       combinTheory.o_DEF] >>
     rw[] >> irule_at Any EQ_REFL >> gs[open_in_euclidean,PULL_EXISTS] >>
     rw[] >> first_x_assum $ dxrule_then strip_assume_tac >>
-    gs[ival_def,SUBSET_DEF,REAL_ARITH “x = -y ⇔ -x = y”] >>
+    gs[ival_def,SUBSET_DEF,REAL_ARITH “x = -y ⇔ -x = y:real”] >>
     rpt $ irule_at Any $ iffRL REAL_LT_NEG >>
     rpt $ first_assum $ irule_at Any >> simp[]
 QED
 
 Theorem homeo_shift:
-    B = IMAGE ((+) d) A ⇒
-    homeomorphism (EST A,EST B)
-                ((+) d,flip (-) d)
+  B = IMAGE ((+) d) A ⇒
+  homeomorphism (EST A,EST B) ((+) d,flip (-) d)
 Proof
     simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,
        OPEN_IN_SUBTOPOLOGY,BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,REAL_ADD_SUB] >>
@@ -746,34 +747,29 @@ QED
 
 
 Theorem upray_LE_homeo_01:
-  ∃f g. homeomorphism (EST {x | c ≤ x},
-                       EST {x | 0 ≤ x ∧ x < 1}) (f,g)
+  ∃f g. homeomorphism (EST {x | c ≤ x}, EST {x | 0 ≤ x ∧ x < 1}) (f,g)
 Proof
   irule_at Any htrans >> irule_at (Pos hd) homeo_shift >>
   ‘{ x | 1 ≤ x } = IMAGE ($+ (1 - c)) { x | c ≤ x }’
     by (simp[EXTENSION, EQ_IMP_THM, PULL_EXISTS] >> rw[] >>
-        qexists ‘c + x - 1’ >> simp[]) >> 
+        qexists ‘c + x - 1’ >> simp[]) >>
   first_x_assum $ irule_at Any >>
   irule_at Any htrans >>
   irule_at Any homeo_inv >>
   ‘{x | 0 < x ∧ x ≤ 1} = IMAGE realinv {x | 1 ≤ x}’
-   by (simp[EXTENSION] >>
-       rw[EQ_IMP_THM] >> simp[] >>
+   by (simp[EXTENSION] >> rw[EQ_IMP_THM] >> simp[] >>
        qexists_tac ‘x⁻¹’ >> simp[REAL_INV_INV]) >>
   first_x_assum $ irule_at Any >>
-  simp[] >>        
+  simp[] >>
   qexistsl_tac [‘λ x. 1 - x’,‘λ x. 1 - x’] >>
   simp[homeomorphism,
        TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
        PULL_EXISTS,BIJ_DEF,INJ_DEF,SURJ_DEF,
        REAL_ARITH “1r − y = x ⇔ y = 1r - x”] >>
   simp[INJ_IMAGE_INTER] >>
-  ‘IMAGE (λ x. 1 - x) {x | 0 ≤ x ∧ x < 1} =
-   {x | 0 < x ∧ x ≤ 1} ∧
-   IMAGE (λ x. 1 - x) {x | 0 < x ∧ x ≤ 1} =
-   {x | 0 ≤ x ∧ x < 1}’
-  by (simp[EXTENSION,
-      REAL_ARITH “y = 1r - x ⇔ 1r − y = x”]) >>
+  ‘IMAGE (λ x. 1r - x) {x | 0 ≤ x ∧ x < 1} = {x | 0 < x ∧ x ≤ 1} ∧
+   IMAGE (λ x. 1r - x) {x | 0 < x ∧ x ≤ 1} = {x | 0 ≤ x ∧ x < 1}’
+    by simp[EXTENSION, REAL_ARITH “y = 1r - x ⇔ 1r − y = x”] >>
   rw[] (* 2 *)
   >> irule_at Any EQ_REFL >>
      gs[open_in_euclidean,ival_def,SUBSET_DEF,PULL_EXISTS,
@@ -781,11 +777,11 @@ Proof
      rw[] >>
      first_x_assum (drule_then strip_assume_tac) >>
      qexistsl_tac [‘1-b’,‘1-a’] >> simp[]
-QED                       
- 
-(* fact that only one of these disjuncts is possible follows from 4.3.7 above and
-   the fact that {0} can't be homeomorphic to any of the others because their
-   cardinalities are totally different. *)
+QED
+
+(* fact that only one of these disjuncts is possible follows from 4.3.7 above
+   and the fact that {0} can't be homeomorphic to any of the others because
+   their cardinalities are totally different. *)
 Theorem exercise_4_3_1:
   interval A ∧ A ≠ ∅ ⇒
   (∃f g. homeomorphism (EST A, EST {0}) (f,g)) ∨
@@ -840,7 +836,7 @@ Proof
       metis_tac[upray_LE_homeo_01]) >>
   (* (inf,inf) -> (-1,1) -> (0,1) *)
   simp[SUBTOPOLOGY_UNIV] >>
-  disj2_tac >> disj1_tac >>  
+  disj2_tac >> disj1_tac >>
   irule_at Any htrans >>
   irule_at Any example_4_2_5 >>
   rw[GSYM ival_def] >>
