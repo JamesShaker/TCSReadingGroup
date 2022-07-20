@@ -638,9 +638,7 @@ Proof
 QED
 
 Theorem homeo_negate:
-    B = IMAGE (real_neg) A ⇒
-    homeomorphism (EST A,EST B)
-                (real_neg,real_neg)
+  B = IMAGE (real_neg) A ⇒ homeomorphism (EST A,EST B) (real_neg,real_neg)
 Proof
     simp[homeomorphism,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
        BIJ_DEF,INJ_DEF,SURJ_DEF,PULL_EXISTS,INJ_IMAGE_INTER,IMAGE_IMAGE,
@@ -744,7 +742,6 @@ Proof
   rw[EQ_IMP_THM] >> simp[] >>
   qexists ‘inv x’ >> simp[REAL_INV_INV]
 QED
-
 
 Theorem upray_LE_homeo_01:
   ∃f g. homeomorphism (EST {x | c ≤ x}, EST {x | 0 ≤ x ∧ x < 1}) (f,g)
