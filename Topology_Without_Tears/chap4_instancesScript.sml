@@ -761,22 +761,12 @@ Proof
        qexists_tac ‘x⁻¹’ >> simp[REAL_INV_INV]) >>
   first_x_assum $ irule_at Any >>
   simp[] >>
-  qexistsl_tac [‘λ x. 1 - x’,‘λ x. 1 - x’] >>
-  simp[homeomorphism,
-       TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY,
-       PULL_EXISTS,BIJ_DEF,INJ_DEF,SURJ_DEF,
-       REAL_ARITH “1r − y = x ⇔ y = 1r - x”] >>
-  simp[INJ_IMAGE_INTER] >>
-  ‘IMAGE (λ x. 1r - x) {x | 0 ≤ x ∧ x < 1} = {x | 0 < x ∧ x ≤ 1} ∧
-   IMAGE (λ x. 1r - x) {x | 0 < x ∧ x ≤ 1} = {x | 0 ≤ x ∧ x < 1}’
-    by simp[EXTENSION, REAL_ARITH “y = 1r - x ⇔ 1r − y = x”] >>
-  rw[] (* 2 *)
-  >> irule_at Any EQ_REFL >>
-     gs[open_in_euclidean,ival_def,SUBSET_DEF,PULL_EXISTS,
-        REAL_ARITH “y = 1r - x ⇔ 1r − y = x”] >>
-     rw[] >>
-     first_x_assum (drule_then strip_assume_tac) >>
-     qexistsl_tac [‘1-b’,‘1-a’] >> simp[]
+  irule_at Any htrans >> irule_at (Pos hd) homeo_shift >>
+  ‘{ x | -1 < x ∧ x ≤ 0 } = IMAGE ($+ (-1)) { x | 0 < x ∧ x ≤ 1r }’
+    by simp[EXTENSION, REAL_ARITH “x = -1 + y ⇔ y = x + 1r”] >>
+  pop_assum $ irule_at Any >> irule_at Any homeo_negate >>
+  simp[EXTENSION, EQ_IMP_THM, PULL_EXISTS] >> rpt strip_tac >>
+  qexists_tac ‘-x’ >> simp[]
 QED
 
 (* fact that only one of these disjuncts is possible follows from 4.3.7 above
