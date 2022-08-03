@@ -965,7 +965,34 @@ Proof
          simp[cos_EQ1] >> rw[] >> gs[] >> SPOSE_NOT_THEN kall_tac >>
          intLib.ARITH_TAC) >~
         [‘x pow 2 + y pow 2 = 1’] (* surjection *)
-        >- (Cases_on ‘x = 1’ ...) >>
+        >- (Cases_on ‘x = 1’ >> gs[REAL_ARITH “x + y = x ⇔ y = 0r”] >>
+            Cases_on ‘x < 0’ >> Cases_on ‘y < 0’ (* 4 *)
+            >- (qabbrev_tac ‘a = acs x’ >>
+               qexists_tac ‘1 - (a / (2 * π))’ >>
+               simp[REAL_SUB_LDISTRIB,REAL_SUB_RDISTRIB,
+                    REAL_ARITH “(0r < x - y ⇔ y < x) ∧ (a - b < a ⇔ 0 < b)”]>>
+               ‘-1 < x’
+                 by (CCONTR_TAC >>
+                     gs[REAL_NOT_LT,REAL_LE_LT,
+                        REAL_ARITH “x + y = x ⇔ y = 0r”] >>
+                     ‘1 < -x’ by simp[] >>
+                     dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
+                     ‘y pow 2 < 0’
+                       by metis_tac[REAL_ARITH “a + b < a ⇔ b < 0”] >>
+                     gs[]) >>
+               ‘0 < a ∧ a < π’
+                 by simp[Abbr‘a’,ACS_BOUNDS_LT] >>
+               simp[PI_POS,SIN_COS] >>
+               ‘∀a. cos (2 * π − a) = cos (-a)’
+                 by metis_tac[real_sub,REAL_ADD_COMM,COS_PERIODIC] >>
+               simp[COS_NEG] >> conj_tac (* 2 *)
+               >- simp[Abbr‘a’,ACS_COS] >>
+               once_rewrite_tac[GSYM COS_NEG] >> simp[REAL_NEG_SUB] >>
+               simp[REAL_ARITH “x - a - b = x - (a + b:real)”,COS_NEG] >>
+               rw[COS_SIN,REAL_ARITH “a - (b + a) = -b”,SIN_NEG] >>
+               cheat
+               )
+               ) >>
         (* injection *) ...)
 
 
