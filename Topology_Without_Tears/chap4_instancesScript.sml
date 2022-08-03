@@ -2,7 +2,7 @@ open HolKernel Parse boolLib bossLib;
 
 open pred_setTheory topologyTheory
 open chap1Theory chap2_instancesTheory chap4Theory chap3Theory
-     chap3_instancesTheory
+     chap3_instancesTheory transcTheory
 open realTheory RealArith;
 val _ = new_theory "chap4_instances";
 
@@ -854,7 +854,8 @@ Proof
     drule_then assume_tac $ cj 1 $ iffLR homeomorphism >>
     gs[TOPSPACE_SUBTOPOLOGY] >>
     ‘ival a b ≈ 𝕌(:real)’ by metis_tac[cardinalTheory.cardeq_def] >>
-    ‘¬countable (ival a b)’ by metis_tac[cardinalTheory.countable_cardeq,real_uncountable] >>
+    ‘¬countable (ival a b)’
+      by metis_tac[cardinalTheory.countable_cardeq,real_uncountable] >>
     ‘¬(ival a b ⊆ A)’ by metis_tac[COUNTABLE_SUBSET] >>
     gs[SUBSET_DEF,ival_def] >>
     metis_tac[]
@@ -865,5 +866,108 @@ countable_rational
 num_countable
 countable_integer
 *)
+Overload "π"[local] = “pi”
+
+Theorem COS_PERIODIC_N:
+  cos (x + 2 * π * real_of_int i) = cos x
+Proof
+  wlog_tac ‘0 ≤ i’ []
+  >- (gs[integerTheory.INT_NOT_LE] >>
+      ONCE_REWRITE_TAC [GSYM COS_NEG] >>
+      REWRITE_TAC[REAL_NEG_ADD, REAL_NEG_RMUL,
+                  GSYM intrealTheory.real_of_int_neg] >>
+      first_x_assum irule >> intLib.ARITH_TAC) >>
+  Cases_on ‘i’ >> gs[] >> Induct_on ‘n’ >>
+  simp[arithmeticTheory.ADD1] >>
+  REWRITE_TAC [GSYM REAL_ADD, REAL_LDISTRIB] >>
+  simp[] >> REWRITE_TAC [REAL_ADD_ASSOC, COS_PERIODIC] >>
+  Cases_on ‘n = 0’ >> simp[]
+QED
+
+Theorem cos_EQ1:
+  cos x = 1 ⇔ ∃i. x = 2 * π * real_of_int i
+Proof
+  wlog_tac ‘0 ≤ x ∧ x < 2 * π’ []
+  >- (gs[REAL_NOT_LE, REAL_NOT_LT] >>
+      ‘∃j. 0 ≤ x + 2 * π * real_of_int j ∧ x + 2 * π * real_of_int j < 2 * π’
+        suffices_by (rw[] >> first_x_assum drule_all >>
+                     REWRITE_TAC[COS_PERIODIC_N, REAL_MUL_ASSOC] >>
+                     rw[] >> eq_tac >> rw[]
+                     >- (pop_assum mp_tac >>
+                         REWRITE_TAC [REAL_MUL_ASSOC] >>
+                         qmatch_abbrev_tac ‘x + 2 * π * J1 = 2 * π * J2 ⇒ _’>>
+                         REWRITE_TAC [REAL_ARITH “x + y = z ⇔ x = z - y:real”,
+                                      GSYM REAL_SUB_LDISTRIB] >>
+                         simp[Abbr‘J1’, Abbr‘J2’] >>
+                         simp[GSYM intrealTheory.real_of_int_sub,
+                              Excl "real_of_int_sub"]) >>
+                     qexists ‘i + j’ >> simp[]) >>
+      qabbrev_tac ‘τ = 2 * π’ >> ‘0 < τ’ by simp[Abbr‘τ’, PI_POS] >>
+      simp[REAL_ARITH “0r ≤ x + τ * y ∧ x + τ * y < τ ⇔
+                         τ * y - τ < -x ∧ -x ≤ τ * y”] >>
+      simp[REAL_ARITH “x * y - x = x * (y - 1r)”] >>
+      qspec_then ‘τ’ mp_tac REAL_ARCH_LEAST >> simp[]
+      >- (disch_then $ qspec_then ‘-x’ mp_tac >> simp[] >>
+          disch_then $ qx_choose_then ‘N’ strip_assume_tac >>
+          Cases_on ‘-x = τ * &N’ >> simp[]
+          >- (qexists ‘&N’ >> simp[REAL_SUB_LDISTRIB] >>
+              ‘0 < τ’ suffices_by simp[] >> simp[Abbr‘τ’, PI_POS]) >>
+          qexists ‘&N + 1’ >> simp[] >>
+          REWRITE_TAC [GSYM REAL_ADD, REAL_ARITH “(x:real) + 1 - 1 = x”] >>
+          gs[arithmeticTheory.ADD1]) >>
+      disch_then $ qspec_then ‘x’ mp_tac >> simp[] >>
+      disch_then $ qx_choose_then ‘N’ strip_assume_tac >>
+      qexists ‘-&N’ >> simp[REAL_SUB_LDISTRIB] >>
+      gs[arithmeticTheory.ADD1, REAL_LDISTRIB, GSYM REAL_ADD, Excl "REAL_ADD"]) >>
+  eq_tac >> strip_tac
+  >- (qexists ‘0’ >> simp[] >>
+      qspec_then ‘1’ mp_tac COS_TOTAL >>
+      simp[EXISTS_UNIQUE_ALT] >> strip_tac >>
+      Cases_on ‘x ≤ π’
+      >- metis_tac[COS_0, PI_POS, REAL_LE_LT] >>
+      gs[REAL_NOT_LE] >>
+      ‘cos ((x - π) + π) = cos x’ by simp[REAL_ARITH “x:real - y + y = x”] >>
+      gs[COS_PERIODIC_PI] >>
+      ‘cos (x - π) = -1’ by simp[] >>
+      qspec_then ‘-1’ mp_tac COS_TOTAL >> impl_tac >- simp[] >>
+      disch_then
+        (qx_choose_then ‘y’ strip_assume_tac o SRULE[EXISTS_UNIQUE_ALT]) >>
+      ‘y = π’ by metis_tac[PI_POS, COS_PI, REAL_LE_LT] >>
+      pop_assum SUBST_ALL_TAC >>
+      pop_assum $ qspec_then ‘x - π’ mp_tac  >> simp[]) >>
+  assume_tac (COS_PERIODIC_N |> Q.INST [‘x’ |-> ‘0’] |> SRULE[]) >>
+  simp[COS_0]
+QED
+
+Theorem pi_not0[local,simp]:
+  π ≠ 0
+Proof
+  metis_tac[PI_POS, REAL_LT_REFL]
+QED
+
+
+Theorem exercise_4_3_3i:
+  let X = { (x,y) | x pow 2 + y pow 2 = 1 }
+  in
+    ∃f g. homeomorphism (EST { x | 0 < x ∧ x < 1 },
+                         subtopology euclidean_2 (X DELETE (1,0))) (f,g)
+Proof
+  simp[] >>
+  qabbrev_tac ‘fx = λx. cos (2 * π * x)’ >>
+  qabbrev_tac ‘fy = λx. sin (2 * π * x)’ >>
+  qabbrev_tac ‘FF = λx. (fx x, fy x)’ >>
+  ‘BIJ FF { x | 0 < x ∧ x < 1 } ({ (x,y) | x pow 2 + y pow 2 = 1 } DELETE (1,0))’
+    by (rw[BIJ_DEF, INJ_DEF, SURJ_DEF] >>
+        markerLib.UNABBREV_ALL_TAC >> simp[] >> gs[] >>~-
+        ([‘_ pow 2 + _ pow 2 = 1’, ‘(cos _) pow 2’],
+         metis_tac[REAL_ADD_COMM, SIN_CIRCLE]) >>~-
+        ([‘cos _ = 1 ⇒ sin _ ≠ 0’],
+         simp[cos_EQ1] >> rw[] >> gs[] >> SPOSE_NOT_THEN kall_tac >>
+         intLib.ARITH_TAC) >~
+        [‘x pow 2 + y pow 2 = 1’] (* surjection *)
+        >- (Cases_on ‘x = 1’ ...) >>
+        (* injection *) ...)
+
+
 
 val _ = export_theory();
