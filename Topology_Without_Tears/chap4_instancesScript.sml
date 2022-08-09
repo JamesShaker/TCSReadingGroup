@@ -830,16 +830,6 @@ Proof
   metis_tac[example_4_2_4,REAL_ARITH “0 < 1r ∧ -1 < 1r”]
 QED
 
-Theorem real_uncountable:
-    ¬countable 𝕌(:real)
-Proof
-    simp[cardinalTheory.countable_thm] >>
-    irule $ INST_TYPE [“:β” |-> “:num set”] cardinalTheory.cardlt_leq_trans >>
-    qexists_tac ‘UNIV’ >> simp[cardinalTheory.CANTOR_THM_UNIV] >>
-    simp[cardinalTheory.cardleq_def] >>
-    cheat
-QED
-
 (*
 example_4_2_6
 cardinalTheory.countable_cardeq
@@ -855,7 +845,8 @@ Proof
     gs[TOPSPACE_SUBTOPOLOGY] >>
     ‘ival a b ≈ 𝕌(:real)’ by metis_tac[cardinalTheory.cardeq_def] >>
     ‘¬countable (ival a b)’
-      by metis_tac[cardinalTheory.countable_cardeq,real_uncountable] >>
+      by metis_tac[cardinalTheory.countable_cardeq,
+                   real_topologyTheory.UNCOUNTABLE_REAL] >>
     ‘¬(ival a b ⊆ A)’ by metis_tac[COUNTABLE_SUBSET] >>
     gs[SUBSET_DEF,ival_def] >>
     metis_tac[]
