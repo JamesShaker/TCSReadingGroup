@@ -936,6 +936,15 @@ Proof
   metis_tac[PI_POS, REAL_LT_REFL]
 QED
 
+Theorem both_neg_squared_injective:
+  a < 0 ∧ b < 0 ∧ a pow 2 = b pow 2 ⇒ a = b
+Proof
+  rw[] >> CCONTR_TAC >>
+  wlog_tac `a < b` [`a`, `b`]
+  >- (metis_tac[REAL_NOT_LT, REAL_LE_LT])
+  >> `-b < -a ∧ 2 ≠ 0n ∧ 0 ≤ -b` by simp[] >>
+  drule_all REAL_POW_LT2 >> rw[]
+QED
 
 Theorem exercise_4_3_3i:
   let X = { (x,y) | x pow 2 + y pow 2 = 1 }
@@ -955,37 +964,62 @@ Proof
         ([‘cos _ = 1 ⇒ sin _ ≠ 0’],
          simp[cos_EQ1] >> rw[] >> gs[] >> SPOSE_NOT_THEN kall_tac >>
          intLib.ARITH_TAC) >~
-        [‘x pow 2 + y pow 2 = 1’] (* surjection *)
+        [‘x pow 2 + y pow 2 = 1’] (* 2 *)
+        (* surjection *)
         >- (Cases_on ‘x = 1’ >> gs[REAL_ARITH “x + y = x ⇔ y = 0r”] >>
             Cases_on ‘x < 0’ >> Cases_on ‘y < 0’ (* 4 *)
+            (* x<0 y<0*)
             >- (qabbrev_tac ‘a = acs x’ >>
-               qexists_tac ‘1 - (a / (2 * π))’ >>
-               simp[REAL_SUB_LDISTRIB,REAL_SUB_RDISTRIB,
-                    REAL_ARITH “(0r < x - y ⇔ y < x) ∧ (a - b < a ⇔ 0 < b)”]>>
-               ‘-1 < x’
-                 by (CCONTR_TAC >>
-                     gs[REAL_NOT_LT,REAL_LE_LT,
-                        REAL_ARITH “x + y = x ⇔ y = 0r”] >>
-                     ‘1 < -x’ by simp[] >>
-                     dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
-                     ‘y pow 2 < 0’
-                       by metis_tac[REAL_ARITH “a + b < a ⇔ b < 0”] >>
-                     gs[]) >>
-               ‘0 < a ∧ a < π’
-                 by simp[Abbr‘a’,ACS_BOUNDS_LT] >>
-               simp[PI_POS,SIN_COS] >>
-               ‘∀a. cos (2 * π − a) = cos (-a)’
-                 by metis_tac[real_sub,REAL_ADD_COMM,COS_PERIODIC] >>
-               simp[COS_NEG] >> conj_tac (* 2 *)
-               >- simp[Abbr‘a’,ACS_COS] >>
-               once_rewrite_tac[GSYM COS_NEG] >> simp[REAL_NEG_SUB] >>
-               simp[REAL_ARITH “x - a - b = x - (a + b:real)”,COS_NEG] >>
-               rw[COS_SIN,REAL_ARITH “a - (b + a) = -b”,SIN_NEG] >>
-               cheat
-               )
-               ) >>
-        (* injection *) ...)
-
+                qexists_tac ‘1 - (a / (2 * π))’ >>
+                simp[REAL_SUB_LDISTRIB,REAL_SUB_RDISTRIB,
+                     REAL_ARITH “(0r < x - y ⇔ y < x) ∧ (a - b < a ⇔ 0r < b)”]>>
+                ‘-1 < x’
+                  by (CCONTR_TAC >>
+                      gs[REAL_NOT_LT,REAL_LE_LT,
+                         REAL_ARITH “x + y = x ⇔ y = 0r”] >>
+                      ‘1 < -x’ by simp[] >>
+                      dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
+                      ‘y pow 2 < 0’
+                        by metis_tac[REAL_ARITH “a + b < a ⇔ b < 0r”] >>
+                      gs[]) >>
+                ‘0 < a ∧ a < π’
+                  by simp[Abbr‘a’,ACS_BOUNDS_LT] >>
+                simp[PI_POS,SIN_COS] >>
+                ‘∀a. cos (2 * π − a) = cos (-a)’
+                  by metis_tac[real_sub,REAL_ADD_COMM,COS_PERIODIC] >>
+                simp[COS_NEG] >> conj_tac (* 2 *)
+                >- simp[Abbr‘a’,ACS_COS] >>
+                once_rewrite_tac[GSYM COS_NEG] >> simp[REAL_NEG_SUB] >>
+                simp[REAL_ARITH “x - a - b = x - (a + b:real)”,COS_NEG] >>
+                rw[COS_SIN,REAL_ARITH “a - (b + a) = -b:real”,SIN_NEG] >>
+                `-sin a < 0`
+                  by (simp[] >> metis_tac[SIN_POS_PI]) >>
+                irule both_neg_squared_injective >> rw[] >>
+                `(sin a)² = 1 - x²` suffices_by simp[] >>
+                `(sin a)² = 1 - (cos a)²`
+                  by metis_tac[SIN_CIRCLE, REAL_ARITH ``x + y = 1 ⇔ x = 1r - y``] >>
+                simp[REAL_ARITH ``1 - a = 1r - b ⇔ a = b``, Abbr‘a’, ACS_COS])
+            (* x<0 0<=y*)
+            >- (fs[REAL_NOT_LT] >> rw[] >>
+                qexists_tac `1/2 - asn y/(2 * π)` >> rw[]
+                >- (simp[REAL_ARITH ``(0r < x - y ⇔ y < x)``, PI_POS] >>
+                    `y < 1`
+                      by (CCONTR_TAC >>
+                          gs[REAL_NOT_LT,REAL_LE_LT,
+                          REAL_ARITH “x + y = y ⇔ x = 0r”] >>
+                          dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
+                          ‘x pow 2 < 0’
+                            by metis_tac[REAL_ARITH “a + b < b ⇔ a < 0r”] >>
+                          gs[]) >>
+                    `asn y ≤ (pi/2)` by simp[ASN_BOUNDS] >> assume_tac PI_POS >>
+                    gs[])
+                >- (simp[REAL_LT_SUB_RADD, REAL_LDISTRIB,
+                         REAL_ARITH ``1 < 2r + a ⇔ -1 < a``, PI_POS] >> cheat
+                >> cheat))
+            >> cheat)
+        >> cheat
+        (* injection *)
+QED
 
 
 val _ = export_theory();
