@@ -950,6 +950,47 @@ Proof
   drule_all REAL_POW_LT2 >> rw[]
 QED
 
+Theorem both_pos_squared_injective:
+  0 ≤ a ∧ 0 ≤ b ∧ a pow 2 = b pow 2 ⇒ a = b
+Proof
+  Cases_on ‘a = 0’ >> simp[] >> Cases_on ‘b = 0’ >> simp[] >>
+  rw[] >>
+  mp_tac $ Q.INST [‘a’ |-> ‘-a’, ‘b’ |-> ‘-b’] both_neg_squared_injective >>
+  simp[]
+QED
+
+Theorem square_EQ1:
+  x pow 2 = 1 ⇔ x = 1 ∨ x = -1
+Proof
+  simp[EQ_IMP_THM, DISJ_IMP_THM] >>
+  CCONTR_TAC >> gs[] >>
+  ‘x < -1 ∨ -1 < x ∧ x < 1 ∨ 1 < x ’ by simp[] >~
+  [‘1 < x’]
+  >- (drule REAL_LT1_POW2 >> simp[]) >~
+  [‘x < -1’]
+  >- (‘1 < -x’ by simp[] >> drule REAL_LT1_POW2 >> simp[]) >~
+  [‘-1 < x’, ‘x < 1’]
+  >- (‘x ≠ 0’ by (strip_tac >> gs[]) >>
+      wlog_tac ‘0 < x’ [‘x’]
+      >- (first_x_assum $ qspec_then ‘-x’ mp_tac >> simp[]) >>
+      ‘1 < inv x’  by simp[REAL_INV_LT1] >>
+      drule REAL_LT1_POW2 >> simp[])
+QED
+
+Theorem ASN_POS:
+  0 < x ∧ x ≤ 1 ⇒ 0 < asn x
+Proof
+  rw[] >> ‘-1 ≤ x’ by simp[] >>
+  drule_all_then strip_assume_tac ASN >> CCONTR_TAC >>
+  gs[REAL_NOT_LT] >>
+  Cases_on ‘asn x = 0’ >> gs[SIN_0] >>
+  ‘asn x < 0’ by simp[] >>
+  ‘sin (-asn x) = -sin (asn x)’ by simp[SIN_NEG] >>
+  ‘¬(0 ≤ sin (-asn x))’ by simp[] >>
+  drule_at Concl SIN_POS_PI2_LE >> simp[]
+QED
+
+
 Theorem exercise_4_3_3i:
   let X = { (x,y) | x pow 2 + y pow 2 = 1 }
   in
@@ -971,8 +1012,9 @@ Proof
         [‘x pow 2 + y pow 2 = 1’] (* 2 *)
         (* surjection *)
         >- (Cases_on ‘x = 1’ >> gs[REAL_ARITH “x + y = x ⇔ y = 0r”] >>
-            Cases_on ‘x < 0’ >> Cases_on ‘y < 0’ (* 4 *)
-            (* x<0 y<0*)
+            Cases_on ‘x < 0’ >> Cases_on ‘y < 0’ (* 4 *) >>
+            gs[REAL_NOT_LT] >~
+            [‘x pow 2 + y pow 2 = 1’, ‘x < 0’, ‘y < 0’]
             >- (qabbrev_tac ‘a = acs x’ >>
                 qexists_tac ‘1 - (a / (2 * π))’ >>
                 simp[REAL_SUB_LDISTRIB,REAL_SUB_RDISTRIB,
@@ -1002,27 +1044,93 @@ Proof
                 `(sin a)² = 1 - x²` suffices_by simp[] >>
                 `(sin a)² = 1 - (cos a)²`
                   by metis_tac[SIN_CIRCLE, REAL_ARITH ``x + y = 1 ⇔ x = 1r - y``] >>
-                simp[REAL_ARITH ``1 - a = 1r - b ⇔ a = b``, Abbr‘a’, ACS_COS])
-            (* x<0 0<=y*)
-            >- (fs[REAL_NOT_LT] >> rw[] >>
-                qexists_tac `1/2 - asn y/(2 * π)` >> rw[]
+                simp[REAL_ARITH ``1 - a = 1r - b ⇔ a = b``, Abbr‘a’, ACS_COS]) >~
+            [‘x pow 2 + y pow 2 = 1’, ‘x < 0’, ‘0 ≤ y’]
+            >- (rw[] >> qexists_tac `1/2 - asn y/(2 * π)` >>
+                ‘y < 1’
+                  by (CCONTR_TAC >>
+                      gs[REAL_NOT_LT,REAL_LE_LT,
+                         REAL_ARITH “x + y = y ⇔ x = 0r”] >>
+                      dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
+                      ‘x pow 2 < 0’
+                        by metis_tac[REAL_ARITH “a + b < b ⇔ a < 0r”] >>
+                      gs[]) >>
+                rw[]
                 >- (simp[REAL_ARITH ``(0r < x - y ⇔ y < x)``, PI_POS] >>
-                    `y < 1`
-                      by (CCONTR_TAC >>
-                          gs[REAL_NOT_LT,REAL_LE_LT,
-                          REAL_ARITH “x + y = y ⇔ x = 0r”] >>
-                          dxrule REAL_LT1_POW2 >> simp[] >> strip_tac >>
-                          ‘x pow 2 < 0’
-                            by metis_tac[REAL_ARITH “a + b < b ⇔ a < 0r”] >>
-                          gs[]) >>
                     `asn y ≤ (pi/2)` by simp[ASN_BOUNDS] >> assume_tac PI_POS >>
                     gs[])
                 >- (simp[REAL_LT_SUB_RADD, REAL_LDISTRIB,
-                         REAL_ARITH ``1 < 2r + a ⇔ -1 < a``, PI_POS] >> cheat
-                >> cheat))
-            >> cheat)
-        >> cheat
+                         REAL_ARITH ``1 < 2r + a ⇔ -1 < a``, PI_POS] >>
+                    irule REAL_LTE_TRANS >> irule_at Any $ cj 1 ASN_BOUNDS >>
+                    simp[PI_POS])
+                >- (simp[REAL_SUB_LDISTRIB] >>
+                    ‘cos (π - asn y) = cos (-asn y + π)’
+                      by simp[real_sub, REAL_ADD_COMM] >>
+                    simp[COS_PERIODIC_PI, COS_NEG] >>
+                    irule both_neg_squared_injective >> simp[] >> conj_tac >~
+                    [‘0 < cos (asn y)’]
+                    >- (irule COS_POS_PI >>
+                        ‘-1 < y ∧ y < 1 ’ suffices_by metis_tac[ASN_BOUNDS_LT] >>
+                        simp[]) >>
+                    ‘(cos (asn y)) pow 2 = 1 - (sin (asn y)) pow 2’
+                      by metis_tac[SIN_CIRCLE, REAL_ARITH “x = 1r - y ⇔ y + x = 1”] >>
+                    simp[ASN_SIN])
+                >- (simp[REAL_LDISTRIB, real_sub, SIN_PERIODIC_PI,
+                         REAL_ARITH “π + x = x + π”, SIN_NEG, ASN_SIN])) >~
+            [‘x pow 2 + y pow 2 = 1’, ‘0 ≤ x’, ‘y < 0’]
+            >- ((* bottom right quadrant; acs x is mirror angle in top right. *)
+                qexists ‘1 - acs x / (2 * π)’ >>
+                ‘x < 1’ by (CCONTR_TAC >> gs[REAL_NOT_LT, REAL_LE_LT] >>
+                            dxrule REAL_LT1_POW2 >> strip_tac >>
+                            ‘y pow 2 < 0’
+                              by metis_tac[REAL_ARITH “a + b < a ⇔ b < 0r”] >>
+                            gs[]) >>
+                rw[] >~
+                [‘0 < 1 - acs x / (2 * π)’]
+                >- (simp[REAL_SUB_LT, PI_POS] >> irule REAL_LT_TRANS >>
+                    irule_at Any $ cj 2 ACS_BOUNDS_LT >> simp[PI_POS]) >~
+                [‘1 - acs x / (2 * π) < 1’]
+                >- simp[REAL_ARITH “1r - x < 1 ⇔ 0 < x”, PI_POS, ACS_BOUNDS_LT] >~
+                [‘cos _ = x’]
+                >- simp[real_sub, REAL_LDISTRIB, REAL_ARITH “2 * π + x = x + 2 * π”,
+                        COS_PERIODIC, COS_NEG, ACS_COS] >~
+                [‘sin _ = y’]
+                >- (simp[real_sub, REAL_LDISTRIB, REAL_ARITH “2 * π + x = x + 2 * π”,
+                         SIN_PERIODIC, SIN_NEG] >>
+                    irule both_neg_squared_injective >> simp[] >> conj_tac >~
+                    [‘0 < sin (acs x)’]
+                    >- (irule SIN_POS_PI >> simp[ACS_BOUNDS_LT]) >>
+                    ‘(sin (acs x)) pow 2 = 1 - (cos (acs x)) pow 2’
+                      by metis_tac[SIN_CIRCLE, REAL_ARITH “x = 1r - y ⇔ y + x = 1”,
+                                   REAL_ADD_COMM] >>
+                    simp[ACS_COS])) >~
+            [‘x pow 2 + y pow 2 = 1’, ‘0 ≤ x’, ‘0 ≤ y’]
+            >- ((* top right *)
+                qexists ‘asn y / (2 * π)’ >>
+                ‘y ≤ 1’ by (CCONTR_TAC >> gs[REAL_NOT_LE] >>
+                            dxrule REAL_LT1_POW2 >> strip_tac >>
+                            ‘x pow 2 < 0’
+                              by metis_tac[REAL_ARITH “a + b < b ⇔ a < 0r”] >>
+                            gs[]) >>
+                ‘0 < y’ by (CCONTR_TAC >> gs[REAL_NOT_LT, REAL_LE_LT, square_EQ1]) >>
+                rw[PI_POS] >~
+                [‘0 < asn y’] >- simp[ASN_POS] >~
+                [‘asn y < 2 * π’]
+                >- (irule REAL_LET_TRANS >>
+                    irule_at Any $ cj 2 ASN_BOUNDS >> simp[PI_POS]) >~
+                [‘sin (asn y) = y’] >- simp[ASN_SIN] >~
+                [‘cos (asn y) = x’]
+                >- (irule both_pos_squared_injective >> simp[] >> conj_tac >~
+                    [‘0 ≤ cos (asn y)’]
+                    >- (irule COS_POS_PI2_LE >> simp[ASN_BOUNDS] >>
+                        simp[REAL_LE_LT, ASN_POS]) >>
+                    ‘(cos (asn y)) pow 2 = 1 - (sin (asn y)) pow 2’
+                      by metis_tac[SIN_CIRCLE, REAL_ARITH “x = 1r - y ⇔ y + x = 1”,
+                                   REAL_ADD_COMM] >>
+                    simp[ASN_SIN]))) >>
         (* injection *)
+        cheat)>>
+  cheat
 QED
 
 
