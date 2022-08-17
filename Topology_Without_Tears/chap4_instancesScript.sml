@@ -8,6 +8,10 @@ val _ = new_theory "chap4_instances";
 
 val _ = augment_srw_ss [realSimps.REAL_ARITH_ss]
 
+Overload euclidean = “chap2_instances$euclidean”
+Overload homeomorphism = “chap4$homeomorphism”
+val _ = realLib.prefer_real()
+
 Theorem open_in_euclidean_UNIV[simp]:
   open_in euclidean UNIV
 Proof
