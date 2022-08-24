@@ -990,6 +990,8 @@ Proof
   drule_at Concl SIN_POS_PI2_LE >> simp[]
 QED
 
+Theorem COS_PERIODIC_PI' = ONCE_REWRITE_RULE [REAL_ADD_COMM] COS_PERIODIC_PI;
+Theorem SIN_PERIODIC_PI' = ONCE_REWRITE_RULE [REAL_ADD_COMM] SIN_PERIODIC_PI;
 
 Theorem exercise_4_3_3i:
   let X = { (x,y) | x pow 2 + y pow 2 = 1 }
@@ -1128,8 +1130,36 @@ Proof
                       by metis_tac[SIN_CIRCLE, REAL_ARITH “x = 1r - y ⇔ y + x = 1”,
                                    REAL_ADD_COMM] >>
                     simp[ASN_SIN]))) >>
-        (* injection *)
-        cheat)>>
+        (* injection *) 
+        Cases_on ‘x ≤ 1/2’ >> Cases_on ‘y ≤ 1/2’ (* 4 *) >>
+        gs[REAL_NOT_LE] >~
+        [‘2 * x ≤ 1’,‘2 * y ≤ 1’,‘cos (2 * (x * π)) = cos (2 * (y * π))’]
+        >- (qpat_x_assum ‘cos _ = cos _’ (mp_tac o Q.AP_TERM ‘acs’) >>
+            assume_tac PI_POS >>
+            ‘2 * (x * π) ≤ π ∧ 2 * (y * π) ≤ π ∧
+             0 ≤ 2 * (x * π) ∧ 0 ≤ 2 * (y * π)’ by simp[REAL_LE_MUL] >>
+            simp[COS_ACS]) >>~-
+        ([‘2 * x ≤ 1’,‘1 < 2 * y’],
+         assume_tac PI_POS >> 
+         ‘0 ≤ sin(2 * (x * π))’
+           by (irule SIN_POS_PI_LE >> simp[REAL_LE_MUL]) >>
+         ‘sin (2 * (y * π)) < 0’
+           suffices_by simp[] >>
+         qabbrev_tac ‘d = y - 1/2’ >> ‘y = 1/2 + d’ by simp[Abbr‘d’] >>
+         pop_assum mp_tac >>
+         simp_tac (srw_ss()) [REAL_LDISTRIB,SIN_PERIODIC_PI'] >>
+         strip_tac >>
+         irule SIN_POS_PI >> simp[Abbr‘d’,REAL_SUB_LDISTRIB,REAL_SUB_LT]) >>
+        qabbrev_tac ‘d1 = x - 1/2’ >> ‘x = 1/2 + d1’ by simp[Abbr‘d1’] >>
+        qabbrev_tac ‘d2 = y - 1/2’ >> ‘y = 1/2 + d2’ by simp[Abbr‘d2’] >>
+        qpat_x_assum ‘cos _ = cos _’ mp_tac >>
+        simp[REAL_LDISTRIB,COS_PERIODIC_PI'] >>
+        disch_then (mp_tac o Q.AP_TERM ‘acs’) >> assume_tac PI_POS >>
+        ‘0 < d1 ∧ 0 < d2 ∧ 2 * d1 ≤ 1 ∧ 2 * d2 ≤ 1’
+         by simp[Abbr‘d1’,Abbr‘d2’,REAL_SUB_LDISTRIB,REAL_SUB_LT] >> 
+        ‘2 * (d1 * π) ≤ π ∧ 2 * (d2 * π) ≤ π ∧
+         0 ≤ 2 * (d1 * π) ∧ 0 ≤ 2 * (d2 * π)’ by simp[REAL_LE_MUL] >>
+        simp[COS_ACS]) >>
   cheat
 QED
 

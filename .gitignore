@@ -4,3 +4,4 @@
 *.uo
 *.ui
 .DS_Store
+*.sml#
