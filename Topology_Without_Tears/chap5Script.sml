@@ -171,4 +171,76 @@ Proof
     simp[PULL_EXISTS] >> metis_tac[SUBSET_DEF]
 QED
 
+Theorem exercise_5_1_6:
+  (∀a. a ∈ A ⇒ f a ∈ topspace t2) ⇒
+  continuousfn (discrete_topology A) t2 f
+Proof
+  rw[continuousfn_def]
+QED
+
+Theorem exercise_5_1_7:
+  (∀a. a ∈ topspace t1 ⇒ f a ∈ B) ⇒
+  continuousfn t1 (indiscrete_topology B) f
+Proof
+  simp[continuousfn_def, PREIMAGE_EMPTY, DISJ_IMP_THM] >> rw[] >>
+  ‘PREIMAGE f B ∩ topspace t1 = topspace t1’ suffices_by simp[] >>
+  simp[EXTENSION] >> metis_tac[]
+QED
+
+Theorem exercise_5_1_8:
+  continuousfn t1 t2 f ∧ A ⊆ topspace t1 ∧
+  (∀a. a ∈ A ⇒ g a = f a)
+⇒
+  continuousfn (subtopology t1 A) (subtopology t2 (IMAGE f A)) g
+Proof
+  simp[continuousfn_def, TOPSPACE_SUBTOPOLOGY, OPEN_IN_SUBTOPOLOGY] >>
+  rw[] >> first_x_assum $ drule_then assume_tac >>
+  first_assum $ irule_at Any >>
+  ‘PREIMAGE g (t ∩ IMAGE f A) ∩ A = PREIMAGE f t ∩ A’
+    by (simp[EXTENSION] >> metis_tac[]) >>
+  metis_tac[INTER_COMM, INTER_ASSOC]
+QED
+
+Theorem exercise_5_1_9:
+  (∀a. a ∈ topspace t1 ⇒ f a ∈ topspace t2) ⇒
+  (continuousfn t1 t2 f ⇔
+     ∀a N. a ∈ topspace t1 ∧ neigh t2 (N, f a) ⇒
+           ∃M. neigh t1 (M,a) ∧ IMAGE f M ⊆ N)
+Proof
+  rw[continuousfn_def] >> eq_tac >> rpt strip_tac
+  >- (gs[neigh, PULL_EXISTS] >>
+      first_x_assum $ drule_then assume_tac >>
+      irule_at Any SUBSET_REFL >>
+      first_assum $ irule_at Any >> simp[] >> conj_tac
+      >- simp[IN_DEF] >>
+      simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[SUBSET_DEF]) >>
+  gs[neigh, PULL_EXISTS] >>
+  rename [‘open_in t2 B’, ‘open_in t1 (PREIMAGE f B ∩ topspace t1)’] >>
+  first_x_assum $ resolve_then Any assume_tac SUBSET_REFL >>
+  first_x_assum $ drule_at_then (Pat ‘open_in _ _’) assume_tac >>
+  first_x_assum $ resolve_then Any assume_tac OPEN_IN_SUBSET >> gs[] >>
+  qabbrev_tac ‘pfb = PREIMAGE f B ∩ topspace t1’ >>
+  ‘∀a. B (f a) ⇔ f a ∈ B’ by simp[IN_DEF] >> pop_assum (gs o single) >>
+  ‘∀a. a ∈ topspace t1 ∧ f a ∈ B ⇔ a ∈ pfb’
+    by (simp[Abbr‘pfb’] >> metis_tac[]) >>
+  pop_assum (gs o single) >>
+  gs[GSYM RIGHT_EXISTS_IMP_THM, SKOLEM_THM] >>
+  rename [‘open_in t1 (opfn _)’, ‘opfn _ ⊆ nfn _’] >>
+  ‘∀x. opfn x x ⇔ x ∈ opfn x’ by simp[IN_DEF] >>
+  pop_assum (gs o single) >>
+  ‘pfb = BIGUNION (IMAGE opfn pfb)’
+    suffices_by (disch_then SUBST1_TAC >>
+                 irule OPEN_IN_BIGUNION >>
+                 simp[PULL_EXISTS]) >>
+  simp[Once EXTENSION, PULL_EXISTS] >>
+  rw[EQ_IMP_THM] >- metis_tac[] >>
+  rename [‘a ∈ opfn y’, ‘y ∈ pfb’, ‘a ∈ pfb’] >>
+  ‘a ∈ nfn y’ by metis_tac[SUBSET_DEF] >>
+  ‘IMAGE f (nfn y) ⊆ B’ by simp[] >>
+  pop_assum mp_tac >>
+  simp_tac (srw_ss())[Abbr‘pfb’, SUBSET_DEF, PULL_EXISTS] >>
+  metis_tac[in_open_in_topspace]
+QED
+
+
 val _ = export_theory();
