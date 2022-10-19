@@ -105,7 +105,7 @@ Proof
   simp[EXTENSION]
 QED
 
-Theorem singles_closed:
+Theorem singles_closed[simp]:
   closed_in euclidean {x}
 Proof
   ‘{x} = {a | x ≤ a ∧ a ≤ x}’ by simp[EXTENSION] >>
