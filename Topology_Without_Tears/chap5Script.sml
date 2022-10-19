@@ -252,20 +252,15 @@ Theorem PREIMAGE_I[simp]:
  PREIMAGE I X = X
 Proof
  simp[EXTENSION]
-QED 
-        
+QED
+
 Theorem exercise_5_1_10_ii:
    finer τ1 τ2 ⇔
    continuousfn τ1 τ2 I ∧ topspace τ1 = topspace τ2
 Proof
   rw[finer_def,continuousfn_def,PREIMAGE_I,EQ_IMP_THM] >>
-  gs[iffLR SUBSET_INTER_ABSORPTION,OPEN_IN_SUBSET] 
-QED  
+  gs[iffLR SUBSET_INTER_ABSORPTION,OPEN_IN_SUBSET]
+QED
 
-     
-  
-        
-QED        
-                
 
 val _ = export_theory();
