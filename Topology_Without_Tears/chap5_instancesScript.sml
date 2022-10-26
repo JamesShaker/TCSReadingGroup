@@ -38,12 +38,74 @@ Proof
     first_x_assum $ drule_all >> simp[]
 QED
 
-(* Example_5_1_6 *)
+Theorem example_5_1_6:
+  (∀x. f x = if x ≤ 3 then x - 1 else 0.5*(x+5)) ⇒
+  ¬continuousfn euclidean euclidean f
+Proof
+  rw[continuousfn_def] >> qexists_tac `ival 1 3` >> rw[] >>
+  `PREIMAGE f (ival 1 3) = {x | 2 < x ∧ x ≤ 3}`
+    by (rw[EXTENSION, ival_def] >> rw[]) >>
+  rw[exercise_2_1_1]
+QED
+
+Theorem exercise_5_1_2_i:
+  (∀x. f x = if x ≤ 0 then -1 else 1) ⇒
+  ¬continuousfn euclidean euclidean f
+Proof
+  rw[continuousfn_def] >> qexists_tac `ival (-2) 1` >> rw[] >>
+  `PREIMAGE f (ival (-2) 1) = {x | x ≤ 0}`
+    by (rw[EXTENSION, ival_def] >> rw[]) >>
+  rw[open_in_euclidean] >> qexists_tac `0` >> rw[ival_def] >>
+  simp[SUBSET_DEF] >> Cases_on `a < 0` >> simp[] >>
+  Cases_on `0 < b` >> simp[] >>
+  qexists_tac `b/2` >> rw[]
+QED
+
+Theorem exercise_5_1_2_ii:
+  (∀x. f x = if x ≤ 0 then -1 else 1) ⇒
+  ¬continuousfn euclidean euclidean f
+Proof
+  rw[prop_5_1_9] >> qexists_tac `{1}` >> rw[] >>
+  `PREIMAGE f {1} = {x | 0 < x}`
+    by (rw[EXTENSION] >> rw[]) >> rw[] >>
+  `open_in euclidean {x | 0 < x}`
+    by rw[] >>
+  strip_tac >>
+  `{x | 0r < x} = ∅ ∨ {x | 0 < x} = 𝕌(:real)`
+    by metis_tac[chap1Theory.clopen_def,
+                 chap3_instancesTheory.prop_3_3_3] >>
+  gs[EXTENSION] >> pop_assum mp_tac >> simp[]
+  >- (qexists_tac `1` >> rw[])
+  >> qexists_tac `-1` >> rw[]
+QED
+
+Theorem exercise_5_1_3:
+  (∀x. f x = if x ≤ 1 then x else x+2) ⇒
+  ¬continuousfn euclidean euclidean f
+Proof
+  rw[continuousfn_def] >> qexists_tac `ival 0 3` >> rw[]
+  `PREIMAGE f (ival 0 3) = {x | 0 < x ∧ x ≤ 1}`
+    by (rw[EXTENSION, ival_def] >> rw[]) >>
+  rw[exercise_2_1_1]
+QED
+
+Theorem exercise_5_1_4:
+  (∀x. f x = if 0 ≤ x ∧ x ≤ 1 then 1 else 2) ⇒
+  continuousfn (subtopology euclidean {x | 0 ≤ x ∧ x ≤ 1 ∨ 2 ≤ x ∧ x ≤ 4}) euclidean f
+Proof
+  rw[continuousfn_def, OPEN_IN_SUBTOPOLOGY] >>
+  map_every Cases_on [`1 ∈ A`, `2 ∈ A`]
+  >- (qexists_tac `UNIV` >> rw[EXTENSION, TOPSPACE_SUBTOPOLOGY] >>
+      metis_tac[])
+  >- cheat
+  >- cheat
+  >> cheat
+QED
 
 Theorem FINITE_closed:
   FINITE s ⇒ closed_in euclidean s
 Proof
-  strip_tac >> 
+  strip_tac >>
   ‘s = BIGUNION {{a} | a IN s}’
     by simp[Once EXTENSION,PULL_EXISTS] >>
   pop_assum SUBST1_TAC >>
@@ -53,19 +115,18 @@ Proof
   ‘{{a} | a ∈ s} = IMAGE (\a. {a}) s’
     by simp[Once EXTENSION] >>
   simp[]
-QED          
-        
-    
+QED
+
 Theorem exercise_5_1_10_i:
  finer euclidean (finite_closed_topology UNIV)
-Proof 
+Proof
   simp[DISJ_IMP_THM,finer_def,OPEN_IN_EMPTY] >>
   rw[] >> drule_then assume_tac FINITE_closed >>
   gs[closed_in,COMPL_COMPL_applied]
 QED
 
-        
-    
-  
+
+
+
 val _ = export_theory();
 
