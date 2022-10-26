@@ -83,7 +83,7 @@ Theorem exercise_5_1_3:
   (∀x. f x = if x ≤ 1 then x else x+2) ⇒
   ¬continuousfn euclidean euclidean f
 Proof
-  rw[continuousfn_def] >> qexists_tac `ival 0 3` >> rw[]
+  rw[continuousfn_def] >> qexists_tac `ival 0 3` >> rw[] >>
   `PREIMAGE f (ival 0 3) = {x | 0 < x ∧ x ≤ 1}`
     by (rw[EXTENSION, ival_def] >> rw[]) >>
   rw[exercise_2_1_1]
@@ -93,13 +93,13 @@ Theorem exercise_5_1_4:
   (∀x. f x = if 0 ≤ x ∧ x ≤ 1 then 1 else 2) ⇒
   continuousfn (subtopology euclidean {x | 0 ≤ x ∧ x ≤ 1 ∨ 2 ≤ x ∧ x ≤ 4}) euclidean f
 Proof
-  rw[continuousfn_def, OPEN_IN_SUBTOPOLOGY] >>
+  rw[continuousfn_def, OPEN_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >>
   map_every Cases_on [`1 ∈ A`, `2 ∈ A`]
-  >- (qexists_tac `UNIV` >> rw[EXTENSION, TOPSPACE_SUBTOPOLOGY] >>
+  >- (qexists_tac `UNIV` >> rw[EXTENSION] >>
       metis_tac[])
-  >- cheat
-  >- cheat
-  >> cheat
+  >- (qexists_tac `ival (-1) 2` >> rw[EXTENSION,ival_def,EQ_IMP_THM] >> fs[])
+  >- (qexists_tac `ival 1 5` >> rw[EXTENSION,ival_def,EQ_IMP_THM] >> fs[])
+  >> qexists_tac `∅` >> simp[EXTENSION] >> metis_tac[]
 QED
 
 Theorem FINITE_closed:
