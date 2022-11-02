@@ -293,6 +293,11 @@ Proof
   simp[closure_def]
 QED
 
+(*
+closure_subset_topspace
+remark_3_1_10_ii
+*)
+
 Theorem exercise_5_1_13:
   (∀a. a ∈ topspace t1 ⇒ f a ∈ topspace t2) ⇒
   (continuousfn t1 t2 f ⇔
@@ -318,15 +323,16 @@ Proof
       irule_at Any IMAGE_SUBSET>>
       first_assum $ irule_at Any >>
       simp[Abbr‘A2’, SUBSET_DEF, PULL_EXISTS]) >>
-  rename [‘closed_in t2 B’, ‘closed_in t1 (PREIMAGE f B ∩ topspace t1)’] >>
-  qabbrev_tac ‘A= PREIMAGE f B ∩ topspace t1’ >>
-  ‘closure t2 B = B’ by simp[closure_of_closed] >>
-  ‘IMAGE f A ⊆ B’ by simp[Abbr‘A’, SUBSET_DEF, PULL_EXISTS] >>
+  rename [‘closed_in t1 (PREIMAGE f B ∩ topspace t1)’] >>
+  qabbrev_tac ‘A = PREIMAGE f B ∩ topspace t1’ >>
   ‘A ⊆ topspace t1’ by simp[Abbr‘A’] >>
-  ‘closure t1 A ⊆ topspace t1’ by simp[closure_subset_topspace] >>
-  ‘IMAGE f (closure t1 A) ⊆ closure t2 (IMAGE f (closure t1 A))’
-    by simp[] >>
-  cheat
+  ‘A = closure t1 A’ suffices_by (DISCH_THEN SUBST1_TAC >> simp[remark_3_1_10_i]) >>
+  simp[SET_EQ_SUBSET,SUBSET_DEF] >> qx_gen_tac ‘a’ >> strip_tac >>
+  ‘a ∈ topspace t1’ by metis_tac[closure_subset_topspace,SUBSET_DEF] >>
+  ‘f a ∈ B’ suffices_by simp[Abbr ‘A’] >>
+  first_x_assum drule >> simp[SUBSET_DEF,PULL_EXISTS] >> DISCH_THEN drule >>
+  ‘IMAGE f A ⊆ B’ by simp[Abbr‘A’, SUBSET_DEF, PULL_EXISTS] >>
+  metis_tac [remark_3_1_10_ii,SUBSET_DEF]
 QED
 
 val _ = export_theory();
