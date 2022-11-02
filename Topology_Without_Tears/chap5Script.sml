@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 
-open chap4Theory pred_setTheory topologyTheory
+open chap3Theory chap4Theory pred_setTheory topologyTheory
 
 val _ = new_theory "chap5";
 
@@ -14,7 +14,7 @@ Proof
   >- (first_assum $ irule_at (Pat ‘open_in τ _’) >>
       first_assum $ irule_at (Pat ‘open_in τ' _’) >>
       simp[] >> simp[SUBSET_DEF, PULL_EXISTS]) >>
-  simp[chap3Theory.corollary_3_2_9] >> rpt strip_tac >>
+  simp[corollary_3_2_9] >> rpt strip_tac >>
   first_x_assum $ drule_all_then strip_assume_tac >>
   first_assum $ irule_at Any >> simp[OPEN_IN_SUBSET] >>
   qpat_x_assum ‘IMAGE f V ⊆ U’ mp_tac >>
@@ -262,5 +262,71 @@ Proof
   gs[iffLR SUBSET_INTER_ABSORPTION,OPEN_IN_SUBSET]
 QED
 
+Theorem exercise_5_1_12:
+  continuousfn τ1 τ2 f ∧ INJ f (topspace τ1) (topspace τ2) ⇒
+  (* i *) (T2_space τ2 ⇒ T2_space τ1) ∧
+  (* ii *) (T1_space τ2 ⇒ T1_space τ1)
+Proof
+  rw[T2_space_def, chap1Theory.T1_space_def] >~
+  [‘closed_in t1 {a}’, ‘INJ _ (topspace t1) (topspace t2)’]
+  >- (gs[prop_5_1_9] >>
+      ‘f a ∈ topspace t2’ by simp[] >>
+      ‘closed_in t2 {f a}’ by simp[] >>
+      ‘PREIMAGE f {f a} ∩ topspace t1 = {a}’ suffices_by metis_tac[] >>
+      simp[EXTENSION, EQ_IMP_THM] >> metis_tac[INJ_DEF]) >~
+  [‘a ∈ topspace τ1’, ‘b ∈ topspace τ1’, ‘a ≠ b’]
+  >- (gs[continuousfn_def] >>
+      ‘f a ∈ topspace τ2 ∧ f b ∈ topspace τ2 ∧ f a ≠ f b’
+        by metis_tac[INJ_DEF] >>
+      first_x_assum $ drule_all_then strip_assume_tac >>
+      rename [‘open_in τ2 fA’, ‘open_in τ2 fB’, ‘fA ∩ fB = ∅’] >>
+      qabbrev_tac ‘fA' = PREIMAGE f fA ∩ topspace τ1’ >>
+      qabbrev_tac ‘fB' = PREIMAGE f fB ∩ topspace τ1’ >>
+      ‘open_in τ1 fA' ∧ open_in τ1 fB'’ by metis_tac[] >>
+      qexistsl [‘fA'’, ‘fB'’] >> simp[Abbr‘fA'’, Abbr‘fB'’] >>
+      gs[EXTENSION] >> metis_tac[])
+QED
+
+Theorem SUBSET_closure[simp]:
+  A ⊆ closure t A
+Proof
+  simp[closure_def]
+QED
+
+Theorem exercise_5_1_13:
+  (∀a. a ∈ topspace t1 ⇒ f a ∈ topspace t2) ⇒
+  (continuousfn t1 t2 f ⇔
+     ∀A. A ⊆ topspace t1 ⇒
+         IMAGE f (closure t1 A) ⊆ closure t2 (IMAGE f A))
+Proof
+  rw[prop_5_1_9, EQ_IMP_THM]
+  >- (‘closed_in t2 (closure t2 (IMAGE f A))’
+        by (irule remark_3_1_10_i >>
+            simp[SUBSET_DEF, PULL_EXISTS] >>
+            metis_tac[SUBSET_DEF]) >>
+      first_x_assum $ drule_then strip_assume_tac >>
+      qabbrev_tac ‘B = IMAGE f A’ >>
+      qabbrev_tac ‘A2 = PREIMAGE f (closure t2 B) ∩ topspace t1’ >>
+      ‘closure t1 A ⊆ A2’
+        by (irule remark_3_1_10_ii >>
+            simp[SUBSET_DEF, PULL_EXISTS, Abbr‘A2’] >>
+            gs[SUBSET_DEF] >> qx_gen_tac ‘a’ >>
+            strip_tac >>
+            irule $ iffLR SUBSET_DEF >> qexists ‘B’ >>
+            simp[] >> simp[Abbr‘B’]) >>
+      irule SUBSET_TRANS >>
+      irule_at Any IMAGE_SUBSET>>
+      first_assum $ irule_at Any >>
+      simp[Abbr‘A2’, SUBSET_DEF, PULL_EXISTS]) >>
+  rename [‘closed_in t2 B’, ‘closed_in t1 (PREIMAGE f B ∩ topspace t1)’] >>
+  qabbrev_tac ‘A= PREIMAGE f B ∩ topspace t1’ >>
+  ‘closure t2 B = B’ by simp[closure_of_closed] >>
+  ‘IMAGE f A ⊆ B’ by simp[Abbr‘A’, SUBSET_DEF, PULL_EXISTS] >>
+  ‘A ⊆ topspace t1’ by simp[Abbr‘A’] >>
+  ‘closure t1 A ⊆ topspace t1’ by simp[closure_subset_topspace] >>
+  ‘IMAGE f (closure t1 A) ⊆ closure t2 (IMAGE f (closure t1 A))’
+    by simp[] >>
+  cheat
+QED
 
 val _ = export_theory();

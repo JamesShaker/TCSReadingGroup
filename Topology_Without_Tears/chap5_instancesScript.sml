@@ -125,6 +125,26 @@ Proof
   gs[closed_in,COMPL_COMPL_applied]
 QED
 
+Theorem exercise_5_1_11:
+  continuousfn euclidean euclidean f ∧
+  (∀q. q ∈ rational ⇒ f q = 0) ⇒
+  ∀r. f r = 0
+Proof
+  CCONTR_TAC >> gs[prop_5_1_9] >>
+  ‘closed_in euclidean {0}’ by simp[] >>
+  first_x_assum drule >>
+  ‘∃A. PREIMAGE f {0} = A ∪ rational ∧ DISJOINT A rational ∧ r ∉ A ∧
+       A ∪ rational ≠ UNIV’
+    by (simp[PREIMAGE_def, EXTENSION, DISJOINT_DEF] >>
+        qexists ‘{ r | r ∉ rational ∧ f r = 0}’ >> simp[] >> rw[]
+        >- metis_tac[]
+        >- (simp[SF CONJ_ss] >> metis_tac[])) >>
+  simp[closed_in, open_in_euclidean, SUBSET_DEF,
+       DECIDE “¬p ∨ q ⇔ p ⇒ q”] >>
+  qexists ‘r’ >> simp[] >> qx_genl_tac [‘a’, ‘b’] >> strip_tac >>
+  gs[ival_def] >>
+  metis_tac[rationals_dense, REAL_LT_TRANS, IN_DEF]
+QED
 
 
 
