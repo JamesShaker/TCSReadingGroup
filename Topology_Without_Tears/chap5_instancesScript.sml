@@ -1,6 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 open chap4Theory pred_setTheory topologyTheory realTheory;
 open chap2_instancesTheory chap4_instancesTheory chap5Theory realLib;
+open chap3_instancesTheory; 
 
 val _ = new_theory "chap5_instances";
 
@@ -146,7 +147,33 @@ Proof
   metis_tac[rationals_dense, REAL_LT_TRANS, IN_DEF]
 QED
 
+Definition path_connected_def:
+  path_connected τ ⇔
+  ∀a b. a ∈ topspace τ ∧ b ∈ topspace τ ⇒
+        ∃f. continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) τ f ∧
+            f 0 = a ∧ f 1 = b
+End            
 
-
+Theorem linear_continuousfn:
+ (∀x. x ∈ A ⇒ m * x + c ∈ B) ⇒ continuousfn (EST A) (EST B) (λx. m * x + c)
+Proof
+  rw[continuousfn_def,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
+  Cases_on ‘m = 0’ >> gvs[] (* 2 *)
+  >- (Cases_on ‘A = {}’ >> gvs[] (* 2 *)
+     >- (qexists_tac ‘t’ >> simp[]) >>
+     cheat) >>
+  cheat    
+QED         
+               
+Theorem example_5_2_4:
+  interval A ⇒ path_connected (EST A)
+Proof
+  rw[path_connected_def,remark4_3_4ii,TOPSPACE_SUBTOPOLOGY] >> gvs[] (* 10 *)
+  >- (qexists_tac ‘K a’ >> simp[exercise_5_1_1_i,TOPSPACE_SUBTOPOLOGY])
+  >- rename [‘a ≤ _ ∧ _ ≤ b’,‘_ 0 = c’,‘_ 1 = d’] >>
+     qexists_tac ‘λx. (d - c) * x + c’ >> simp[] >>
+     
+QED
+               
 val _ = export_theory();
 

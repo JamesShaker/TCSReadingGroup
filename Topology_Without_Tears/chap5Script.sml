@@ -335,4 +335,30 @@ Proof
   metis_tac [remark_3_1_10_ii,SUBSET_DEF]
 QED
 
+
+Theorem prop_5_2_1:
+  continuousfn t1 t2 f ∧ SURJ f (topspace t1) (topspace t2) ∧
+  connected t1 ⇒ connected t2
+Proof
+  rw[connected_def] >> CCONTR_TAC >>
+  rename [‘clopen t2 U’] >>
+  Cases_on ‘U = {}’ >> gs[] >> Cases_on ‘U = topspace t2’ >> gs[] >>
+  ‘clopen t1 (PREIMAGE f U ∩ topspace t1)’
+    by (simp_tac (srw_ss()) [chap1Theory.clopen_def] >>
+        metis_tac[prop_5_1_9,continuousfn_def,chap1Theory.clopen_def]) >>
+  pop_assum mp_tac >> simp[] >>
+  simp[EXTENSION] >> reverse strip_tac (* 2 *)
+  >- (gs[SURJ_DEF] >>
+      metis_tac[MEMBER_NOT_EMPTY,chap1Theory.clopen_def,
+                OPEN_IN_SUBSET,SUBSET_DEF]) >>
+  simp[EQ_IMP_THM] >>
+  pop_assum mp_tac >> simp[EXTENSION,EQ_IMP_THM] >>
+  metis_tac[SURJ_DEF,SUBSET_DEF,chap1Theory.clopen_def,
+            OPEN_IN_SUBSET]
+QED
+
+
+
+
+        
 val _ = export_theory();
