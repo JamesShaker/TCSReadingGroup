@@ -1,7 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 open chap4Theory pred_setTheory topologyTheory realTheory;
 open chap2_instancesTheory chap4_instancesTheory chap5Theory realLib;
-open chap3_instancesTheory; 
+open chap3_instancesTheory;
 
 val _ = new_theory "chap5_instances";
 
@@ -152,28 +152,69 @@ Definition path_connected_def:
   ∀a b. a ∈ topspace τ ∧ b ∈ topspace τ ⇒
         ∃f. continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) τ f ∧
             f 0 = a ∧ f 1 = b
-End            
+End
+
+Theorem open_in_linear:
+  open_in euclidean t ∧ m ≠ 0 ⇒
+  open_in euclidean (IMAGE (λx. m * x + c) t)
+Proof
+  rw[open_in_euclidean] >>
+  first_assum $ drule_then strip_assume_tac >>
+  rename [‘x ∈ ival a b’] >>
+  Cases_on ‘0 < m’
+  >- (qexistsl [‘m * a + c’,‘m * b + c’] >>
+      gs[SUBSET_DEF,ival_def] >>
+      qx_gen_tac ‘y’ >> strip_tac >>
+      qexists_tac ‘(y - c) / m’ >>
+      simp[real_div]) >>
+  qexistsl [‘m * b + c’,‘m * a + c’] >>
+  gs[SUBSET_DEF,ival_def] >>
+  qx_gen_tac ‘y’ >> strip_tac >>
+  qexists_tac ‘(y - c) / m’ >>
+  simp[real_div]
+QED
 
 Theorem linear_continuousfn:
- (∀x. x ∈ A ⇒ m * x + c ∈ B) ⇒ continuousfn (EST A) (EST B) (λx. m * x + c)
+  (∀x. x ∈ A ⇒ m * x + c ∈ B) ⇒ continuousfn (EST A) (EST B) (λx. m * x + c)
 Proof
   rw[continuousfn_def,TOPSPACE_SUBTOPOLOGY,OPEN_IN_SUBTOPOLOGY] >>
   Cases_on ‘m = 0’ >> gvs[] (* 2 *)
   >- (Cases_on ‘A = {}’ >> gvs[] (* 2 *)
-     >- (qexists_tac ‘t’ >> simp[]) >>
-     cheat) >>
-  cheat    
-QED         
-               
+      >- (qexists_tac ‘t’ >> simp[]) >>
+      gs[GSYM MEMBER_NOT_EMPTY] >> rename [‘a ∈ A’] >>
+      first_assum $ drule_then assume_tac >>
+      reverse $ Cases_on ‘c ∈ t’
+      >- (qexists_tac ‘∅’ >> simp[EXTENSION]) >>
+      qexists_tac ‘UNIV’ >>
+      simp[EXTENSION]) >>
+  irule_at Any open_in_linear >>
+  irule_at Any REAL_INV_NZ >>
+  rpt $ first_assum $ irule_at Any >>
+  qexists_tac ‘- c * inv m’ >>
+  simp[EXTENSION] >> rw[EQ_IMP_THM] >>
+  simp[REAL_LDISTRIB,REAL_ARITH “x + -y + y = x:real”] >>
+  first_assum $ irule_at Any >>
+  simp[REAL_LDISTRIB]
+QED
+
 Theorem example_5_2_4:
   interval A ⇒ path_connected (EST A)
 Proof
-  rw[path_connected_def,remark4_3_4ii,TOPSPACE_SUBTOPOLOGY] >> gvs[] (* 10 *)
-  >- (qexists_tac ‘K a’ >> simp[exercise_5_1_1_i,TOPSPACE_SUBTOPOLOGY])
-  >- rename [‘a ≤ _ ∧ _ ≤ b’,‘_ 0 = c’,‘_ 1 = d’] >>
-     qexists_tac ‘λx. (d - c) * x + c’ >> simp[] >>
-     
+  rw[interval_def,path_connected_def,TOPSPACE_SUBTOPOLOGY] >>
+  rename [‘_ 0 = c’,‘_ 1 = d’] >>
+  Cases_on ‘c = d’
+  >- (qexists_tac ‘K c’ >> simp[exercise_5_1_1_i,TOPSPACE_SUBTOPOLOGY]) >>
+  qexists_tac ‘λx. (d - c) * x + c’ >>
+  irule_at Any linear_continuousfn >> simp[] >>
+  rw[REAL_LE_LT] >> gs[REAL_ARITH “d - c + c = d:real”] >>
+  first_x_assum irule >> Cases_on ‘c < d’ >> rw[]
+  >- (qexists_tac ‘c’ >> simp[] >> irule REAL_LT_MUL >> simp[])
+  >- (qexists_tac ‘d’ >> simp[] >> irule REAL_LTE_TRANS >>
+      qexists_tac ‘1 * (d - c) + c’ >> simp[])
+  >- (qexists_tac ‘d’ >> simp[] >> irule REAL_LET_TRANS >>
+      qexists_tac ‘1 * (d - c) + c’ >> simp[])
+  >- (qexists_tac ‘c’ >> simp[] >> irule REAL_LTE_TRANS >>
+      qexists_tac ‘0 * (d - c) + c’ >> simp[])
 QED
-               
-val _ = export_theory();
 
+val _ = export_theory();
