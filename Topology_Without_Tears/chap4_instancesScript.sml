@@ -499,7 +499,7 @@ Proof
       ‘{x | c ≤ x ∧ x < d} DIFF {c} = {x | c < x ∧ x < d}’ by simp[EXTENSION] >>
       simp[] >> strip_tac >>
       drule homeomorphism_connected >> simp[prop_4_3_5] >>
-      conj_tac >- metis_tac[remark4_3_4ii] >>
+      conj_tac >- metis_tac[remark_4_3_4ii] >>
       simp[interval_def] >>
       ‘a < g c ∧ g c < b’
         by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
@@ -514,7 +514,7 @@ Proof
       ‘{x | c ≤ x ∧ x ≤ d} DIFF {c} = {x | c < x ∧ x ≤ d}’ by simp[EXTENSION] >>
       simp[] >> strip_tac >>
       drule homeomorphism_connected >> simp[prop_4_3_5] >>
-      conj_tac >- metis_tac[remark4_3_4ii] >>
+      conj_tac >- metis_tac[remark_4_3_4ii] >>
       simp[interval_def] >>
       ‘a < g c ∧ g c < b’
         by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
@@ -532,7 +532,7 @@ Proof
             by simp[EXTENSION] >> gs[] >>
           metis_tac[homeomorphism_SYM]) >>
       drule homeomorphism_connected >> simp[prop_4_3_5] >>
-      conj_tac >- metis_tac[remark4_3_4ii] >>
+      conj_tac >- metis_tac[remark_4_3_4ii] >>
       simp[interval_def] >>
       ‘a < g d ∧ g d < b’
         by (gs[homeomorphism, TOPSPACE_SUBTOPOLOGY] >>
@@ -780,7 +780,7 @@ Theorem exercise_4_3_1:
   (∃f g. homeomorphism (EST A, EST {x | 0 ≤ x ∧ x ≤ 1}) (f,g)) ∨
   (∃f g. homeomorphism (EST A, EST {x | 0 ≤ x ∧ x < 1}) (f,g))
 Proof
-  strip_tac >> gvs[better_remark4_3_4ii]
+  strip_tac >> gvs[better_remark_4_3_4ii]
   >- (disj1_tac >> qexistsl_tac [‘λi. 0’, ‘λi. a’] >>
       simp[homeomorphism, TOPSPACE_SUBTOPOLOGY, OPEN_IN_SUBTOPOLOGY] >>
       rpt strip_tac >> simp[BIJ_IFF_INV]

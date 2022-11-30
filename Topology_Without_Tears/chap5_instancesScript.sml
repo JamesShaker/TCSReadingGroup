@@ -1,7 +1,8 @@
 open HolKernel Parse boolLib bossLib;
 open chap4Theory pred_setTheory topologyTheory realTheory;
 open chap2_instancesTheory chap4_instancesTheory chap5Theory realLib;
-open chap3_instancesTheory;
+open chap3_instancesTheory chap3Theory;
+open chap1Theory;
 
 val _ = new_theory "chap5_instances";
 
@@ -216,5 +217,48 @@ Proof
   >- (qexists_tac ‘c’ >> simp[] >> irule REAL_LTE_TRANS >>
       qexists_tac ‘0 * (d - c) + c’ >> simp[])
 QED
+
+Theorem prop_5_2_6:
+  path_connected t ⇒ connected t
+Proof
+  rw[] >> CCONTR_TAC >> gs[remark_3_3_9, path_connected_def] >>
+  `∃a b. a ∈ A ∧ b ∈ B ∧ a ≠ b`
+    by metis_tac[MEMBER_NOT_EMPTY, EXTENSION, NOT_IN_EMPTY, IN_INTER] >>
+  `a ∈ topspace t ∧ b ∈ topspace t`
+    by metis_tac[IN_UNION] >>
+  first_x_assum $ dxrule_all_then strip_assume_tac >>
+  `clopen (EST {x | 0 ≤ x ∧ x ≤ 1}) ((PREIMAGE f A) ∩ {x | 0 ≤ x ∧ x ≤ 1})`
+    by (rw[clopen_def]
+        >- (drule $ cj 2 $ iffLR prop_5_1_9 >> rw[TOPSPACE_SUBTOPOLOGY] >>
+            first_x_assum irule >> simp[closed_in] >>
+            `topspace t DIFF A = B`
+              by (simp[EXTENSION] >> metis_tac[IN_INTER, IN_UNION, NOT_IN_EMPTY, EXTENSION]) >>
+            rw[] >> metis_tac[SUBSET_UNION])
+        >> fs[continuousfn_def, TOPSPACE_SUBTOPOLOGY]) >>
+  qabbrev_tac `U = PREIMAGE f A ∩ {x | 0 ≤ x ∧ x ≤ 1}` >>
+  `U ≠ topspace (EST {x | 0 ≤ x ∧ x ≤ 1}) ∧ U ≠ ∅`
+    by (rw[TOPSPACE_SUBTOPOLOGY]
+        >- (simp[EXTENSION] >> qexists_tac `0` >> simp[Abbr `U`] >>
+            metis_tac[IN_INTER, NOT_IN_EMPTY])
+        >> simp[EXTENSION, Abbr `U`] >> qexists_tac `1` >> rw[]) >>
+  `¬connected (EST {x | 0 ≤ x ∧ x ≤ 1})` by metis_tac[connected_def] >>
+  gs[prop_4_3_5] >> metis_tac[remark_4_3_4ii]
+QED
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 val _ = export_theory();

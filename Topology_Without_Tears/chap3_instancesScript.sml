@@ -93,7 +93,7 @@ Definition interval_def:
     ∀x y z. x ∈ A ∧ z ∈ A ∧ x < y ∧ y < z ⇒ y ∈ A
 End
 
-Theorem remark4_3_4i[simp]:
+Theorem remark_4_3_4i[simp]:
   interval {x}
 Proof
   simp[interval_def]
@@ -139,7 +139,7 @@ Cases_on ‘∃z. ∀x. p x ⇒ x ≤ z’ (* 2 *)
 gs[REAL_NOT_LE]
 QED
 
-Theorem remark4_3_4ii:
+Theorem remark_4_3_4ii:
   interval A ⇔
     (∃a. A = {a}) ∨
     (∃a b. A = { x | a ≤ x ∧ x ≤ b }) ∨
@@ -164,7 +164,7 @@ Proof
     metis_tac[REAL_LT_SUP,REAL_INF_LT,REAL_LE_LT]
 QED
 
-Theorem better_remark4_3_4ii:
+Theorem better_remark_4_3_4ii:
   interval A ⇔
     (∃a. A = {a}) ∨
     (∃a b. a < b ∧ A = { x | a ≤ x ∧ x ≤ b }) ∨
@@ -177,7 +177,7 @@ Theorem better_remark4_3_4ii:
     (∃a.           A = { x | a ≤ x }) ∨
     A = UNIV ∨ A = ∅
 Proof
-  simp[remark4_3_4ii] >> Cases_on ‘A = ∅’ >> simp[]
+  simp[remark_4_3_4ii] >> Cases_on ‘A = ∅’ >> simp[]
   >- (disj1_tac >> qexistsl_tac [‘1’, ‘0’] >> simp[EXTENSION]) >>
   Cases_on ‘A = UNIV’ >> simp[] >>
   Q.ASM_CASES_TAC ‘∃a. A = {a}’  >> simp[] >>
