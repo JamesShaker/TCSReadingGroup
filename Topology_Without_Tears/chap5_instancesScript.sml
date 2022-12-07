@@ -245,20 +245,67 @@ Proof
   gs[prop_4_3_5] >> metis_tac[remark_4_3_4ii]
 QED
 
+Theorem Weierstrass_IVT:
+  a < b ∧ continuousfn (EST { x | a ≤ x ∧ x ≤ b }) euclidean f ∧ f a ≠ f b ⇒
+  ∀p. f a ≤ p ∧ p ≤ f b ∨ f b ≤ p ∧ p ≤ f a ⇒
+      ∃c. a ≤ c ∧ c ≤ b ∧ f c = p
+Proof
+  rpt strip_tac >>
+  qabbrev_tac ‘AB = { x | a ≤ x ∧ x ≤ b}’ >>
+  ‘connected (EST (IMAGE f AB))’
+    by (drule exercise_5_1_8 >> simp[TOPSPACE_SUBTOPOLOGY] >>
+        disch_then $ qspecl_then [‘f’, ‘AB’] mp_tac >>
+        simp[SUBTOPOLOGY_SUBTOPOLOGY] >>
+        strip_tac >> drule_then irule prop_5_2_1 >>
+        simp[TOPSPACE_SUBTOPOLOGY, closed_ival_connected, Abbr‘AB’]) >>
+  drule_then assume_tac $ iffLR prop_4_3_5 >>
+  ‘p ∈ IMAGE f AB’
+    by (gs[interval_def, PULL_EXISTS, Abbr‘AB’] >>
+        metis_tac[REAL_LE_LT]) >>
+  gs[Abbr‘AB’] >> metis_tac[]
+QED
 
+Theorem corollary_5_2_10:
+  a < b ∧ continuousfn (EST { x | a ≤ x ∧ x ≤ b}) euclidean f ∧
+  0 < f a ∧ f b < 0 ⇒
+  ∃x. a < x ∧ x < b ∧ f x = 0
+Proof
+  strip_tac >> drule_then (drule_then $ qspec_then ‘0’ mp_tac) Weierstrass_IVT >>
+  impl_tac >- rw[] >>
+  metis_tac[REAL_LE_LT, REAL_LT_REFL]
+QED
+(*
+Theorem continuousfn_additive:
+  continuousfn t1 euclidean f ∧ continuousfn t1 euclidean g ⇒
+  continuousfn t1 euclidean (λx. f x + g x)
+Proof
+  rw[continuousfn_def] >> .... ????
 
+QED
+*)
 
-
-
-
-
-
-
-
-
-
-
-
-
+Theorem corollary_5_2_11:
+  continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) (EST {x | 0 ≤ x ∧ x ≤ 1}) f ⇒
+  ∃z. 0 ≤ z ∧ z ≤ 1 ∧ f z = z
+Proof
+  strip_tac >>
+  qabbrev_tac ‘Z1 = {x | 0r ≤ x ∧ x ≤ 1}’ >>
+  Cases_on ‘f 0 = 0’ >- metis_tac[REAL_LE_REFL, SCONV[] “0r ≤ 1”] >>
+  Cases_on ‘f 1 = 1’ >- metis_tac[REAL_LE_REFL, SCONV[] “0r ≤ 1”] >>
+  ‘0 < f 0 ∧ f 1 < 1’
+    by (gs[continuousfn_def, TOPSPACE_SUBTOPOLOGY, Abbr‘Z1’] >>
+        metis_tac[REAL_LE_LT, REAL_LE_REFL, SCONV[] “0r ≤ 1”]) >>
+  qabbrev_tac ‘g = λx. x - f x’ >>
+  ‘continuousfn (EST Z1) euclidean g’
+    by (gs[Abbr‘g’, continuousfn_def, TOPSPACE_SUBTOPOLOGY] >>
+        rw[] >> rename [‘open_in euclidean A’] >>
+        ‘open_in (EST Z1) (A ∩ Z1)’
+          by (simp[OPEN_IN_SUBTOPOLOGY] >> metis_tac[]) >>
+        first_x_assum drule >>
+        simp[PREIMAGE_INTER, OPEN_IN_SUBTOPOLOGY, PULL_EXISTS] >>
+        qx_gen_tac ‘B’ >> strip_tac >>
+        cheat) >>
+  cheat
+QED
 
 val _ = export_theory();
