@@ -284,6 +284,9 @@ Proof
 QED
 *)
 
+
+
+(*The book got the g = λx. f x - x the wrong way around as x - f x*)        
 Theorem corollary_5_2_11:
   continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) (EST {x | 0 ≤ x ∧ x ≤ 1}) f ⇒
   ∃z. 0 ≤ z ∧ z ≤ 1 ∧ f z = z
@@ -295,17 +298,75 @@ Proof
   ‘0 < f 0 ∧ f 1 < 1’
     by (gs[continuousfn_def, TOPSPACE_SUBTOPOLOGY, Abbr‘Z1’] >>
         metis_tac[REAL_LE_LT, REAL_LE_REFL, SCONV[] “0r ≤ 1”]) >>
-  qabbrev_tac ‘g = λx. x - f x’ >>
+  qabbrev_tac ‘g = λx. f x - x’ >>
   ‘continuousfn (EST Z1) euclidean g’
-    by (gs[Abbr‘g’, continuousfn_def, TOPSPACE_SUBTOPOLOGY] >>
+    by (*gs[Abbr‘g’, continuousfn_def, TOPSPACE_SUBTOPOLOGY] >>
         rw[] >> rename [‘open_in euclidean A’] >>
         ‘open_in (EST Z1) (A ∩ Z1)’
           by (simp[OPEN_IN_SUBTOPOLOGY] >> metis_tac[]) >>
-        first_x_assum drule >>
-        simp[PREIMAGE_INTER, OPEN_IN_SUBTOPOLOGY, PULL_EXISTS] >>
-        qx_gen_tac ‘B’ >> strip_tac >>
-        cheat) >>
-  cheat
+        first_assum drule >>
+        simp_tac (srw_ss()) [PREIMAGE_INTER, OPEN_IN_SUBTOPOLOGY, PULL_EXISTS] >>
+        qx_gen_tac ‘B’ >> strip_tac >> 
+        irule_at Any EQ_REFL >>
+        qpat_x_assum ‘open_in (EST Z1) (A ∩ Z1)’ mp_tac >>
+        simp[open_in_euclidean,SUBSET_DEF,ival_def,
+             OPEN_IN_SUBTOPOLOGY] >>
+        disch_then $ qx_choose_then ‘B'’ strip_assume_tac>>
+        qx_gen_tac ‘b’ >> strip_tac >>
+        first_assum $ drule_then strip_assume_tac >>
+        qexistsl [‘f c + a’,‘f c + b’] >>
+        qx_gen_tac ‘d’ >> strip_tac >>
+        last_assum irule
+        simp[open_in_euclidean]
+        cheat*) cheat >>
+  gs[Abbr‘Z1’] >>        
+  ‘0 < g 0 ∧ g 1 < 0 ∧ 0r < 1’ by simp[Abbr‘g’] >>
+  drule_all_then strip_assume_tac corollary_5_2_10 >>
+  gs[Abbr‘g’] >> metis_tac[REAL_LE_LT] 
 QED
 
+
+Theorem sq_continuous:
+  continuousfn (EST $ ival 0 1) (EST $ ival 0 1) (λx. x * x)
+Proof
+  simp[continuousfn_def,OPEN_IN_SUBTOPOLOGY,ival_def,
+       PULL_EXISTS,TOPSPACE_SUBTOPOLOGY] >>
+  rw[] (* 2 *)
+  >- (CCONTR_TAC >> gs[REAL_NOT_LT] >>
+      ‘x < x pow 2’ by metis_tac[REAL_LTE_TRANS] >>
+      gs[]) >>
+  simp[PREIMAGE_INTER] >> 
+  qexists ‘(PREIMAGE (λx. x²) t) ∩ ival 0 1’ >> simp[EXTENSION,ival_def] >> rw[EQ_IMP_THM]
+  (* 2 *)
+  >- (gs[open_in_euclidean,SUBSET_DEF,ival_def] >>
+      rpt strip_tac >>
+      first_x_assum $ drule_then strip_assume_tac >>
+      qexistsl [‘if a < 0 then 0 else (sqrt a)’,
+                ‘min 1 (sqrt b)’] >>
+      rw[sqrt_lt,REAL_LT_MIN] (* 3 *)  
+      >- metis_tac[REAL_LE_POW2,SQRT_MONO_LT,POW_2_SQRT,
+                   REAL_LE_LT]
+      >- (first_x_assum irule >>
+          conj_tac (* 2 *)
+          >- metis_tac[REAL_LTE_TRANS,REAL_LE_POW2] >>
+          ‘b = (sqrt b) pow 2’
+            by (simp[SQRT_POW2] >>
+                metis_tac[REAL_LE_TRANS,REAL_LE_POW2,
+                          REAL_LE_LT]) >>
+          pop_assum SUBST1_TAC >>
+          irule REAL_POW_LT2 >> simp[]) >>
+      (first_x_assum irule >>
+       conj_tac (* 2 *)
+       >- metis_tac[REAL_LTE_TRANS,REAL_LE_POW2] >>
+       ‘b = (sqrt b) pow 2’
+         by (simp[SQRT_POW2] >>
+             metis_tac[REAL_LE_TRANS,REAL_LE_POW2,
+                       REAL_LE_LT]) >>
+       pop_assum SUBST1_TAC >>
+       irule REAL_POW_LT2 >> simp[])) >>
+  CCONTR_TAC >> gs[REAL_NOT_LT] >>
+  ‘x < x pow 2’ by metis_tac[REAL_LTE_TRANS] >>
+  gs[]
+QED
+  
 val _ = export_theory();
