@@ -357,8 +357,9 @@ Proof
             OPEN_IN_SUBSET]
 QED
 
-
-
-
+Definition has_fixed_points_def:
+  has_fixed_points t = ∀f. continuousfn t t f ⇒
+                           ∃x. x ∈ topspace t ∧ f x = x
+End
         
 val _ = export_theory();

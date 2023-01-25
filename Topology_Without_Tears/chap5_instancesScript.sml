@@ -325,7 +325,6 @@ Proof
   gs[Abbr‘g’] >> metis_tac[REAL_LE_LT] 
 QED
 
-
 Theorem sq_continuous:
   continuousfn (EST $ ival 0 1) (EST $ ival 0 1) (λx. x * x)
 Proof
@@ -368,5 +367,63 @@ Proof
   ‘x < x pow 2’ by metis_tac[REAL_LTE_TRANS] >>
   gs[]
 QED
-  
+
+Theorem exercise_5_2_1:
+  path_connected τ₁ ∧ continuousfn τ₁ τ₂ f ⇒
+  path_connected (subtopology τ₂ (IMAGE f (topspace τ₁)))
+Proof
+  rw[path_connected_def,TOPSPACE_SUBTOPOLOGY] >>
+  rename [‘_ 0 = f a’,‘_ 1 = f b’] >>
+  last_x_assum $ qspecl_then [‘a’,‘b’] mp_tac >>
+  simp[] >> disch_then $ qx_choose_then ‘g’ strip_assume_tac >>
+  qexists ‘f ∘ g’ >> simp[] >>
+  irule prop_5_1_8 >> first_assum $ irule_at Any >>
+  resolve_then Any (irule o SRULE [SUBTOPOLOGY_TOPSPACE])
+               SUBSET_REFL exercise_5_1_8 >>
+  simp[]
+QED
+
+(*
+Theorem exercise_5_2_2:
+  a < b ∧ 
+Proof
+QED
+*)
+
+Theorem exercice_5_2_3_i:
+  continuousfn (EST $ ival 0 1) (EST $ ival 0 1) (λx. x * x) ∧
+  ∀z. z ∈ ival 0 1 ⇒ z * z ≠ z 
+Proof
+  rw[sq_continuous,ival_def]
+QED
+
+Theorem exercise_5_2_3_ii:
+  interval A ∧ has_fixed_points (EST A) ⇒
+  ∃a b. a ≤ b ∧ A = {x | a ≤ x ∧ x ≤ b}
+Proof
+  rw[better_remark_4_3_4ii]
+  >- (rename[‘EST {a}’] >> qexistsl [‘a’,‘a’] >> simp[EXTENSION])
+  >- (rename[‘a < b’] >> qexistsl [‘a’,‘b’] >> simp[EXTENSION]) >>
+  ‘F’ suffices_by simp[] >>
+  qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+  simp[has_fixed_points_def] >>
+  cheat
+  (*
+  >- (
+  )
+  >- (
+  )
+  >- (
+  )
+  >- (
+  )
+  >- (
+  )
+  >- (
+  )
+  >- (
+  )
+  *)
+QED
+
 val _ = export_theory();
