@@ -397,33 +397,150 @@ Proof
   rw[sq_continuous,ival_def]
 QED
 
-Theorem exercise_5_2_3_ii:
-  interval A ∧ has_fixed_points (EST A) ⇒
-  ∃a b. a ≤ b ∧ A = {x | a ≤ x ∧ x ≤ b}
+Theorem closed_in_thm[simp]:
+  closed_in euclidean {} ∧
+  closed_in euclidean {a} ∧
+  closed_in euclidean UNIV ∧
+  closed_in euclidean {x | a ≤ x } ∧
+  closed_in euclidean {x | x ≤ a } ∧
+  closed_in euclidean {x | a ≤ x ∧ x ≤ b}
 Proof
-  rw[better_remark_4_3_4ii]
-  >- (rename[‘EST {a}’] >> qexistsl [‘a’,‘a’] >> simp[EXTENSION])
-  >- (rename[‘a < b’] >> qexistsl [‘a’,‘b’] >> simp[EXTENSION]) >>
-  ‘F’ suffices_by simp[] >>
-  qpat_x_assum ‘has_fixed_points _’ mp_tac >>
-  simp[has_fixed_points_def] >>
-  cheat
-  (*
-  >- (
-  )
-  >- (
-  )
-  >- (
-  )
-  >- (
-  )
-  >- (
-  )
-  >- (
-  )
-  >- (
-  )
-  *)
+  simp[closed_is_closed] >>
+  simp[closed_in, open_in_euclidean] >> rpt strip_tac >>
+  gs[REAL_NOT_LE, SUBSET_DEF, ival_def] >~
+  [‘x < a’, ‘_ < x ∧ x < _’]
+  >- (qexistsl [‘x - 1’, ‘a’] >> simp[]) >~
+  [‘a < x’, ‘_ < x ∧ x < _’]
+  >- (qexistsl [‘a’, ‘x + 1’] >> simp[])
+QED
+
+
+Theorem closed_intervals:
+  interval A ∧ closed_in euclidean A ⇔
+  A = UNIV ∨ A = ∅ ∨ (∃a b. a ≤ b ∧ A = {x | a ≤ x ∧ x ≤ b}) ∨
+  (∃a. A = { x | x ≤ a }) ∨ (∃a. A = { x | a ≤ x })
+Proof
+  rw[better_remark_4_3_4ii, EQ_IMP_THM, closed_is_closed] >>
+  simp[] >~
+  [‘closed_in euclidean {a}’] (* M-h M-p *)
+  >- (‘{a} = {x | a ≤ x ∧ x ≤ a}’ suffices_by metis_tac[REAL_LE_REFL] >>
+      simp[EXTENSION]) >~
+  [‘closed_in euclidean {x | a ≤ x ∧ x ≤ b}’] (* M-h M-p *)
+  >- metis_tac[REAL_LE_LT] >~
+  [‘closed_in _ { x | x ≤ a}’] >- metis_tac[] >~
+  [‘closed_in _ { x | a ≤ x}’] >- metis_tac[] >~
+  [‘closed_in _ {x | a < x}’]
+  >- (‘open_in euclidean {x | a < x}’ suffices_by
+        (strip_tac >>
+        ‘{ x | a < x } ≠ ∅ ∧ { x | a < x } ≠ UNIV’
+           by (simp[EXTENSION] >>
+               metis_tac [REAL_ARITH “a < a + 1r”, REAL_LT_REFL]) >>
+         metis_tac[clopen_def, prop_3_3_3]) >>
+      simp[]) >~
+  [‘closed_in _ {x | x < a}’]
+  >- (‘open_in euclidean {x | x < a}’ suffices_by
+        (strip_tac >>
+        ‘{ x | x < a } ≠ ∅ ∧ { x | x < a } ≠ UNIV’
+           by (simp[EXTENSION] >>
+               metis_tac [REAL_ARITH “a - 1r < a”, REAL_LT_REFL]) >>
+         metis_tac[clopen_def, prop_3_3_3]) >>
+      simp[]) >~
+  [‘closed_in _ {x | a < x ∧ x < b}’]
+  >- (‘open_in euclidean {x | a < x ∧ x < b}’ suffices_by
+        (strip_tac >>
+        ‘{ x | a < x ∧ x < b } ≠ ∅ ∧ { x | a < x ∧ x < b } ≠ UNIV’
+           by (simp[EXTENSION] >> metis_tac [REAL_LT_REFL, REAL_MEAN]) >>
+         metis_tac[clopen_def, prop_3_3_3]) >>
+      simp[GSYM ival_def]) >~
+  [‘closed_in _ {x | a ≤ x ∧ x < b}’]
+  >- (‘F’ suffices_by simp[] >> pop_assum mp_tac >>
+      simp[closed_include_all_limits, REAL_NOT_LE, REAL_NOT_LT,
+           limpt_thm] >> qexists ‘b’ >>
+      simp[open_in_euclidean, ival_def] >> rpt strip_tac >>
+      first_x_assum $ drule_then $
+        qx_choosel_then [‘c’, ‘d’] strip_assume_tac >>
+      ‘max a c < b’ by simp[REAL_MAX_LT] >>
+      drule REAL_MEAN >> disch_then $ qx_choose_then ‘e’ strip_assume_tac >>
+      qexists ‘e’ >> gs[SUBSET_DEF, REAL_MAX_LT]) >~
+  [‘closed_in _ {x | b < x ∧ x ≤ a}’]
+  >- (‘F’ suffices_by simp[] >> pop_assum mp_tac >>
+      simp[closed_include_all_limits, REAL_NOT_LE, REAL_NOT_LT,
+           limpt_thm] >> qexists ‘b’ >>
+      simp[open_in_euclidean, ival_def] >> rpt strip_tac >>
+      first_x_assum $ drule_then $
+        qx_choosel_then [‘c’, ‘d’] strip_assume_tac >>
+      ‘b < min a d’ by simp[REAL_LT_MIN] >>
+      drule REAL_MEAN >> disch_then $ qx_choose_then ‘e’ strip_assume_tac >>
+      qexists ‘e’ >> gs[SUBSET_DEF, REAL_LT_MIN]) >~
+  [‘a ≤ b’]
+  >- (gs[REAL_LE_LT] >~
+      [‘a < b’] >- metis_tac[] >> rpt disj1_tac >> qexists ‘a’ >>
+      simp[EXTENSION]) >>
+  metis_tac[]
+QED
+
+Theorem exercise_5_2_3_ii:
+  interval A ∧ has_fixed_points (EST A) ⇒ closed_in euclidean A
+Proof
+  rw[better_remark_4_3_4ii] >> simp[] >~
+  [‘EST {x | a < x ∧ x < b}’]
+  >- (‘F’ suffices_by simp[] >>
+      qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+      simp[has_fixed_points_def] >> qexists ‘λx. 1/2 * x + a / 2’ >> rw[] >~
+      [‘1/2 * x + a/2 = x’]
+      >- (pop_assum (mp_tac o Q.AP_TERM ‘$* 2r’) >>
+          REWRITE_TAC[REAL_LDISTRIB] >> simp[] >> strip_tac >>
+          ‘x = a’ by simp[] >> simp[TOPSPACE_SUBTOPOLOGY]) >>
+      irule linear_continuousfn >> simp[] >> rpt strip_tac >>
+      irule iterateTheory.REAL_LT_LCANCEL_IMP >> qexists ‘2’ >>
+      REWRITE_TAC [REAL_LDISTRIB] >> simp[]) >~
+  [‘EST { x | x < a}’]
+  >- (‘F’ suffices_by simp[] >>
+      qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+      simp[has_fixed_points_def] >> qexists ‘λx. 1/2 * x + a / 2’ >> rw[] >~
+      [‘1/2 * x + a/2 = x’]
+      >- (pop_assum (mp_tac o Q.AP_TERM ‘$* 2r’) >>
+          REWRITE_TAC[REAL_LDISTRIB] >> simp[] >> strip_tac >>
+          ‘x = a’ by simp[] >> simp[TOPSPACE_SUBTOPOLOGY]) >>
+      irule linear_continuousfn >> simp[] >> rpt strip_tac >>
+      irule iterateTheory.REAL_LT_LCANCEL_IMP >> qexists ‘2’ >>
+      REWRITE_TAC [REAL_LDISTRIB] >> simp[]) >~
+  [‘EST { x | a < x}’]
+  >- (‘F’ suffices_by simp[] >>
+      qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+      simp[has_fixed_points_def] >> qexists ‘λx. 1/2 * x + a / 2’ >> rw[] >~
+      [‘1/2 * x + a/2 = x’]
+      >- (pop_assum (mp_tac o Q.AP_TERM ‘$* 2r’) >>
+          REWRITE_TAC[REAL_LDISTRIB] >> simp[] >> strip_tac >>
+          ‘x = a’ by simp[] >> simp[TOPSPACE_SUBTOPOLOGY]) >>
+      irule linear_continuousfn >> simp[] >> rpt strip_tac >>
+      (irule iterateTheory.REAL_LT_LCANCEL_IMP ORELSE
+       irule REAL_LE_LCANCEL_IMP) >> qexists ‘2’ >>
+      REWRITE_TAC [REAL_LDISTRIB] >> simp[]) >~
+  [‘EST { x | b ≤ x ∧ x < a }’]
+  >-  (‘F’ suffices_by simp[] >>
+      qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+      simp[has_fixed_points_def] >> qexists ‘λx. 1/2 * x + a / 2’ >> rw[] >~
+      [‘1/2 * x + a/2 = x’]
+      >- (pop_assum (mp_tac o Q.AP_TERM ‘$* 2r’) >>
+          REWRITE_TAC[REAL_LDISTRIB] >> simp[] >> strip_tac >>
+          ‘x = a’ by simp[] >> simp[TOPSPACE_SUBTOPOLOGY]) >>
+      irule linear_continuousfn >> simp[] >> rpt strip_tac >>
+      (irule iterateTheory.REAL_LT_LCANCEL_IMP ORELSE
+       irule REAL_LE_LCANCEL_IMP) >> qexists ‘2’ >>
+      REWRITE_TAC [REAL_LDISTRIB] >> simp[]) >~
+  [‘EST { x | a < x ∧ x ≤ b }’]
+  >-  (‘F’ suffices_by simp[] >>
+      qpat_x_assum ‘has_fixed_points _’ mp_tac >>
+      simp[has_fixed_points_def] >> qexists ‘λx. 1/2 * x + a / 2’ >> rw[] >~
+      [‘1/2 * x + a/2 = x’]
+      >- (pop_assum (mp_tac o Q.AP_TERM ‘$* 2r’) >>
+          REWRITE_TAC[REAL_LDISTRIB] >> simp[] >> strip_tac >>
+          ‘x = a’ by simp[] >> simp[TOPSPACE_SUBTOPOLOGY]) >>
+      irule linear_continuousfn >> simp[] >> rpt strip_tac >>
+      (irule iterateTheory.REAL_LT_LCANCEL_IMP ORELSE
+       irule REAL_LE_LCANCEL_IMP) >> qexists ‘2’ >>
+      REWRITE_TAC [REAL_LDISTRIB] >> simp[])
 QED
 
 val _ = export_theory();
