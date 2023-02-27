@@ -361,5 +361,44 @@ Definition has_fixed_points_def:
   has_fixed_points t = ∀f. continuousfn t t f ⇒
                            ∃x. x ∈ topspace t ∧ f x = x
 End
-        
+
+Theorem exercise_5_2_3_iii:
+  a ≠ b ∧ a ∈ X ∧ b ∈ X ⇒
+    ¬has_fixed_points (discrete_topology X) ∧
+    ¬has_fixed_points (indiscrete_topology X)
+Proof
+  rw[has_fixed_points_def, continuousfn_def]
+  >- (qexists `λx. if x = a then b else a` >> rw[])
+  >> (rw[DISJ_IMP_THM] >> qexists `λx. if x = a then b else a` >>
+      rw[EXTENSION] >> DISJ1_TAC >> rw[])
+QED
+
+(*
+Theorem exercise_5_2_3_iv:
+  has_fixed_points (finite_closed_topology X) ⇔ ∃a. X = {a}
+Proof
+  reverse $ rw[has_fixed_points_def, prop_5_1_9, EQ_IMP_THM]
+  >- gs[]
+  >> Cases_on `X = ∅` >> gs[] >> CCONTR_TAC >> gs[] >>
+  `∃a b. a ≠ b ∧ a ∈ X ∧ b ∈ X`
+    by (CCONTR_TAC >> gs[] >> `∃x. x ∈ X` by metis_tac[MEMBER_NOT_EMPTY] >>
+        `X ≠ {x}` by gs[] >> pop_assum mp_tac >>
+        simp_tac (srw_ss ()) [EXTENSION] >> metis_tac[]) >>
+  first_x_assum (qspecl_then [`λx. if x = a then b else a`] mp_tac) >>
+  rw[] >> rw[]
+  >- (rw[EXTENSION] >> DISJ1_TAC >> rw[])
+  >- ()
+  >>
+
+QED
+
+Theorem exercise_5_2_3_iv:
+  has_fixed_points (finite_closed_topology X) ⇔ X ≠ ∅
+Proof
+  rw[has_fixed_points_def, prop_5_1_9, EQ_IMP_THM]
+  >- (strip_tac >> gs[])
+  >>
+QED
+*)
+
 val _ = export_theory();
