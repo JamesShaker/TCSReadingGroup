@@ -373,7 +373,7 @@ Proof
       rw[EXTENSION] >> DISJ1_TAC >> rw[])
 QED
 
-(*
+
 Theorem exercise_5_2_3_iv:
   has_fixed_points (finite_closed_topology X) ⇔ ∃a. X = {a}
 Proof
@@ -392,6 +392,48 @@ Proof
 
 QED
 
+
+Theorem FINITE_DERANGEMENT_EX:
+  ∀s x1 x2. x1 ∈ s ∧ x2 ∈ s ∧ x1 ≠ x2 ∧ FINITE s ⇒
+            ∃f. BIJ f s s ∧ ∀x. x ∈ s ⇒ f x ≠ x
+Proof            
+  ‘∀n. 1 < n ⇒ ∃f. BIJ f (count n) (count n) ∧ ∀m. m < n ⇒ f m ≠ m’
+    suffices_by
+    (rw[] >>
+     ‘∃f n. BIJ f s (count n)’ by metis_tac[FINITE_BIJ_COUNT,BIJ_SYM] >>
+     ‘1 < n’
+       by (CCONTR_TAC >> gs[arithmeticTheory.NOT_LESS] >>
+           Cases_on ‘n = 0’ >> gs[] >>
+           ‘n = 1’ by simp[] >>
+           gs[BIJ_DEF,INJ_IFF,DECIDE “x < 1 ⇔ x = 0”]) >>
+    first_x_assum $ drule_then (qx_choose_then ‘g’ strip_assume_tac) >>
+    qexists ‘LINV f s o g o f’ >> rw[] (* 2 *)
+    >- (irule BIJ_COMPOSE  >> irule_at Any BIJ_LINV_BIJ >>
+       first_assum $ irule_at Any >>
+       irule BIJ_COMPOSE >> metis_tac[]) >>
+    disch_then (mp_tac o Q.AP_TERM ‘f’) >>
+    rev_drule_then assume_tac BIJ_LINV_INV >>
+    ‘f x ∈ count n ∧ g (f x) ∈ count n’ by metis_tac[BIJ_DEF,INJ_DEF] >>
+    simp[] >> first_x_assum irule >> gs[]) >>
+ rw[] >> qexists ‘λm. if m = 0 then n - 1 else m - 1’  >>
+ simp[BIJ_DEF,INJ_IFF,SURJ_DEF,AllCaseEqs(),SF DNF_ss] >>
+ rw[DECIDE “x ≠ 0 ⇒ (x - 1 = y ⇔ x = y + 1)”,SF CONJ_ss]
+QED 
+ 
+  
+Theorem DERANGEMENT_EX:
+  ∀s x1 x2. x1 ∈ s ∧ x2 ∈ s ∧ x1 ≠ x2 ⇒
+            ∃f. BIJ f s s ∧ ∀x. x ∈ s ⇒ f x ≠ x
+Proof
+  rw[] >> Cases_on ‘FINITE s’ >- metis_tac[FINITE_DERANGEMENT_EX] >>
+  drule_then strip_assume_tac
+             cardinalTheory.disjoint_countable_decomposition>>
+  ‘∀x. x ∈ s ⇒ ∃a. a ∈ A ∧ x ∈ a’ by (rw[] >> metis_tac[]) >>
+  gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
+  ‘∃f. ∀x. x ∈ s ⇒ f x ∈ A ∧ x ∈ f x’
+   by rw[PULL_EXISTS,GSYM SKOLEM_THM] 
+        
+
 Theorem exercise_5_2_3_iv:
   has_fixed_points (finite_closed_topology X) ⇔ X ≠ ∅
 Proof
@@ -399,6 +441,6 @@ Proof
   >- (strip_tac >> gs[])
   >>
 QED
-*)
+
 
 val _ = export_theory();
