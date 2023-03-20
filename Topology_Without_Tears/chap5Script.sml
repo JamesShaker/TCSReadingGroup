@@ -1,6 +1,6 @@
 open HolKernel Parse boolLib bossLib;
 
-open chap3Theory chap4Theory pred_setTheory topologyTheory
+open chap3Theory chap4Theory pred_setTheory topologyTheory arithmeticTheory
 
 val _ = new_theory "chap5";
 
@@ -373,7 +373,7 @@ Proof
       rw[EXTENSION] >> DISJ1_TAC >> rw[])
 QED
 
-
+(*
 Theorem exercise_5_2_3_iv:
   has_fixed_points (finite_closed_topology X) ⇔ ∃a. X = {a}
 Proof
@@ -391,6 +391,7 @@ Proof
   >>
 
 QED
+*)
 
 
 Theorem FINITE_DERANGEMENT_EX:
@@ -419,8 +420,31 @@ Proof
  simp[BIJ_DEF,INJ_IFF,SURJ_DEF,AllCaseEqs(),SF DNF_ss] >>
  rw[DECIDE “x ≠ 0 ⇒ (x - 1 = y ⇔ x = y + 1)”,SF CONJ_ss]
 QED 
- 
-  
+
+Theorem INF_COUNTABLE_DERANGEMENT_EX:
+  INFINITE A ∧ countable A ⇒
+  ∃f. f PERMUTES A ∧
+      ∀x. x ∈ A ⇒ f x ≠ x
+Proof
+  ‘∃d. d PERMUTES 𝕌(:num) ∧ ∀n. d n ≠ n’ by (
+    qexists_tac ‘λi. if EVEN i then i + 1 else i - 1’ >> rw[]
+    >~ [‘¬EVEN _’] >- (strip_tac >> ‘n = 0’ by simp[] >> gs[]) >>
+    rw[BIJ_DEF,INJ_DEF,SURJ_DEF,AllCaseEqs()] >>
+    gs[GSYM ODD_EVEN] >>
+    imp_res_tac ODD_POS >> gs[]
+    >~ [‘_ ∨ _’] >- (csimp[EXISTS_OR_THM,DECIDE “x + 1n = y ⇔ x = y - 1n ∧ 0 < y”,
+                           EVEN_SUB, GSYM ODD_EVEN, ODD_POS] >>
+                     csimp[DECIDE “0 < x ⇒ (x - 1n = y ⇔ x = y + 1n)”,
+                           ODD_POS, ODD_ADD]) >>
+    gs[DECIDE “0 < x ⇒ (x - 1n = y ⇔ x = y + 1n) ∧ (y = x - 1n ⇔ x = y + 1n)”,
+       ODD_POS, ODD_ADD, EVEN_ODD]) >>
+  rw[] >> gs[COUNTABLE_ALT_BIJ] >>
+  drule_then strip_assume_tac BIJ_INV >> gs[] >>
+  qexists ‘enumerate A ∘ d ∘ g’ >> rw[]
+  >- (rpt $ irule_at Any BIJ_COMPOSE >> metis_tac[]) >>
+  disch_then $ mp_tac o Q.AP_TERM ‘g’ >> simp[]
+QED
+
 Theorem DERANGEMENT_EX:
   ∀s x1 x2. x1 ∈ s ∧ x2 ∈ s ∧ x1 ≠ x2 ⇒
             ∃f. BIJ f s s ∧ ∀x. x ∈ s ⇒ f x ≠ x
@@ -430,10 +454,36 @@ Proof
              cardinalTheory.disjoint_countable_decomposition>>
   ‘∀x. x ∈ s ⇒ ∃a. a ∈ A ∧ x ∈ a’ by (rw[] >> metis_tac[]) >>
   gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
-  ‘∃f. ∀x. x ∈ s ⇒ f x ∈ A ∧ x ∈ f x’
-   by rw[PULL_EXISTS,GSYM SKOLEM_THM] 
-        
+  ‘∀a. a ∈ A ⇒ ∃d. d PERMUTES a ∧ ∀x. x ∈ a ⇒ d x ≠ x’
+    by metis_tac[INF_COUNTABLE_DERANGEMENT_EX] >>
+  gs[SKOLEM_THM,GSYM RIGHT_EXISTS_IMP_THM] >>
+  rename [‘f _ ∈ A ∧ _ ∈ f _’, ‘g _ PERMUTES _’] >>
+  qexists ‘λx. g (f x) x’ >>
+  simp[BIJ_DEF,INJ_DEF,SURJ_DEF] >>
+  rpt strip_tac
+  >>~- ([‘g (f x) x ∈ s’], rw[] >> metis_tac[BIJ_DEF,INJ_DEF])
+  >~ [‘g (f a) a = g (f b) b’] >- (Cases_on ‘f a = f b’
+                                   >- (metis_tac[INJ_DEF,BIJ_DEF]) >>
+                                   ‘a ∈ f a ∧ b ∈ f b ∧ f a ∈ A ∧ f b ∈ A’ by
+                                     metis_tac[] >>
+                                   ‘g (f a) a ∈ f a ∧ g (f b) b ∈ f b’ by
+                                     metis_tac[INJ_DEF,BIJ_DEF] >>
+                                   ‘DISJOINT (f a) (f b)’ by metis_tac[] >>
+                                   metis_tac[DISJOINT_DEF,IN_INTER,NOT_IN_EMPTY]) >>
+  ‘f x ∈ A’ by simp[] >>
+  first_x_assum $ drule_then strip_assume_tac >>
+  drule_then (qx_choose_then ‘gi’ strip_assume_tac) BIJ_INV >>
+  qexists ‘gi x’ >> ‘gi x ∈ f x’ by metis_tac[BIJ_DEF,SURJ_DEF] >>
+  conj_asm1_tac
+  >- (rw[] >> metis_tac[]) >>
+  ‘f (gi x) = f x’ suffices_by gs[] >>
+  CCONTR_TAC >>
+  ‘gi x ∈ f (gi x) ∧ DISJOINT (f x) (f (gi x))’ by metis_tac[] >>
+  pop_assum $ mp_tac o SRULE [DISJOINT_DEF] >>
+  simp[GSYM MEMBER_NOT_EMPTY] >> metis_tac[]
+QED
 
+(*
 Theorem exercise_5_2_3_iv:
   has_fixed_points (finite_closed_topology X) ⇔ X ≠ ∅
 Proof
@@ -441,6 +491,30 @@ Proof
   >- (strip_tac >> gs[])
   >>
 QED
+*)
 
+(*
+finite_closed_topology
+chap1Theory.finite_closed_topology_def
+INSERT_DEF
+has_fixed_points_def
+continuousfn_def
+topology
+topology_tybij
+istopology
+topspace
+*)
+Theorem exercise_5_2_3_iv_bool:
+  ¬has_fixed_points (finite_closed_topology {T;F})
+Proof
+  simp[chap1Theory.finite_closed_topology_def,ABSORPTION_RWT] >>
+  simp[has_fixed_points_def,continuousfn_def] >>
+  ‘∀A. open_in (topology {s | s ⊆ 𝟚}) A ⇔ A ⊆ 𝟚’ by (
+    rw[] >> ‘istopology {s | s ⊆ 𝟚}’ suffices_by simp[topology_tybij] >>
+    simp[istopology,SUBSET_DEF]) >>
+  ‘topspace (topology {s | s ⊆ 𝟚}) = 𝟚’ by (
+    rw[EXTENSION,topspace] >> qexists_tac ‘𝟚’ >> simp[]) >>
+  simp[] >> qexists_tac ‘$¬’ >> metis_tac[]
+QED
 
 val _ = export_theory();
