@@ -1,6 +1,7 @@
 open HolKernel Parse boolLib bossLib;
 
-open chap3Theory chap4Theory pred_setTheory topologyTheory arithmeticTheory
+open chap1Theory chap3Theory chap4Theory pred_setTheory topologyTheory
+     arithmeticTheory
 
 val _ = new_theory "chap5";
 
@@ -516,5 +517,88 @@ Proof
     rw[EXTENSION,topspace] >> qexists_tac ‘𝟚’ >> simp[]) >>
   simp[] >> qexists_tac ‘$¬’ >> metis_tac[]
 QED
+
+Theorem exercise_5_2_3_iv:
+  has_fixed_points (finite_closed_topology A) ⇔ ∃a. A = {a}
+Proof
+  reverse eq_tac
+  >- simp[PULL_EXISTS, has_fixed_points_def, continuousfn_def] >>
+  simp[has_fixed_points_def, continuousfn_def] >> strip_tac >>
+  CCONTR_TAC >> gs[] >>
+  Cases_on ‘A = {}’ >- gvs[] >>
+  ‘∃a b. a ≠ b ∧ a ∈ A ∧ b ∈ A’
+    by (CCONTR_TAC >>
+        ‘∀a b. a ∈ A ∧ b ∈ A ⇒ a = b’ by metis_tac[] >>
+        qpat_x_assum ‘A ≠ ∅’ mp_tac >>
+        simp[EXTENSION] >> rpt strip_tac >>
+        qpat_x_assum ‘∀a. A ≠ {a}’ mp_tac >> simp[] >>
+        qexists_tac ‘x’ >> simp[EXTENSION] >> metis_tac[]) >>
+  drule_all_then (qx_choose_then ‘d’ strip_assume_tac)
+                 DERANGEMENT_EX >>
+  first_x_assum $ qspec_then ‘d’ mp_tac >> rw[] >>
+  simp[]
+  >- metis_tac[BIJ_DEF, INJ_DEF] >~
+  [‘FINITE (A DIFF PREIMAGE d B ∩ A)’]
+  >- (‘A DIFF PREIMAGE d B ∩ A = A DIFF PREIMAGE d B’
+        by (simp[EXTENSION] >> metis_tac[]) >>
+      simp[] >>
+      ‘FINITE (A DIFF PREIMAGE d B)’
+        suffices_by simp[] >>
+      irule $ iffLR cardinalTheory.CARDEQ_FINITE >>
+      first_assum $ irule_at Any >>
+      simp[cardinalTheory.cardeq_def] >>
+      irule $ iffLR BIJ_SYM >> qexists ‘d’ >>
+      gs[BIJ_DEF, INJ_IFF, SURJ_DEF] >> metis_tac[]) >>
+  metis_tac[]
+QED
+
+Theorem exercise_5_2_3_v:
+  has_fixed_points τ ∧ homeomorphism (τ,τ₁) (f,g) ⇒
+  has_fixed_points τ₁
+Proof
+  rw[has_fixed_points_def] >>
+  rename [‘continuousfn τ₁ τ₁ h’] >>
+  ‘continuousfn τ τ (g o h o f)’
+    by metis_tac[prop_5_1_11, prop_5_1_8] >>
+  first_x_assum $ drule_then strip_assume_tac >>
+  gs[] >> pop_assum (mp_tac o Q.AP_TERM ‘f’) >>
+  ‘f x ∈ topspace τ₁’
+    by metis_tac[homeomorphism, BIJ_DEF, INJ_DEF] >>
+  ‘h (f x) ∈ topspace τ₁’
+    by metis_tac[continuousfn_def] >>
+  gs[prop_5_1_11] >> metis_tac[]
+QED
+
+(* Uof : ('a -> 'b) -> (('a -> bool) -> bool) -> ('b -> bool)
+
+   Uof x::A. ....x...
+
+*)
+
+Theorem exercise_5_2_4:
+  (∀j. j ∈ J ⇒ connected (subtopology τ $ A j)) ∧
+  BIGINTER (IMAGE A J) ≠ ∅ ⇒
+  connected (subtopology τ $ BIGUNION (IMAGE A J))
+Proof
+  simp[connected_def, clopen_def, OPEN_IN_SUBTOPOLOGY,
+       CLOSED_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >>
+  rw[] >>
+  ‘∃a. a ∈ BIGINTER (IMAGE A J)’ by metis_tac[MEMBER_NOT_EMPTY] >>
+  gs[PULL_EXISTS] >> eq_tac >> rw[] >~
+  [‘closed_in τ X’, ‘open_in τ Y’]
+  >- (Cases_on ‘X = {}’ >> simp[] >>
+      Cases_on ‘X ∩ BIGUNION (IMAGE A J) = ∅’ >> simp[] >>
+      simp[INTER_UNIONS] >>
+      simp[Once EXTENSION, PULL_EXISTS] >>
+      rw[EQ_IMP_THM, PULL_EXISTS] >~
+      [‘x ∈ topspace τ ∧ x ∈ A _’]
+      >- metis_tac[CLOSED_IN_SUBSET, SUBSET_DEF] >>
+      rename [‘x ∈ topspace τ’, ‘x ∈ A j’, ‘j ∈ J’] >>
+      ‘x ∈ X’suffices_by metis_tac[] >>
+      ...) >>
+  ...
+QED
+
+
 
 val _ = export_theory();
