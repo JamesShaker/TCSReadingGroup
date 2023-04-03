@@ -575,28 +575,74 @@ QED
 
 *)
 
+Theorem lemma:
+  A ⊆ B ∧ C = D1 ∩ B ∧ C = D2 ∩ B ⇒
+  D1 ∩ A = D2 ∩ A
+Proof
+  SET_TAC[]
+QED
+
+Theorem lemma2:
+  A ⊆ B ∧ A ⊆ C ∧ A ≠ ∅ ∧ A ≠ B ∩ C ⇒
+  ∃a. a ∈ B ∧ a ∈ C ∧ a ∉ A
+Proof
+  SET_TAC[]
+QED
+
+
 Theorem exercise_5_2_4:
-  (∀j. j ∈ J ⇒ connected (subtopology τ $ A j)) ∧
+  (∀j. j ∈ J ⇒ connected (subtopology τ $ A j) ∧ A j ⊆ topspace τ) ∧
   BIGINTER (IMAGE A J) ≠ ∅ ⇒
   connected (subtopology τ $ BIGUNION (IMAGE A J))
 Proof
-  simp[connected_def, clopen_def, OPEN_IN_SUBTOPOLOGY,
-       CLOSED_IN_SUBTOPOLOGY, TOPSPACE_SUBTOPOLOGY] >>
-  rw[] >>
+  rw[connected_def, TOPSPACE_SUBTOPOLOGY] >>
+  reverse eq_tac
+  >- (simp[DISJ_IMP_THM] >>
+      simp[clopen_def, OPEN_IN_SUBTOPOLOGY, CLOSED_IN_SUBTOPOLOGY] >>
+      strip_tac >> simp[PULL_EXISTS] >>
+      rpt (irule_at Any EQ_REFL) >> simp[]) >>
+  CCONTR_TAC >> gs[] >>
+  ‘s ⊆ topspace τ ∩ BIGUNION (IMAGE A J)’
+    by metis_tac[OPEN_IN_SUBSET, TOPSPACE_SUBTOPOLOGY, clopen_def] >>
   ‘∃a. a ∈ BIGINTER (IMAGE A J)’ by metis_tac[MEMBER_NOT_EMPTY] >>
-  gs[PULL_EXISTS] >> eq_tac >> rw[] >~
-  [‘closed_in τ X’, ‘open_in τ Y’]
-  >- (Cases_on ‘X = {}’ >> simp[] >>
-      Cases_on ‘X ∩ BIGUNION (IMAGE A J) = ∅’ >> simp[] >>
-      simp[INTER_UNIONS] >>
-      simp[Once EXTENSION, PULL_EXISTS] >>
-      rw[EQ_IMP_THM, PULL_EXISTS] >~
-      [‘x ∈ topspace τ ∧ x ∈ A _’]
-      >- metis_tac[CLOSED_IN_SUBSET, SUBSET_DEF] >>
-      rename [‘x ∈ topspace τ’, ‘x ∈ A j’, ‘j ∈ J’] >>
-      ‘x ∈ X’suffices_by metis_tac[] >>
-      ...) >>
-  ...
+  gs[PULL_EXISTS] >>
+  ‘a ∈ topspace τ’ by (irule (iffLR SUBSET_DEF) >>
+                       first_assum (irule_at Any o cj 2) >>
+                       csimp[] >> CCONTR_TAC >>
+                       ‘J = ∅’ by metis_tac[MEMBER_NOT_EMPTY] >>
+                       gs[]) >>
+  Cases_on ‘s ∩ BIGINTER (IMAGE A J) = ∅’
+  >- (‘a ∉ s’ by (strip_tac >> qpat_x_assum ‘_ ∩ _ = ∅’ mp_tac >>
+                  simp[Once EXTENSION] >> metis_tac[]) >>
+      ‘∃b. b ∈ s ∧ b ∈ BIGUNION (IMAGE A J)’
+        by metis_tac[SUBSET_DEF, MEMBER_NOT_EMPTY] >>
+      gvs[] >> rename [‘j ∈ J’, ‘b ∈ A j’, ‘b ∈ s’, ‘a ∉ s’] >>
+      ‘s ∩ A j ≠ topspace τ ∩ A j’
+        by (simp[EXTENSION] >> metis_tac[]) >>
+      ‘s ∩ A j ≠ ∅’ by metis_tac[MEMBER_NOT_EMPTY, IN_INTER] >>
+      ‘¬clopen (subtopology τ (A j)) (s ∩ A j)’ by metis_tac[] >>
+      pop_assum mp_tac >> ASM_REWRITE_TAC[clopen_def] >>
+      qpat_x_assum ‘clopen _ _ ’ mp_tac >>
+      simp[clopen_def, OPEN_IN_SUBTOPOLOGY, CLOSED_IN_SUBTOPOLOGY] >>
+      simp[PULL_EXISTS] >> rpt strip_tac >>
+      ‘BIGUNION (IMAGE A J) ∩ A j = A j ∧ A j ⊆ BIGUNION (IMAGE A J)’
+        suffices_by (simp[GSYM INTER_ASSOC] >> metis_tac[lemma]) >>
+      simp[INTER_SUBSET_EQN] >> simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[]) >>
+  ‘∃b. b ∈ topspace τ ∧ b ∈ BIGUNION (IMAGE A J) ∧ b ∉ s’
+    by metis_tac[lemma2] >>
+  ‘∃j. j ∈ J ∧ b ∈ A j’ by gs[SF SFY_ss] >>
+  ‘s ∩ A j ≠ ∅’
+    by (qpat_x_assum ‘s ∩ _ ≠ _’ mp_tac >> ONCE_REWRITE_TAC[EXTENSION] >>
+        simp[] >> metis_tac[]) >>
+  ‘s ∩ A j ≠ topspace τ ∩ A j’
+    by (simp[EXTENSION] >> qexists ‘b’ >> simp[]) >>
+  ‘¬clopen (subtopology τ (A j)) (s ∩ A j)’ by metis_tac[] >>
+  pop_assum mp_tac >> qpat_x_assum ‘clopen _ _’ mp_tac >>
+  REWRITE_TAC[clopen_def] >> simp[OPEN_IN_SUBTOPOLOGY, CLOSED_IN_SUBTOPOLOGY] >>
+  simp[PULL_EXISTS] >> rpt strip_tac >>
+  ‘BIGUNION (IMAGE A J) ∩ A j = A j ∧ A j ⊆ BIGUNION (IMAGE A J)’
+    suffices_by (simp[GSYM INTER_ASSOC] >> metis_tac[lemma]) >>
+  simp[INTER_SUBSET_EQN] >> simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[]
 QED
 
 
