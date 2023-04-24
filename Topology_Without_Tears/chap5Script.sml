@@ -645,6 +645,36 @@ Proof
   simp[INTER_SUBSET_EQN] >> simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[]
 QED
 
+Theorem exercise_5_2_5:
+  connected (subtopology τ A) ∧ A ⊆ topspace τ ⇒
+  connected (subtopology τ (closure τ A)) ∧
+  ∀B. A ⊆ B ∧ B ⊆ closure τ A ⇒ connected (subtopology τ B)
+Proof
+  rw[] (* 2 *)
+  >- (CCONTR_TAC >> qpat_x_assum ‘connected _’ mp_tac >>
+      gs[connected_def, DECIDE “(A ≠ B) = (A = ¬B)”] >>
+      Cases_on ‘s = ∅’ >> gs[] >>
+      Cases_on ‘s = topspace (subtopology τ (closure τ A))’ >> gs[] >>
+      reverse $ Cases_on ‘s ∩ A = ∅’ >> gs[]
+      >- (qexists_tac ‘s ∩ A’ >> iff_tac >> rw[]
+          >- (rw[TOPSPACE_SUBTOPOLOGY, SUBSET_INTER2, INTER_SUBSET_EQN] >>
+              rw[SUBSET_DEF] >> cheat)
+          >> cheat)
+      >> cheat)
+  >> cheat
 
+      (*
+  rw[connected_def, TOPSPACE_SUBTOPOLOGY, clopen_def,
+     OPEN_IN_SUBTOPOLOGY, CLOSED_IN_SUBTOPOLOGY] >> iff_tac >> rw[] (* 10 *)
+  >- (rename [‘closed_in τ t’ ,‘open_in τ s’] >>
+      ‘topspace τ ∩ closure τ A = closure τ A’
+        by simp[SUBSET_INTER2, closure_subset_topspace] >> simp[] >>
+      simp[INTER_SUBSET_EQN] >> Cases_on ‘t ∩ closure τ A = ∅’ >>
+     
+      rw[SUBSET_DEF] >> CCONTR_TAC >> Cases_on ‘x ∈ A’ >> rw[]
+      >- ()
+      )
+      *)
+QED
 
 val _ = export_theory();
