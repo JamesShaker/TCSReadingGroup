@@ -645,6 +645,47 @@ Proof
   simp[INTER_SUBSET_EQN] >> simp[SUBSET_DEF, PULL_EXISTS] >> metis_tac[]
 QED
 
+Theorem not_connected:
+  ∀top. ¬connected top ⇔ ∃s. clopen top s ∧ s ≠ topspace top ∧ s ≠ ∅
+Proof
+  metis_tac[connected_def,clopen_topspace,clopen_EMPTY]
+QED
+
+Theorem CLOPEN_IN_SUBTOPOLOGY_IMP:
+  ∀top A s. clopen top s ⇒ clopen (subtopology top A) (s ∩ A)
+Proof
+  metis_tac[clopen_def,OPEN_IN_SUBTOPOLOGY,CLOSED_IN_SUBTOPOLOGY]
+QED
+
+(*
+Lemma: ¬connected τ ⇔ ∃s. clopen τ s ∧ s ≠ topspace τ ∧ s ≠ ∅
+Lemma: clopen τ s ⇒ clopen (subtopology τ A) (s ∩ A)
+  This actually needs a more congruence friendly version
+
+Goal: connected (subtopology τ A) ∧ A ⊆ topspace τ ⇒ connected (subtopology τ (closure τ A))
+
+Contrapositive: ¬connected (subtopology τ (closure τ A)) ⇒ ¬connected (subtopology τ A) ∧ A ⊆ topspace τ
+  Have: clopen (subtopology τ (closure τ A)) s ∧ s ≠ (closure τ A) ∧ s ≠ ∅
+  Need: ∃r. clopen (subtopology τ A) r ∧ r ≠ A ∧ r ≠ ∅
+
+Sub-goal: ∃t. clopen (subtopology τ (closure τ A)) t ∧ t ≠ (closure τ A) ∧ t ≠ ∅ ∧ t ∩ A ≠ ∅
+  Either t is s or (closure τ A) DIFF s
+
+Witness: t ∩ A
+  clopen (subtopology τ A) (t ∩ A): trivial from clopen (subtopology τ (closure τ A)) t
+  t ∩ A ≠ ∅: trivial
+
+Goal reduces to t ∩ A ≠ A.
+
+Contradiction: suppose not
+  So assume A ⊆ t
+
+A ⊆ t
+closure (subtopology τ (closure τ A)) A ⊆ closure (subtopology τ (closure τ A)) t
+(closure τ A) ⊆ t   (since t is closed in (subtopology τ (closure τ A)))
+contradicting t ≠ (closure τ A) and clopen (subtopology τ (closure τ A)) t
+*)
+
 Theorem exercise_5_2_5:
   connected (subtopology τ A) ∧ A ⊆ topspace τ ⇒
   connected (subtopology τ (closure τ A)) ∧
@@ -655,7 +696,7 @@ Proof
       gs[connected_def, DECIDE “(A ≠ B) = (A = ¬B)”] >>
       Cases_on ‘s = ∅’ >> gs[] >>
       Cases_on ‘s = topspace (subtopology τ (closure τ A))’ >> gs[] >>
-      reverse $ Cases_on ‘s ∩ A = ∅’ >> gs[]
+      reverse $ Cases_on ‘s ∩ A = ∅’ >> gs[] (* 2 *)
       >- (qexists_tac ‘s ∩ A’ >> iff_tac >> rw[]
           >- (rw[TOPSPACE_SUBTOPOLOGY, SUBSET_INTER2, INTER_SUBSET_EQN] >>
               rw[SUBSET_DEF] >> cheat)
