@@ -657,6 +657,17 @@ Proof
   metis_tac[clopen_def,OPEN_IN_SUBTOPOLOGY,CLOSED_IN_SUBTOPOLOGY]
 QED
 
+Theorem clopen_DIFF:
+  clopen τ s ⇒ clopen τ (topspace τ DIFF s)
+Proof
+  simp[clopen_def,closed_in,DIFF_DIFF_SUBSET]      
+QED
+
+(*
+clopen τ' t
+clopen subtopology τ (closure τ A) t
+*)
+
 (*
 Lemma: ¬connected τ ⇔ ∃s. clopen τ s ∧ s ≠ topspace τ ∧ s ≠ ∅
 Lemma: clopen τ s ⇒ clopen (subtopology τ A) (s ∩ A)
@@ -691,31 +702,41 @@ Theorem exercise_5_2_5:
   connected (subtopology τ (closure τ A)) ∧
   ∀B. A ⊆ B ∧ B ⊆ closure τ A ⇒ connected (subtopology τ B)
 Proof
-  rw[] (* 2 *)
-  >- (CCONTR_TAC >> qpat_x_assum ‘connected _’ mp_tac >>
-      gs[connected_def, DECIDE “(A ≠ B) = (A = ¬B)”] >>
-      Cases_on ‘s = ∅’ >> gs[] >>
-      Cases_on ‘s = topspace (subtopology τ (closure τ A))’ >> gs[] >>
-      reverse $ Cases_on ‘s ∩ A = ∅’ >> gs[] (* 2 *)
-      >- (qexists_tac ‘s ∩ A’ >> iff_tac >> rw[]
-          >- (rw[TOPSPACE_SUBTOPOLOGY, SUBSET_INTER2, INTER_SUBSET_EQN] >>
-              rw[SUBSET_DEF] >> cheat)
-          >> cheat)
-      >> cheat)
-  >> cheat
-
-      (*
-  rw[connected_def, TOPSPACE_SUBTOPOLOGY, clopen_def,
-     OPEN_IN_SUBTOPOLOGY, CLOSED_IN_SUBTOPOLOGY] >> iff_tac >> rw[] (* 10 *)
-  >- (rename [‘closed_in τ t’ ,‘open_in τ s’] >>
-      ‘topspace τ ∩ closure τ A = closure τ A’
-        by simp[SUBSET_INTER2, closure_subset_topspace] >> simp[] >>
-      simp[INTER_SUBSET_EQN] >> Cases_on ‘t ∩ closure τ A = ∅’ >>
-     
-      rw[SUBSET_DEF] >> CCONTR_TAC >> Cases_on ‘x ∈ A’ >> rw[]
-      >- ()
-      )
-      *)
+  rw[]
+  >- (Cases_on ‘closure τ A = A’ >> simp[] >>
+      CCONTR_TAC >> qpat_x_assum ‘connected _’ mp_tac >>
+      gs[not_connected] >> qabbrev_tac ‘τ' = (subtopology τ (closure τ A))’ >>
+      ‘∃t. clopen τ' t ∧ t ≠ topspace τ' ∧ t ≠ ∅ ∧ t ∩ A ≠ ∅’ by (
+        reverse $ Cases_on ‘s ∩ A = ∅’ >- metis_tac[] >>
+        qexists_tac ‘topspace τ' DIFF s’ >>
+        ‘s ⊆ topspace τ'’ by gs[clopen_def,OPEN_IN_SUBSET] >>
+        rpt strip_tac
+        >- simp[clopen_DIFF]
+        >- (gs[X_DIFF_EQ_X] >>
+            metis_tac[DISJOINT_ALT,SUBSET_DEF,GSYM MEMBER_NOT_EMPTY])
+        >- (gs[EXTENSION,SUBSET_DEF] >> metis_tac[])
+        >- (qpat_x_assum ‘_ = ∅’ mp_tac >>
+            simp[EXTENSION] >>
+            Cases_on ‘A = ∅’ >> gs[closure_EMPTY] >>
+            gs[GSYM MEMBER_NOT_EMPTY] >>
+            first_assum $ irule_at Any >>
+            gs[Abbr ‘τ'’,TOPSPACE_SUBTOPOLOGY] >>
+            metis_tac[SUBSET_closure,SUBSET_DEF,NOT_IN_EMPTY,IN_INTER])) >>
+      first_assum $ irule_at Any >> strip_tac
+      >- (drule_then (qspec_then ‘A’ mp_tac) CLOPEN_IN_SUBTOPOLOGY_IMP >>
+          simp[Abbr ‘τ'’,SUBTOPOLOGY_SUBTOPOLOGY] >>
+          ‘closure τ A ∩ A = A’ suffices_by simp[] >>
+          simp[INTER_SUBSET_EQN]) >>
+      simp[TOPSPACE_SUBTOPOLOGY,SUBSET_INTER2,INTER_SUBSET_EQN] >>
+      strip_tac >>
+      ‘t ⊆ topspace τ'’ by gs[clopen_def,OPEN_IN_SUBSET] >>
+      drule_all_then assume_tac closure_monotone >>
+      ‘closure τ' t = t’ by gs[clopen_def,closure_of_closed] >>
+      ‘closure τ' A = topspace τ'’ by (
+        simp[closure_def,Abbr ‘τ'’] >> cheat
+        ) >>
+      gs[] >> metis_tac[SUBSET_ANTISYM]) >>
+  cheat
 QED
 
 val _ = export_theory();
