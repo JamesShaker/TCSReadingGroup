@@ -732,11 +732,22 @@ Proof
       ‘t ⊆ topspace τ'’ by gs[clopen_def,OPEN_IN_SUBSET] >>
       drule_all_then assume_tac closure_monotone >>
       ‘closure τ' t = t’ by gs[clopen_def,closure_of_closed] >>
-      ‘closure τ' A = topspace τ'’ by (
-        simp[closure_def,Abbr ‘τ'’] >> cheat
-        ) >>
+      ‘A ⊆ topspace τ'’
+       by simp[Abbr‘τ'’,TOPSPACE_SUBTOPOLOGY] >> 
+      ‘closure τ' A = topspace τ'’ by
+        (irule $ iffLR dense_def >>
+         simp[dense_nontrivial_inters] >>
+         simp[Abbr‘τ'’,OPEN_IN_SUBTOPOLOGY,PULL_EXISTS] >>
+         simp[GSYM INTER_ASSOC,SUBSET_INTER2] >>
+         simp[closure_def] >> rpt strip_tac >>
+         gs[GSYM MEMBER_NOT_EMPTY] (* 2 *)
+         >- (pop_assum mp_tac >>
+             metis_tac[MEMBER_NOT_EMPTY,IN_INTER]) >>
+         gs[limpt_thm] >>
+         metis_tac[MEMBER_NOT_EMPTY,IN_INTER])  >>
       gs[] >> metis_tac[SUBSET_ANTISYM]) >>
   cheat
 QED
 
+        
 val _ = export_theory();
