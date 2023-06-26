@@ -543,4 +543,46 @@ Proof
       REWRITE_TAC [REAL_LDISTRIB] >> simp[])
 QED
 
+Theorem continuousfn_scale:
+  continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧ 0 < c ⇒
+  continuousfn (EST {x | a/c ≤ x ∧ x ≤ b/c}) τ (λx. f (c * x))
+Proof
+  rw[continuousfn_def] >>
+  first_x_assum drule >>
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >>
+  cheat
+QED
+
+Theorem path_connected_nexus:
+  path_connected τ ⇔
+    topspace τ = ∅ ∨
+    ∃p. p ∈ topspace τ ∧
+        ∀a. a ∈ topspace τ ⇒
+            ∃f. continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) τ f ∧ f 0 = a ∧ f 1 = p
+Proof
+  Cases_on ‘topspace τ = ∅’
+  >- simp[path_connected_def] >>
+  simp[] >> iff_tac
+  >- (simp[path_connected_def] >> metis_tac[MEMBER_NOT_EMPTY]) >>
+  rw[path_connected_def] >>
+  ‘∃fa fb. continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) τ fa ∧ fa 0 = a ∧ fa 1 = p ∧
+           continuousfn (EST {x | 0 ≤ x ∧ x ≤ 1}) τ fb ∧ fb 0 = b ∧ fb 1 = p’ by (
+    metis_tac[]) >>
+  qexists ‘λx. if x ≤ 1/2 then fa (2*x) else fb (2*(1-x))’ >>
+  simp[] >> cheat
+  (*gs[continuousfn_def] >> rw[] >>*)
+QED
+
+(*
+path_connected_def
+euclidean_2_def
+subtopology
+continuousfn_def
+*)
+Theorem exercice_5_2_7:
+  path_connected (subtopology euclidean_2 {(x,y) | ¬rational x ∨ ¬rational y})
+Proof
+  simp[path_connected_nexus] >> cheat
+QED
+
 val _ = export_theory();
