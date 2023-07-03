@@ -550,6 +550,73 @@ Proof
   rw[continuousfn_def] >>
   first_x_assum drule >>
   simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >>
+  qexists ‘{x | c * x ∈ t}’ >> reverse conj_tac
+  >- (pop_assum mp_tac >> simp[EXTENSION]) >>
+  ‘inv c ≠ 0’ by simp[] >>
+  drule_all_then (qspec_then ‘0’ mp_tac) open_in_linear >>
+  simp[] >>
+  ‘(IMAGE (λx. c⁻¹ * x) t) = {x | c * x ∈ t}’ suffices_by simp[] >>
+  simp[EXTENSION]
+QED
+
+Theorem continuousfn_scale_neg:
+  continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧ c < 0 ⇒
+  continuousfn (EST {x | b/c ≤ x ∧ x ≤ a/c}) τ (λx. f (c * x))
+Proof
+  rw[continuousfn_def] >>
+  first_x_assum drule >>
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >>
+  qexists ‘{x | c * x ∈ t}’ >> reverse conj_tac
+  >- (pop_assum mp_tac >> simp[EXTENSION] >> metis_tac[]) >>
+  ‘inv c ≠ 0’ by simp[] >>
+  drule_all_then (qspec_then ‘0’ mp_tac) open_in_linear >>
+  simp[] >>
+  ‘(IMAGE (λx. c⁻¹ * x) t) = {x | c * x ∈ t}’ suffices_by simp[] >>
+  simp[EXTENSION]
+QED
+
+Theorem continuousfn_shift:
+  continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ⇒
+  continuousfn (EST {x | a - c ≤ x ∧ x ≤ b - c}) τ (λx. f (x + c))
+Proof
+  rw[continuousfn_def] >>
+  first_x_assum drule >>
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >>
+  qexists ‘{x | x + c ∈ t}’ >> reverse conj_tac
+  >- (pop_assum mp_tac >>
+      simp[EXTENSION,REAL_LE_SUB_RADD,REAL_LE_SUB_LADD]) >>
+  ‘1r ≠ 0’ by simp[] >>
+  drule_all_then (qspec_then ‘-c’ mp_tac) open_in_linear >>
+  simp[] >>
+  ‘(IMAGE (λx. x + -c) t) = {x | x + c ∈ t}’ suffices_by simp[] >>
+  simp[EXTENSION,GSYM real_sub,REAL_EQ_SUB_LADD]
+QED
+
+(*
+(* open_in euclidean (s ∩ A ∪ t ∩ B) *)
+Theorem open_in_EST_UNION:
+  open_in (EST A) s ∧ open_in (EST B) t ⇒
+  open_in (EST (A ∪ B)) (s ∪ t)
+Proof
+  simp[OPEN_IN_SUBTOPOLOGY,PULL_EXISTS] >> rw[] >>
+  rename [‘s ∩ A ∪ t ∩ B’] >>
+  qexists ‘s ∩ t’ >> simp[OPEN_IN_INTER,EXTENSION] >> metis_tac[]
+        (*
+  simp[OPEN_IN_SUBTOPOLOGY,PULL_EXISTS,UNION_OVER_INTER] >>
+  rpt strip_tac >>
+  rename[‘ta ∩ A ∪ tb ∩ B’] >>
+  qexists ‘ta ∩ tb’ >>
+  simp[OPEN_IN_INTER,EXTENSION] >> metis_tac[]*)
+QED
+*)
+
+Theorem continuousfn_stitch:
+  continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧
+  continuousfn (EST {x | b ≤ x ∧ x ≤ c}) τ g ∧ f b = g b ⇒
+  continuousfn (EST {x | a ≤ x ∧ x ≤ c}) τ (λx. if x ≤ b then f x else g x)
+Proof
+  rw[continuousfn_def] >- rw[] >>
+  rpt $ first_x_assum $ drule_then assume_tac >>
   cheat
 QED
 
