@@ -610,13 +610,22 @@ Proof
 QED
 *)
 
-Theorem OPEN_IN_SUB_UNIONS:
-  C ⊆ A ∧ open_in (EST A) C ⇒ open_in (EST (A ∪ B)) C
+Theorem OPEN_IN_IVAL_EXTENDED:
+  C ⊆ ival a b ∧ open_in (EST (ival a b)) C ⇒ open_in (EST (ival a b ∪ B)) C
 Proof
-  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >> simp[]
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >> simp[] >>
+  qexists ‘t ∩ ival a b’ >> simp[OPEN_IN_INTER] >>
+  simp[EXTENSION] >> metis_tac[]
+QED
 
-
-
+(*Theorem OPEN_IN_RCLOSED_IVAL_EXTENDED:
+  C ⊆ {x | a < x ∧ x ≤ b} ∧ open_in (EST {x | a < x ∧ x ≤ b}) C ⇒
+  open_in (EST ({x | a < x ∧ x ≤ b} ∪ ({b} ∪ B))) C
+Proof
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >> simp[] >>
+  qexists ‘t ∩ ival a b’ >> simp[OPEN_IN_INTER] >>
+  simp[EXTENSION, ival_def] >> rw[EQ_IMP_THM]
+QED *)
 
 Theorem continuousfn_stitch:
   a ≤ b ∧ b ≤ c ∧ f b ∈ topspace τ ∧ a < c ∧
@@ -625,10 +634,23 @@ Theorem continuousfn_stitch:
   continuousfn (EST {x | a < x ∧ x < c}) τ (λx. if x ≤ b then f x else g x)
 Proof
   rw[continuousfn_def] >- (rw[] >> Cases_on ‘x = b’ >> gs[]) >>
-  rpt $ first_x_assum $ drule_then assume_tac >>
   map_every qabbrev_tac
             [‘ab = { x | a < x ∧ x < b}’, ‘bc = {x | b < x ∧ x < c}’,
              ‘ac = {x | a < x ∧ x < c}’] >>
+  ‘open_in (EST ab) (PREIMAGE f A ∩ ab) ∧ open_in (EST bc) (PREIMAGE g A ∩ bc)’
+    by simp[] >>
+  reverse $ Cases_on ‘a < b’
+  >- (‘a = b’ by simp[] >> fs[] >> rw[] >>
+      ‘PREIMAGE (λx. if x ≤ a then f x else g x) A ∩ ac =
+       PREIMAGE g A ∩ ac’ suffices_by simp[] >>
+      simp[EXTENSION, Abbr‘ac’] >>
+      metis_tac[REAL_ARITH “a < x ⇒ ¬(x ≤ a:real)”])>>
+  reverse $ Cases_on ‘b < c’
+  >- (‘b = c’ by simp[] >> fs[] >> rw[] >>
+      ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ ab =
+       PREIMAGE f A ∩ ab’ suffices_by simp[] >>
+      simp[EXTENSION, Abbr‘ab’, REAL_LE_LT, SF CONJ_ss] >>
+      simp[SF CONJ_ss]) >>
   ‘ac = ab ∪ bc ∪ {b}’
     by (simp[Abbr‘ab’, Abbr‘bc’, Abbr‘ac’, EXTENSION] >> rw[EQ_IMP_THM] >>
         simp[]) >>
@@ -640,8 +662,22 @@ Proof
         ‘x = b’ by simp[] >> gvs[]) >>
   simp[] >>
   ntac 2 (pop_assum kall_tac) >>
-  gs[OPEN_IN_SUBTOPOLOGY] >>
-  rename [‘aot ∩ ab ∪ cot ∩ bc = _ ∩ (ab ∪ bc)’] >>
+  ‘open_in (EST (ab ∪ bc ∪ {b})) (PREIMAGE f A ∩ ab)’
+    by (‘ab = ival a b’ by simp[EXTENSION, Abbr‘ab’, ival_def] >>
+        REWRITE_TAC [GSYM UNION_ASSOC] >> simp[] >>
+        irule OPEN_IN_IVAL_EXTENDED >> gvs[]) >>
+  ‘open_in (EST (ab ∪ bc ∪ {b})) (PREIMAGE g A ∩ bc)’
+    by (‘bc = ival b c’ by simp[EXTENSION, Abbr‘bc’, ival_def] >> fs[] >>
+        qpat_assum ‘open_in (EST (ival b c)) _’
+                   (mp_then Any mp_tac OPEN_IN_IVAL_EXTENDED) >>
+        simp[] >> metis_tac[UNION_ASSOC, UNION_COMM]) >>
+  Cases_on ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ {b} = ∅’
+  >- simp[OPEN_IN_UNION] >>
+  ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ {b} = {b} ∧ g b ∈ A’
+    by (simp[EXTENSION] >> pop_assum mp_tac >> simp[GSYM MEMBER_NOT_EMPTY] >>
+        rw[] >> metis_tac[]) >>
+  simp[] >>
+  OPEN_IN_RCLOSED_IVAL_EXTENDED
 
 Theorem continuousfn_stitch:
   a ≤ b ∧ b ≤ c ∧
