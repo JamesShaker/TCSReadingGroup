@@ -610,13 +610,77 @@ Proof
 QED
 *)
 
+Theorem OPEN_IN_SUB_UNIONS:
+  C ⊆ A ∧ open_in (EST A) C ⇒ open_in (EST (A ∪ B)) C
+Proof
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >> simp[]
+
+
+
+
 Theorem continuousfn_stitch:
+  a ≤ b ∧ b ≤ c ∧ f b ∈ topspace τ ∧ a < c ∧
+  continuousfn (EST {x | a < x ∧ x < b}) τ f ∧
+  continuousfn (EST {x | b < x ∧ x < c}) τ g ∧ f b = g b ⇒
+  continuousfn (EST {x | a < x ∧ x < c}) τ (λx. if x ≤ b then f x else g x)
+Proof
+  rw[continuousfn_def] >- (rw[] >> Cases_on ‘x = b’ >> gs[]) >>
+  rpt $ first_x_assum $ drule_then assume_tac >>
+  map_every qabbrev_tac
+            [‘ab = { x | a < x ∧ x < b}’, ‘bc = {x | b < x ∧ x < c}’,
+             ‘ac = {x | a < x ∧ x < c}’] >>
+  ‘ac = ab ∪ bc ∪ {b}’
+    by (simp[Abbr‘ab’, Abbr‘bc’, Abbr‘ac’, EXTENSION] >> rw[EQ_IMP_THM] >>
+        simp[]) >>
+  simp[UNION_OVER_INTER] >>
+  ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ ab = PREIMAGE f A ∩ ab’
+    by (simp[EXTENSION, Abbr‘ab’] >> rw[]) >>
+  ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ bc = PREIMAGE g A ∩ bc’
+    by (simp[EXTENSION, Abbr‘bc’] >> rw[] >> iff_tac >> strip_tac >>
+        ‘x = b’ by simp[] >> gvs[]) >>
+  simp[] >>
+  ntac 2 (pop_assum kall_tac) >>
+  gs[OPEN_IN_SUBTOPOLOGY] >>
+  rename [‘aot ∩ ab ∪ cot ∩ bc = _ ∩ (ab ∪ bc)’] >>
+
+Theorem continuousfn_stitch:
+  a ≤ b ∧ b ≤ c ∧
   continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧
   continuousfn (EST {x | b ≤ x ∧ x ≤ c}) τ g ∧ f b = g b ⇒
   continuousfn (EST {x | a ≤ x ∧ x ≤ c}) τ (λx. if x ≤ b then f x else g x)
 Proof
   rw[continuousfn_def] >- rw[] >>
   rpt $ first_x_assum $ drule_then assume_tac >>
+  map_every qabbrev_tac
+            [‘ab = { x | a ≤ x ∧ x ≤ b}’, ‘bc = {x | b ≤ x ∧ x ≤ c}’,
+             ‘ac = {x | a ≤ x ∧ x ≤ c}’] >>
+  ‘ac = ab ∪ bc’
+    by simp[Abbr‘ab’, Abbr‘bc’, Abbr‘ac’, EXTENSION] >>
+  simp[UNION_OVER_INTER] >>
+  ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ ab = PREIMAGE f A ∩ ab’
+    by (simp[EXTENSION, Abbr‘ab’] >> rw[]) >>
+  ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ bc = PREIMAGE g A ∩ bc’
+    by (simp[EXTENSION, Abbr‘bc’] >> rw[] >> iff_tac >> strip_tac >>
+        ‘x = b’ by simp[] >> gvs[]) >>
+  simp[] >>
+  ntac 2 (pop_assum kall_tac) >>
+  gs[OPEN_IN_SUBTOPOLOGY] >>
+  rename [‘aot ∩ ab ∪ cot ∩ bc = _ ∩ (ab ∪ bc)’] >>
+
+
+    simp[OPEN_IN_UNION, OPEN_IN_INTER] >>
+  simp[EXTENSION] >> rw[EQ_IMP_THM] >> simp[] >> CCONTR_TAC >> gs[]
+
+
+
+
+  ‘ac = ab ∪ bc’
+    by simp[Abbr‘ab’, Abbr‘bc’, Abbr‘ac’, EXTENSION] >>
+  simp[UNION_OVER_INTER] >> irule OPEN_IN_UNION >>
+  simp[] >> conj_tac >> irule OPEN_IN_SUBTOPOLOGY_UNION >> simp[] >>
+  simp[OPEN_IN_SUBTOPOLOGY]
+
+
   cheat
 QED
 
