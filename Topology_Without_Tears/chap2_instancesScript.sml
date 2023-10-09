@@ -501,10 +501,11 @@ Proof
       >- (gvs[REAL_LT_LE,LE_NUM_CEILING] >> metis_tac[real_of_int_num]) >>
       CCONTR_TAC >> fs[] >> Cases_on ‘x ≤ 0 ∨ x = &flr x’ >> gvs[] (* 3 *)
       >- (‘x = 0’ by gvs[] >> metis_tac[real_of_int_num])
-      >- metis_tac[integerTheory.INT_LT_ANTISYM] >>
+      >- (first_x_assum $ qspec_then ‘&(flr x)’ mp_tac >> simp[]) >>
       irule integerTheory.INT_DISCRETE >>
       ‘&(flr x + 1) = (&flr x) + 1:int’
-        by gvs[GSYM integerTheory.INT_ADD] >> metis_tac[])
+        by gvs[GSYM integerTheory.INT_ADD] >>
+      gs[NUM_CEILING_NUM_FLOOR] >> metis_tac[])
 QED
 
 Theorem real_of_int_subN:
