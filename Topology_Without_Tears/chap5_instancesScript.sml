@@ -624,11 +624,29 @@ Theorem open_in_est_cc:
              (s = {x | a ≤ x ∧ x < l} ∪ BIGUNION OS ∪ {x | r < x ∧ x ≤ b}) ∧
              (∀t. t ∈ OS ⇒ ∃c d. a < c ∧ c < d ∧ d < b ∧ t = ival c d)
 Proof
-  reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY] >> gs[prop2_2_1,PULL_EXISTS]
+  reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY] >> gvs[prop2_2_1,PULL_EXISTS]
   >- (qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’ >>
       qmatch_abbrev_tac ‘al ∪ _ ∪ rb = BIGUNION ivl ∩ ab’ >>
-      simp[INTER_BIGUNION] >> cheat
-  ) >> cheat
+      simp[INTER_BIGUNION] >>
+      ‘(BIGUNION {x ∩ ab | x ∈ ivl}) =
+       (ival (a-1) l ∩ ab) ∪ BIGUNION {s ∩ ab | s ∈ OS} ∪ (ival r (b+1) ∩ ab)’ by (
+        simp[Once EXTENSION,PULL_EXISTS,Abbr ‘ivl’] >> metis_tac[]) >>
+      pop_assum SUBST1_TAC >>
+      ‘∀s1 s2 s3 t1 t2 t3:real->bool.
+         s1 = t1 ∧ s2 = t2 ∧ s3 = t3 ⇒
+         s1 ∪ s2 ∪ s3 = t1 ∪ t2 ∪ t3’ by simp[] >>
+      pop_assum irule >> UNABBREV_ALL_TAC >>
+      rw[EXTENSION,ival_def] >> reverse $ rw[EQ_IMP_THM]
+      >- metis_tac[] >>
+      last_x_assum $ irule_at Any >>
+      first_x_assum $ drule >> rw[] >>
+      last_x_assum $ irule_at Any >>
+      simp[] >> simp[ival_def,REAL_LE_LT]) >>
+  cheat
+  (* BIGUNION intervals -> BIGUNION disjoint intervals *)
+  (* BIGUNION disjoint intervals ∩ ab ->
+   *   Same unions with at most (only one?) each over a and b
+   *)
 QED
 
 (*
