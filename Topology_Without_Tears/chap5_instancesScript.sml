@@ -618,6 +618,34 @@ Proof
   simp[EXTENSION] >> metis_tac[]
 QED
 
+Theorem open_in_est_cc:
+  open_in (EST {x | a ≤ x ∧ x ≤ b}) s ⇔
+    ∃l OS r. l < b ∧ a < r ∧
+             (s = {x | a ≤ x ∧ x < l} ∪ BIGUNION OS ∪ {x | r < x ∧ x ≤ b}) ∧
+             (∀t. t ∈ OS ⇒ ∃c d. a < c ∧ c < d ∧ d < b ∧ t = ival c d)
+Proof
+  reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY] >> gs[prop2_2_1,PULL_EXISTS]
+  >- (qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’ >>
+      qmatch_abbrev_tac ‘al ∪ _ ∪ rb = BIGUNION ivl ∩ ab’ >>
+      simp[INTER_BIGUNION] >> cheat
+  ) >> cheat
+QED
+
+(*
+t ∩ (ab \ B) 
+*)
+(*
+Theorem OPEN_IN_IVAL_EXTENDED:
+  C ⊆ {x | a ≤ x ∧ x ≤ b} ∧ open_in (EST {x | a ≤ x ∧ x ≤ b}) C ∧
+           closed_in euclidean B ⇒
+           open_in (EST ({x | a ≤ x ∧ x ≤ b} ∪ B)) C
+Proof
+  simp[OPEN_IN_SUBTOPOLOGY] >> strip_tac >> simp[UNION_OVER_INTER] >>
+  qexists ‘t ∩ COMPL B’ >> gs[closed_in,COMPL_DEF] >>
+  simp[OPEN_IN_INTER] >> simp[EXTENSION] >> metis_tac[]
+QED
+*)
+
 (*Theorem OPEN_IN_RCLOSED_IVAL_EXTENDED:
   C ⊆ {x | a < x ∧ x ≤ b} ∧ open_in (EST {x | a < x ∧ x ≤ b}) C ⇒
   open_in (EST ({x | a < x ∧ x ≤ b} ∪ ({b} ∪ B))) C
@@ -629,14 +657,14 @@ QED *)
 
 Theorem continuousfn_stitch:
   a ≤ b ∧ b ≤ c ∧ f b ∈ topspace τ ∧ a < c ∧
-  continuousfn (EST {x | a < x ∧ x < b}) τ f ∧
-  continuousfn (EST {x | b < x ∧ x < c}) τ g ∧ f b = g b ⇒
-  continuousfn (EST {x | a < x ∧ x < c}) τ (λx. if x ≤ b then f x else g x)
+  continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧
+  continuousfn (EST {x | b ≤ x ∧ x ≤ c}) τ g ∧ f b = g b ⇒
+  continuousfn (EST {x | a ≤ x ∧ x ≤ c}) τ (λx. if x ≤ b then f x else g x)
 Proof
   rw[continuousfn_def] >- (rw[] >> Cases_on ‘x = b’ >> gs[]) >>
   map_every qabbrev_tac
-            [‘ab = { x | a < x ∧ x < b}’, ‘bc = {x | b < x ∧ x < c}’,
-             ‘ac = {x | a < x ∧ x < c}’] >>
+            [‘ab = { x | a ≤ x ∧ x ≤ b}’, ‘bc = {x | b ≤ x ∧ x ≤ c}’,
+             ‘ac = {x | a ≤ x ∧ x ≤ c}’] >>
   ‘open_in (EST ab) (PREIMAGE f A ∩ ab) ∧ open_in (EST bc) (PREIMAGE g A ∩ bc)’
     by simp[] >>
   reverse $ Cases_on ‘a < b’
@@ -644,14 +672,14 @@ Proof
       ‘PREIMAGE (λx. if x ≤ a then f x else g x) A ∩ ac =
        PREIMAGE g A ∩ ac’ suffices_by simp[] >>
       simp[EXTENSION, Abbr‘ac’] >>
-      metis_tac[REAL_ARITH “a < x ⇒ ¬(x ≤ a:real)”])>>
+      metis_tac[REAL_LE_ANTISYM])>>
   reverse $ Cases_on ‘b < c’
   >- (‘b = c’ by simp[] >> fs[] >> rw[] >>
       ‘PREIMAGE (λx. if x ≤ b then f x else g x) A ∩ ab =
        PREIMAGE f A ∩ ab’ suffices_by simp[] >>
       simp[EXTENSION, Abbr‘ab’, REAL_LE_LT, SF CONJ_ss] >>
       simp[SF CONJ_ss]) >>
-  ‘ac = ab ∪ bc ∪ {b}’
+  ‘ac = ab ∪ bc’
     by (simp[Abbr‘ab’, Abbr‘bc’, Abbr‘ac’, EXTENSION] >> rw[EQ_IMP_THM] >>
         simp[]) >>
   simp[UNION_OVER_INTER] >>
@@ -662,7 +690,9 @@ Proof
         ‘x = b’ by simp[] >> gvs[]) >>
   simp[] >>
   ntac 2 (pop_assum kall_tac) >>
-  ‘open_in (EST (ab ∪ bc ∪ {b})) (PREIMAGE f A ∩ ab)’
+  
+  (*
+  ‘open_in (EST (ab ∪ bc)) (PREIMAGE f A ∩ ab)’
     by (‘ab = ival a b’ by simp[EXTENSION, Abbr‘ab’, ival_def] >>
         REWRITE_TAC [GSYM UNION_ASSOC] >> simp[] >>
         irule OPEN_IN_IVAL_EXTENDED >> gvs[]) >>
@@ -678,7 +708,11 @@ Proof
         rw[] >> metis_tac[]) >>
   simp[] >>
   OPEN_IN_RCLOSED_IVAL_EXTENDED
+  *)
+  cheat
+QED
 
+(*
 Theorem continuousfn_stitch:
   a ≤ b ∧ b ≤ c ∧
   continuousfn (EST {x | a ≤ x ∧ x ≤ b}) τ f ∧
@@ -719,6 +753,7 @@ Proof
 
   cheat
 QED
+*)
 
 Theorem path_connected_nexus:
   path_connected τ ⇔
