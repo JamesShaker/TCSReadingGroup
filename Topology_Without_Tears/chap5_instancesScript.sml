@@ -619,18 +619,19 @@ Proof
 QED
 
 Theorem open_in_est_cc:
-  open_in (EST {x | a ≤ x ∧ x ≤ b}) s ⇔
-    ∃l OS r. l < b ∧ a < r ∧
-             (s = {x | a ≤ x ∧ x < l} ∪ BIGUNION OS ∪ {x | r < x ∧ x ≤ b}) ∧
-             (∀t. t ∈ OS ⇒ ∃c d. a < c ∧ c < d ∧ d < b ∧ t = ival c d)
+  a < b ⇒
+  (open_in (EST {x | a ≤ x ∧ x ≤ b}) s ⇔
+     ∃l OS r. l ≤ b ∧ a ≤ r ∧
+              (s = {x | a ≤ x ∧ x < l} ∪ BIGUNION OS ∪ {x | r < x ∧ x ≤ b}) ∧
+              (∀t. t ∈ OS ⇒ ∃c d. a < c ∧ c < d ∧ d < b ∧ t = ival c d))
 Proof
   reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY] >> gvs[prop2_2_1,PULL_EXISTS]
-  >- (qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’ >>
+  >- (qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’>>
       qmatch_abbrev_tac ‘al ∪ _ ∪ rb = BIGUNION ivl ∩ ab’ >>
       simp[INTER_BIGUNION] >>
       ‘(BIGUNION {x ∩ ab | x ∈ ivl}) =
-       (ival (a-1) l ∩ ab) ∪ BIGUNION {s ∩ ab | s ∈ OS} ∪ (ival r (b+1) ∩ ab)’ by (
-        simp[Once EXTENSION,PULL_EXISTS,Abbr ‘ivl’] >> metis_tac[]) >>
+       (ival (a-1) l ∩ ab) ∪ BIGUNION {s ∩ ab | s ∈ OS} ∪ (ival r (b+1) ∩ ab)’
+        by (simp[Once EXTENSION,PULL_EXISTS,Abbr ‘ivl’] >> metis_tac[]) >>
       pop_assum SUBST1_TAC >>
       ‘∀s1 s2 s3 t1 t2 t3:real->bool.
          s1 = t1 ∧ s2 = t2 ∧ s3 = t3 ⇒
@@ -642,8 +643,60 @@ Proof
       first_x_assum $ drule >> rw[] >>
       last_x_assum $ irule_at Any >>
       simp[] >> simp[ival_def,REAL_LE_LT]) >>
-  cheat
-  (* BIGUNION intervals -> BIGUNION disjoint intervals *)
+  qabbrev_tac ‘BP = BIGUNION {ival a b | P a b}’ >>
+  qabbrev_tac ‘ab = {x | a ≤ x ∧ x ≤ b}’ >>
+  Cases_on ‘BP ∩ ab = ab’
+  >- (qexistsl [‘(3 * b + a) / 4’, ‘∅’, ‘(3 * a + b) / 4’] >>
+      simp[] >> simp[Abbr‘ab’, EXTENSION]) >>
+  ‘∃Ls Rs Mids.
+     DISJOINT Ls Mids ∧ DISJOINT Mids Rs ∧ DISJOINT Ls Rs ∧
+     (∀x y. P x y ∧ x < a ⇔ (x,y) ∈ Ls) ∧
+     (∀x y. P x y ∧ a ≤ x ∧ y ≤ b ⇔ (x,y) ∈ Mids) ∧
+     (∀x y. P x y ∧ a ≤ x ∧ b < y ⇔ (x,y) ∈ Rs) ∧
+     (∀x y. P x y ⇔ ((x,y) ∈ Ls ∨ (x,y) ∈ Rs ∨ (x,y) ∈ Mids))’
+    by (qexistsl [‘{ (x,y) | P x y ∧ x < a }’,
+                  ‘{ (x,y) | P x y ∧ a ≤ x ∧ b < y}’,
+                  ‘{ (x,y) | P x y ∧ a ≤ x ∧ y ≤ b}’] >>
+        rw[] >>~- ([‘DISJOINT _ _’], rw[DISJOINT_ALT] >> rw[]) >>
+        rw[EQ_IMP_THM] >> CCONTR_TAC >> gs[]) >>
+  ‘{ival a b | P a b} = {ival a b | (a,b) ∈ Ls} ∪ {ival a b | (a,b) ∈ Mids} ∪
+                        {ival a b | (a,b) ∈ Rs}’
+    by (simp[Once EXTENSION] >> rw[EQ_IMP_THM] >> metis_tac[]) >>
+  simp[ONCE_REWRITE_RULE [INTER_COMM] UNION_OVER_INTER] >>
+  ‘BIGUNION {ival a b | (a,b) ∈ Mids} ∩ ab = BIGUNION {ival a b | (a,b) ∈ Mids}’
+    by (simp[Once EXTENSION, PULL_EXISTS] >> rw[EQ_IMP_THM] >~
+        [‘(_ ∧ _) ∧ _’, ‘x ∈ ival a0 b0’]
+        >- (simp[Abbr‘ab’,ival_def] >> qpat_x_assum ‘x ∈ ival a0 b0’ mp_tac >>
+            simp[ival_def] >>
+            first_assum (qpat_assum ‘_ ∈ Mids’ o mp_then Any mp_tac o iffRL)>>
+            metis_tac[REAL_LT_TRANS, REAL_LE_LT]) >>
+        metis_tac[]) >>
+  simp[] >>
+  qabbrev_tac ‘l = if Ls = ∅ then a else sup (IMAGE SND Ls)’ >>
+  qabbrev_tac ‘r = if Rs = ∅ then b else inf (IMAGE FST Rs)’ >>
+  qexistsl [‘l’, ‘{ival a b | (a,b) ∈ Mids}’, ‘r’] >>
+  rw[] >> simp[] >~
+  [‘a < b’, ‘l ≤ b’]
+  >- (rw[Abbr‘l’] >> CCONTR_TAC >> gvs[REAL_NOT_LE] >>
+      drule_at (Pos last) REAL_LT_SUP >>
+      simp[pairTheory.FORALL_PROD] >> conj_tac
+      >- metis_tac[MEMBER_NOT_EMPTY] >>
+      qx_gen_tac ‘b'’ >> Cases_on ‘b < b'’ >> simp[] >> rpt strip_tac >>
+      rename [‘(a',b') ∈ Ls’] >>
+      ‘a' < a’ by metis_tac[] >>
+      qpat_x_assum ‘BP ∩ ab ≠ ab’ mp_tac >> simp[] >>
+      simp[Abbr‘BP’, Once EXTENSION, PULL_EXISTS] >>
+      simp[EQ_IMP_THM] >> simp[Abbr‘ab’] >> qx_gen_tac ‘p’ >>
+      strip_tac >> ‘p ∈ ival a' b'’suffices_by metis_tac[] >>
+      simp[ival_def]) >> cheat
+QED
+
+
+
+
+
+
+        (* BIGUNION intervals -> BIGUNION disjoint intervals *)
   (* BIGUNION disjoint intervals ∩ ab ->
    *   Same unions with at most (only one?) each over a and b
    *)
