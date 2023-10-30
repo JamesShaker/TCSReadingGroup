@@ -618,15 +618,30 @@ Proof
   simp[EXTENSION] >> metis_tac[]
 QED
 
+Theorem prop2_2_1':
+  open_in euclidean s ⇔
+    ∃P. s = BIGUNION {ival a b | P a b} ∧ ∀x y. P x y ⇒ x < y
+Proof
+  reverse $ rw[prop2_2_1,EQ_IMP_THM]
+  >- metis_tac[] >>
+  qexists ‘λx y. P x y ∧ x < y’ >>
+  simp[Once EXTENSION,PULL_EXISTS] >>
+  reverse $ rw[EQ_IMP_THM]
+  >- metis_tac[] >>
+  ‘a < b’ suffices_by metis_tac[] >>
+  gs[ival_def]
+QED
+
 Theorem open_in_est_cc:
   a < b ⇒
   (open_in (EST {x | a ≤ x ∧ x ≤ b}) s ⇔
      ∃l OS r. l ≤ b ∧ a ≤ r ∧
               (s = {x | a ≤ x ∧ x < l} ∪ BIGUNION OS ∪ {x | r < x ∧ x ≤ b}) ∧
-              (∀t. t ∈ OS ⇒ ∃c d. a < c ∧ c < d ∧ d < b ∧ t = ival c d))
+              (∀t. t ∈ OS ⇒ ∃c d. a ≤ c ∧ c < d ∧ d ≤ b ∧ t = ival c d))
 Proof
-  reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY] >> gvs[prop2_2_1,PULL_EXISTS]
-  >- (qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’>>
+  reverse $ rw[EQ_IMP_THM,OPEN_IN_SUBTOPOLOGY]
+  >- (gvs[prop2_2_1,PULL_EXISTS] >>
+      qexists ‘λc d. ival c d ∈ OS ∨ (c = a - 1 ∧ d = l) ∨ (c = r ∧ d = b + 1)’>>
       qmatch_abbrev_tac ‘al ∪ _ ∪ rb = BIGUNION ivl ∩ ab’ >>
       simp[INTER_BIGUNION] >>
       ‘(BIGUNION {x ∩ ab | x ∈ ivl}) =
@@ -643,6 +658,7 @@ Proof
       first_x_assum $ drule >> rw[] >>
       last_x_assum $ irule_at Any >>
       simp[] >> simp[ival_def,REAL_LE_LT]) >>
+  gvs[prop2_2_1',PULL_EXISTS] >>
   qabbrev_tac ‘BP = BIGUNION {ival a b | P a b}’ >>
   qabbrev_tac ‘ab = {x | a ≤ x ∧ x ≤ b}’ >>
   Cases_on ‘BP ∩ ab = ab’
@@ -688,18 +704,28 @@ Proof
       simp[Abbr‘BP’, Once EXTENSION, PULL_EXISTS] >>
       simp[EQ_IMP_THM] >> simp[Abbr‘ab’] >> qx_gen_tac ‘p’ >>
       strip_tac >> ‘p ∈ ival a' b'’suffices_by metis_tac[] >>
-      simp[ival_def]) >> cheat
-QED
-
-
-
-
-
-
-        (* BIGUNION intervals -> BIGUNION disjoint intervals *)
-  (* BIGUNION disjoint intervals ∩ ab ->
-   *   Same unions with at most (only one?) each over a and b
-   *)
+      simp[ival_def]) >~
+  [‘a < b’, ‘a ≤ r’]
+  >- (rw[Abbr‘r’] >> CCONTR_TAC >> gvs[REAL_NOT_LE] >>
+      drule_at (Pos last) REAL_INF_LT >>
+      simp[pairTheory.FORALL_PROD] >> conj_tac
+      >- metis_tac[MEMBER_NOT_EMPTY] >>
+      qx_gen_tac ‘a'’ >> Cases_on ‘a' < a’ >> simp[] >> rpt strip_tac >>
+      rename [‘(a',b') ∈ Rs’] >>
+      ‘a ≤ a'’ by metis_tac[] >> gs[]) >~
+  [‘ival _ _ = ival _ _’]
+  >- metis_tac[] >>
+  simp[Once EXTENSION,Abbr ‘BP’,Abbr ‘ab’,PULL_EXISTS] >>
+  qx_gen_tac ‘p’ >> iff_tac >> rw[] >> simp[]
+  >- (‘p < l’ suffices_by simp[] >>
+      rw[Abbr ‘l’] >> gs[] >>
+      irule $ iffLR REAL_SUP >>
+      simp[pairTheory.EXISTS_PROD,SF SFY_ss] >>
+      conj_tac >> simp[PULL_EXISTS]
+      >- (cheat
+      ) >> cheat
+  ) >>
+  cheat
 QED
 
 (*
